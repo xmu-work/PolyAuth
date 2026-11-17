@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { onMounted, ref, watch } from 'vue'
 import dayjs from 'dayjs'
-import { listLogs } from '@/api/log.api'
+import { Download } from '@element-plus/icons-vue'
+import { exportLogs, listLogs } from '@/api/log.api'
 import { listSystems } from '@/api/system.api'
 import { listUsers } from '@/api/user.api'
 import { useTable } from '@/composables/useTable'
@@ -10,6 +11,7 @@ import { DigitalBool } from '@/constants/enums'
 import type { LogEntry, LogType } from '@/types/log.types'
 import type { System } from '@/types/system.types'
 import type { User } from '@/types/user.types'
+import { ADMIN_ACTION_PERMISSIONS as FP } from '@/constants/permissions'
 
 /**
  * 统一日志查询卡：时间范围必填（默认当天），
@@ -31,6 +33,9 @@ const draftTimeRange = ref<TimeRange | null>(defaultRange())
 const draftUserId = ref<number | undefined>(undefined)
 const draftSystemCode = ref('')
 const draftLogType = ref<LogType | undefined>(undefined)
+const draftUsername = ref('')
+const draftAction = ref('')
+const draftSuccess = ref<0 | 1 | undefined>(undefined)
 
 function defaultRange(): TimeRange {
   const today = dayjs()
@@ -43,6 +48,9 @@ const appliedQuery = ref<{
   userId?: number
   systemCode?: string
   logType?: LogType
+  username?: string
+  action?: string
+  success?: 0 | 1
 }>({
   startTime: toLocalISO(dayjs().startOf('day')),
   endTime: toLocalISO(dayjs().endOf('day')),
@@ -71,6 +79,9 @@ function applyQuery(): void {
     userId: draftUserId.value,
     systemCode: draftSystemCode.value || undefined,
     logType: draftLogType.value,
+    username: draftUsername.value.trim() || undefined,
+    action: draftAction.value.trim() || undefined,
+    success: draftSuccess.value,
   }
   void refresh(1)
 }
@@ -80,7 +91,20 @@ function resetQuery(): void {
   draftUserId.value = undefined
   draftSystemCode.value = ''
   draftLogType.value = undefined
+  draftUsername.value = ''
+  draftAction.value = ''
+  draftSuccess.value = undefined
   applyQuery()
+}
+
+async function download(): Promise<void> {
+  const blob = await exportLogs(appliedQuery.value)
+  const url = URL.createObjectURL(blob)
+  const anchor = document.createElement('a')
+  anchor.href = url
+  anchor.download = `audit-logs-${dayjs().format('YYYYMMDDHHmmss')}.csv`
+  anchor.click()
+  URL.revokeObjectURL(url)
 }
 
 onMounted(() => {
@@ -111,9 +135,16 @@ function asLog(row: unknown): LogEntry {
         <div>
           <h2 class="audit-card__title">统一日志</h2>
           <p class="audit-card__hint">
-            共 {{ total }} 条 · 日志永久保存，不提供删除入口（UC-06）；导出能力待后端补齐
+            共 {{ total }} 条 · 日志永久保存，不提供删除入口（UC-06）
           </p>
         </div>
+        <el-button
+          v-perm="FP.LOG_LIST"
+          :icon="Download"
+          @click="download"
+        >
+          导出 CSV
+        </el-button>
       </div>
     </template>
 
@@ -148,6 +179,18 @@ function asLog(row: unknown): LogEntry {
         <el-select v-model="draftLogType" placeholder="全部类型" clearable class="audit-card__type-select">
           <el-option label="普通操作" value="ACTION" />
           <el-option label="权限变更" value="PERMISSION_CHANGE" />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="用户名">
+        <el-input v-model="draftUsername" clearable placeholder="模糊匹配" />
+      </el-form-item>
+      <el-form-item label="操作动作">
+        <el-input v-model="draftAction" clearable placeholder="如 LOGIN" />
+      </el-form-item>
+      <el-form-item label="结果">
+        <el-select v-model="draftSuccess" clearable placeholder="全部">
+          <el-option label="成功" :value="1" />
+          <el-option label="失败" :value="0" />
         </el-select>
       </el-form-item>
       <el-form-item label="时间范围（必填）">

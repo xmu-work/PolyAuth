@@ -24,6 +24,9 @@ export interface LogQuery extends PageQuery {
   userId?: number
   systemCode?: string
   logType?: LogType
+  username?: string
+  action?: string
+  success?: 0 | 1
   /** ISO 本地时间 YYYY-MM-DDTHH:mm:ss */
   startTime?: string
   /** ISO 本地时间 YYYY-MM-DDTHH:mm:ss */

@@ -3,7 +3,6 @@ package com.iam.platform.common.exception;
 import com.iam.platform.common.enums.ErrorCode;
 import com.iam.platform.common.result.Result;
 import jakarta.validation.ConstraintViolationException;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindException;
@@ -19,13 +18,11 @@ import java.util.stream.Collectors;
  * <p>结构化编程原则：统一出口。所有 Controller 抛出的异常在此集中处理，
  * 转换为统一响应包 Result，避免业务代码中散落的 try-catch。
  */
-@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<Result<Void>> handleBusiness(BusinessException ex) {
-        log.warn("业务异常: code={}, message={}", ex.getCode(), ex.getMessage());
         ErrorCode ec = matchByCode(ex.getCode());
         return ResponseEntity.status(ec.getHttpStatus()).body(Result.fail(ex.getCode(), ex.getMessage()));
     }
@@ -35,7 +32,6 @@ public class GlobalExceptionHandler {
         String msg = ex.getBindingResult().getFieldErrors().stream()
                 .map(e -> e.getField() + ": " + e.getDefaultMessage())
                 .collect(Collectors.joining("; "));
-        log.warn("参数校验失败: {}", msg);
         return ResponseEntity.badRequest().body(Result.fail(ErrorCode.PARAM_INVALID, msg));
     }
 
@@ -62,14 +58,12 @@ public class GlobalExceptionHandler {
             org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class,
             org.springframework.http.converter.HttpMessageNotReadableException.class})
     public ResponseEntity<Result<Void>> handleBadRequest(Exception ex) {
-        log.warn("请求参数错误: {}", ex.getMessage());
         return ResponseEntity.badRequest().body(Result.fail(ErrorCode.PARAM_INVALID, ex.getMessage()));
     }
 
     /** 乐观锁并发冲突（实体 @Version 校验失败）→ 409/3008，前端提示“数据已被他人修改，请刷新后重试” */
     @ExceptionHandler(org.springframework.dao.OptimisticLockingFailureException.class)
     public ResponseEntity<Result<Void>> handleOptimisticLock(org.springframework.dao.OptimisticLockingFailureException ex) {
-        log.warn("并发冲突: {}", ex.getMessage());
         return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(Result.fail(ErrorCode.LOCK_ACQUIRE_FAILED, "数据已被他人修改，请刷新后重试"));
     }
@@ -77,7 +71,6 @@ public class GlobalExceptionHandler {
     /** 唯一约束/完整性冲突（先查后插竞态）→ 409/3009，不再落到 500 */
     @ExceptionHandler(org.springframework.dao.DataIntegrityViolationException.class)
     public ResponseEntity<Result<Void>> handleDataIntegrity(org.springframework.dao.DataIntegrityViolationException ex) {
-        log.warn("数据完整性冲突: {}", ex.getMessage());
         return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(Result.fail(ErrorCode.RESOURCE_DUPLICATE, "数据已存在或违反唯一约束"));
     }
@@ -89,7 +82,6 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Result<Void>> handleInternal(Exception ex) {
-        log.error("服务器内部错误", ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Result.fail(ErrorCode.INTERNAL_ERROR));
     }

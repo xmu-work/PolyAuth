@@ -1,5 +1,6 @@
 package com.iam.platform.application.auth;
 
+import com.iam.platform.application.log.LogService;
 import com.iam.platform.common.enums.AccountStatus;
 import com.iam.platform.common.enums.ErrorCode;
 import com.iam.platform.common.exception.BusinessException;
@@ -8,13 +9,13 @@ import com.iam.platform.infrastructure.persistence.entity.IamToken;
 import com.iam.platform.infrastructure.persistence.entity.IamUser;
 import com.iam.platform.infrastructure.persistence.repository.IamTokenRepository;
 import com.iam.platform.infrastructure.persistence.repository.IamUserRepository;
+import com.iam.platform.interfaces.RequestIdFilter;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,7 +35,6 @@ import java.util.UUID;
  * <p>结构化编程原则：过程内聚——登录→校验账号状态→签发令牌→记录日志，
  * 按固定时序编排，各步处理不同数据。
  */
-@Slf4j
 @RequiredArgsConstructor
 @Service
 public class AuthService {
@@ -42,12 +42,13 @@ public class AuthService {
     /** 管理后台自身的系统编码，令牌归属于该系统 */
     public static final String ADMIN_SYSTEM_CODE = "ADMIN";
 
-    private static final String TOKEN_ACTIVE = "ACTIVE";
-    private static final String TOKEN_REVOKED = "REVOKED";
+    private static final String TOKEN_ACTIVE = IamToken.STATUS_ACTIVE;
+    private static final String TOKEN_REVOKED = IamToken.STATUS_REVOKED;
 
     private final IamUserRepository userRepository;
     private final IamTokenRepository tokenRepository;
     private final CryptoComponent cryptoComponent;
+    private final LogService logService;
 
     @Value("${jwt.secret}")
     private String jwtSecret;
@@ -69,32 +70,41 @@ public class AuthService {
      */
     @Transactional
     public LoginResponse login(LoginRequest request) {
-        if (request.getUsername() == null || request.getUsername().isBlank()
-                || request.getPassword() == null || request.getPassword().isBlank()) {
-            throw new BusinessException(ErrorCode.PARAM_MISSING, "账号和密码不能为空");
+        try {
+            if (request.getUsername() == null || request.getUsername().isBlank()
+                    || request.getPassword() == null || request.getPassword().isBlank()) {
+                throw new BusinessException(ErrorCode.PARAM_MISSING, "账号和密码不能为空");
+            }
+
+            IamUser user = userRepository.findByUserNo(request.getUsername())
+                    .filter(u -> u.getIsDeleted() == 0)
+                    .filter(u -> cryptoComponent.verifyPassword(request.getPassword(), u.getPasswordHash()))
+                    .orElseThrow(() -> new BusinessException(ErrorCode.UNAUTHENTICATED, "账号或密码错误"));
+
+            validateAccountStatus(user.getAccountStatus());
+
+            String accessToken = generateToken(user.getId(), user.getUserNo(), accessTokenExpire);
+            saveToken(user.getId(), accessToken, request.getClientIp());
+            user.setLastLoginAt(LocalDateTime.now());
+            userRepository.save(user);
+
+            LoginResponse response = new LoginResponse();
+            response.setAccessToken(accessToken);
+            response.setTokenType("Bearer");
+            response.setExpiresIn(accessTokenExpire);
+            response.setUserId(String.valueOf(user.getId()));
+            response.setDisplayName(cryptoComponent.decrypt(user.getNameEnc()));
+            response.setAccountStatus(user.getAccountStatus());
+            logService.record(user.getId(), user.getUserNo(), ADMIN_SYSTEM_CODE, "LOGIN",
+                    user.getUserNo(), null, request.getClientIp(), true, null,
+                    RequestIdFilter.currentRequestId());
+            return response;
+        } catch (BusinessException exception) {
+            logService.record(null, request.getUsername(), ADMIN_SYSTEM_CODE, "LOGIN",
+                    request.getUsername(), null, request.getClientIp(), false,
+                    String.valueOf(exception.getCode()), RequestIdFilter.currentRequestId());
+            throw exception;
         }
-
-        IamUser user = userRepository.findByUserNo(request.getUsername())
-                .filter(u -> u.getIsDeleted() == 0)
-                .filter(u -> cryptoComponent.verifyPassword(request.getPassword(), u.getPasswordHash()))
-                .orElseThrow(() -> new BusinessException(ErrorCode.UNAUTHENTICATED, "账号或密码错误"));
-
-        validateAccountStatus(user.getAccountStatus());
-
-        String accessToken = generateToken(user.getId(), user.getUserNo(), accessTokenExpire);
-        saveToken(user.getId(), accessToken, request.getClientIp());
-        user.setLastLoginAt(LocalDateTime.now());
-        userRepository.save(user);
-
-        LoginResponse response = new LoginResponse();
-        response.setAccessToken(accessToken);
-        response.setTokenType("Bearer");
-        response.setExpiresIn(accessTokenExpire);
-        response.setUserId(String.valueOf(user.getId()));
-        response.setDisplayName(cryptoComponent.decrypt(user.getNameEnc()));
-        response.setAccountStatus(user.getAccountStatus());
-        log.info("登录成功: userId={}", user.getId());
-        return response;
     }
 
     /**
@@ -115,6 +125,19 @@ public class AuthService {
         } catch (BusinessException e) {
             return false;
         }
+    }
+
+    /**
+     * 获取当前用户的账号名，用于审计快照；账号不存在时返回 null。
+     */
+    public String getUserNo(Long userId) {
+        if (userId == null) {
+            return null;
+        }
+        return userRepository.findById(userId)
+                .filter(user -> user.getIsDeleted() == 0)
+                .map(IamUser::getUserNo)
+                .orElse(null);
     }
 
     /**
@@ -174,7 +197,6 @@ public class AuthService {
         user.setUpdatedAt(LocalDateTime.now());
         userRepository.save(user);
         revokeUserTokens(userId);
-        log.info("修改密码: userId={}", userId);
     }
 
     private void validatePasswordStrength(String password) {

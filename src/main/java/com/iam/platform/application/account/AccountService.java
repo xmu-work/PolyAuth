@@ -1,15 +1,18 @@
 package com.iam.platform.application.account;
 
 import com.iam.platform.application.auth.AuthService;
+import com.iam.platform.application.log.LogService;
 import com.iam.platform.application.role.RoleService;
 import com.iam.platform.common.enums.AccountStatus;
 import com.iam.platform.common.enums.ErrorCode;
 import com.iam.platform.common.exception.BusinessException;
 import com.iam.platform.infrastructure.crypto.CryptoComponent;
 import com.iam.platform.infrastructure.persistence.entity.IamUser;
+import com.iam.platform.infrastructure.persistence.entity.IamOrg;
+import com.iam.platform.infrastructure.persistence.repository.IamOrgRepository;
 import com.iam.platform.infrastructure.persistence.repository.IamUserRepository;
+import com.iam.platform.interfaces.RequestIdFilter;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.Page;
@@ -18,6 +21,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
  * 用户与账号管理应用服务（M02）。
@@ -25,7 +30,6 @@ import java.time.LocalDateTime;
  * <p>账号建立、状态管理（正常/停用/封存/锁定）、批量导入、账号-角色绑定查询。
  * 对应 FR-01～FR-07。
  */
-@Slf4j
 @RequiredArgsConstructor
 @Service
 public class AccountService {
@@ -34,6 +38,8 @@ public class AccountService {
     private final CryptoComponent cryptoComponent;
     private final AuthService authService;
     private final RoleService roleService;
+    private final IamOrgRepository orgRepository;
+    private final LogService logService;
 
     @Value("${iam.default-password:Iam@123456}")
     private String defaultPassword;
@@ -105,6 +111,7 @@ public class AccountService {
     public IamUser changeStatus(Long userId, String targetStatus, String reason, Long operatorId) {
         AccountStatus target = AccountStatus.fromCode(targetStatus);
         IamUser user = getUser(userId);
+        Map<String, Object> before = userSnapshot(user);
         if (AccountStatus.SEALED.getCode().equals(user.getAccountStatus())) {
             throw new BusinessException(ErrorCode.USER_ALREADY_SEALED);
         }
@@ -119,8 +126,41 @@ public class AccountService {
             user.setLeaveTime(now);
             roleService.revokeAllRoles(userId, operatorId);
         }
-        log.info("账号状态变更: userId={}, status={}, reason={}", userId, target.getCode(), reason);
-        return userRepository.save(user);
+        IamUser saved = userRepository.save(user);
+        logService.recordPermissionChange(operatorId, AuthService.ADMIN_SYSTEM_CODE,
+                "CHANGE_USER_STATUS", "user:" + userId,
+                before, userSnapshot(saved), null, RequestIdFilter.currentRequestId());
+        return saved;
+    }
+
+    /**
+     * 调整用户组织归属与岗位。
+     *
+     * <p>调岗保留已有角色与数据范围，管理员随后按复核结果逐项调整。
+     */
+    @Transactional
+    public IamUser transferUser(Long userId, Long orgId, String post, Long operatorId) {
+        IamUser user = getUser(userId);
+        if (AccountStatus.SEALED.getCode().equals(user.getAccountStatus())) {
+            throw new BusinessException(ErrorCode.USER_ALREADY_SEALED);
+        }
+        IamOrg org = orgRepository.findById(orgId)
+                .filter(item -> item.getIsDeleted() == 0)
+                .orElseThrow(() -> new BusinessException(
+                        ErrorCode.RESOURCE_NOT_FOUND, "组织不存在: " + orgId));
+        if (!IamOrg.STATUS_ACTIVE.equals(org.getStatus())) {
+            throw new BusinessException(ErrorCode.PARAM_INVALID, "停用组织不能接收调岗用户");
+        }
+        Map<String, Object> before = assignmentSnapshot(user);
+        user.setOrgId(orgId);
+        user.setPost(post);
+        user.setUpdatedAt(LocalDateTime.now());
+        user.setUpdatedBy(operatorId);
+        IamUser saved = userRepository.save(user);
+        logService.recordPermissionChange(operatorId, AuthService.ADMIN_SYSTEM_CODE,
+                "TRANSFER_USER", "user:" + userId,
+                before, assignmentSnapshot(saved), null, RequestIdFilter.currentRequestId());
+        return saved;
     }
 
     /**
@@ -130,7 +170,7 @@ public class AccountService {
         UserView view = new UserView();
         view.setId(user.getId());
         view.setUserNo(user.getUserNo());
-        view.setRealName(cryptoComponent.decrypt(user.getNameEnc()));
+        view.setRealName(cryptoComponent.maskName(cryptoComponent.decrypt(user.getNameEnc())));
         if (user.getPhoneEnc() != null) {
             view.setPhoneMasked(cryptoComponent.maskPhone(cryptoComponent.decrypt(user.getPhoneEnc())));
         }
@@ -143,5 +183,44 @@ public class AccountService {
         view.setCreatedAt(user.getCreatedAt());
         view.setUpdatedAt(user.getUpdatedAt());
         return view;
+    }
+
+    /**
+     * 查询敏感用户明文信息，仅供受独立功能点保护的接口调用。
+     */
+    public SensitiveUserView getSensitiveView(Long userId) {
+        IamUser user = getUser(userId);
+        SensitiveUserView view = new SensitiveUserView();
+        view.setId(user.getId());
+        view.setUserNo(user.getUserNo());
+        view.setRealName(cryptoComponent.decrypt(user.getNameEnc()));
+        if (user.getPhoneEnc() != null) {
+            view.setPhone(cryptoComponent.decrypt(user.getPhoneEnc()));
+        }
+        return view;
+    }
+
+    /**
+     * 构造账号状态审计快照，不包含姓名、电话、密码或密文。
+     */
+    private Map<String, Object> userSnapshot(IamUser user) {
+        Map<String, Object> snapshot = new LinkedHashMap<>();
+        snapshot.put("userId", user.getId());
+        snapshot.put("accountStatus", user.getAccountStatus());
+        snapshot.put("leaveTime", user.getLeaveTime());
+        snapshot.put("orgId", user.getOrgId());
+        snapshot.put("post", user.getPost());
+        return snapshot;
+    }
+
+    /**
+     * 构造调岗前后的组织与岗位快照。
+     */
+    private Map<String, Object> assignmentSnapshot(IamUser user) {
+        Map<String, Object> snapshot = new LinkedHashMap<>();
+        snapshot.put("userId", user.getId());
+        snapshot.put("orgId", user.getOrgId());
+        snapshot.put("post", user.getPost());
+        return snapshot;
     }
 }

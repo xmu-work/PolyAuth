@@ -7,6 +7,9 @@ import com.iam.platform.application.auth.AuthService;
 import com.iam.platform.application.auth.LoginResponse;
 import com.iam.platform.application.decision.DecisionService;
 import com.iam.platform.application.decision.PermissionCheckResult;
+import com.iam.platform.application.datascope.DataPermissionService;
+import com.iam.platform.application.datascope.DataScopeService;
+import com.iam.platform.application.datascope.ResourceDecision;
 import com.iam.platform.application.idempotency.IdempotencyStore;
 import com.iam.platform.application.log.LogService;
 import com.iam.platform.application.openapi.OpenApiAuthenticator;
@@ -19,6 +22,7 @@ import com.iam.platform.common.exception.BusinessException;
 import com.iam.platform.infrastructure.persistence.entity.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,6 +38,7 @@ import java.util.Set;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
+import static org.hamcrest.Matchers.containsString;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -67,6 +72,10 @@ class ApiControllerTest {
     private OpenApiAuthenticator openApiAuthenticator;
     @MockitoBean
     private IdempotencyStore idempotencyStore;
+    @MockitoBean
+    private DataScopeService dataScopeService;
+    @MockitoBean
+    private DataPermissionService dataPermissionService;
 
     @BeforeEach
     void setUp() {
@@ -146,6 +155,8 @@ class ApiControllerTest {
         view.setUserNo("zhang");
         when(accountService.createUser("zhang", null, "张三", null, 1L, null)).thenReturn(user);
         when(accountService.getUser(5L)).thenReturn(user);
+        when(accountService.getSensitiveView(5L)).thenReturn(
+                new com.iam.platform.application.account.SensitiveUserView());
         when(accountService.changeStatus(5L, "DISABLED", null, 1L)).thenReturn(user);
         when(accountService.listUsers(any(), isNull(), isNull())).thenReturn(new PageImpl<>(List.of(user)));
         when(accountService.toView(user)).thenReturn(view);
@@ -155,6 +166,8 @@ class ApiControllerTest {
                 .andExpect(jsonPath("$.data.userNo").value("zhang"));
         mvc.perform(get("/users/5").header("Authorization", AUTH))
                 .andExpect(jsonPath("$.data.userNo").value("zhang"));
+        mvc.perform(get("/users/5/sensitive").header("Authorization", AUTH))
+                .andExpect(status().isOk());
         mvc.perform(get("/users").header("Authorization", AUTH).param("page", "1").param("size", "20"))
                 .andExpect(jsonPath("$.data.total").value(1));
         mvc.perform(put("/users/5/status").header("Authorization", AUTH).param("targetStatus", "DISABLED"))
@@ -164,6 +177,8 @@ class ApiControllerTest {
     @Test
     void idempotencyFingerprintIncludesCaller() throws Exception {
         when(authService.authenticate("second-token")).thenReturn(2L);
+        when(roleService.grantRole(eq(5L), eq(2L), isNull(), anyLong(), isNull()))
+                .thenReturn(new IamUserRole());
         when(idempotencyStore.acquire(eq("caller-key"), anyString(), anyLong()))
                 .thenReturn(IdempotencyStore.Status.ACQUIRED, IdempotencyStore.Status.CONFLICT);
 
@@ -234,6 +249,27 @@ class ApiControllerTest {
                 .andExpect(jsonPath("$.data.length()").value(1));
     }
 
+    /**
+     * 验证系统列表不会序列化接入密钥或公钥字段。
+     */
+    @Test
+    @DisplayName("R35 系统响应不泄漏 appSecret/publicKey")
+    void systemResponseDoesNotLeakSecrets() throws Exception {
+        IamSystem system = new IamSystem();
+        system.setId(1L);
+        system.setSystemCode("ADMIN");
+        system.setSystemName("权限后台");
+        system.setAppSecret("top-secret");
+        system.setPublicKey("internal-key");
+        when(systemService.listSystems()).thenReturn(List.of(system));
+
+        mvc.perform(get("/systems").header("Authorization", AUTH))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[0].systemCode").value("ADMIN"))
+                .andExpect(jsonPath("$.data[0].appSecret").doesNotExist())
+                .andExpect(jsonPath("$.data[0].publicKey").doesNotExist());
+    }
+
     @Test
     void organizationEndpointsUseOrganizationResource() throws Exception {
         IamOrg hq = new IamOrg();
@@ -265,13 +301,26 @@ class ApiControllerTest {
         entry.setAction("GRANT_ROLE");
         entry.setSuccess(1);
         when(logService.queryLogs(any(), isNull(), isNull(), eq(LogService.TYPE_PERMISSION_CHANGE),
-                isNull(), isNull())).thenReturn(new PageImpl<>(List.of(entry)));
+                eq("admin"), eq("GRANT"), eq(1), isNull(), isNull()))
+                .thenReturn(new PageImpl<>(List.of(entry)));
+        when(logService.exportLogs(isNull(), isNull(), eq(LogService.TYPE_PERMISSION_CHANGE),
+                eq("admin"), eq("GRANT"), eq(1), isNull(), isNull()))
+                .thenReturn(List.of(entry));
+        when(logService.toCsv(List.of(entry))).thenReturn("logId,action\r\n1,GRANT_ROLE\r\n");
 
         mvc.perform(get("/logs").header("Authorization", AUTH)
-                        .param("logType", LogService.TYPE_PERMISSION_CHANGE))
+                        .param("logType", LogService.TYPE_PERMISSION_CHANGE)
+                        .param("username", "admin").param("action", "GRANT").param("success", "1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.list[0].logType").value(LogService.TYPE_PERMISSION_CHANGE))
                 .andExpect(jsonPath("$.data.list[0].action").value("GRANT_ROLE"));
+        mvc.perform(get("/logs/export").header("Authorization", AUTH)
+                        .param("logType", LogService.TYPE_PERMISSION_CHANGE)
+                        .param("username", "admin").param("action", "GRANT").param("success", "1"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Disposition", containsString("audit-logs-")))
+                .andExpect(content().contentTypeCompatibleWith("text/csv"))
+                .andExpect(content().string(containsString("GRANT_ROLE")));
     }
 
     @Test
@@ -297,11 +346,90 @@ class ApiControllerTest {
 
     @Test
     void dataPermissionEndpointsAreNotExposed() throws Exception {
+        IamDataScope scope = new IamDataScope();
+        scope.setId(1L);
+        scope.setScopeCode("DEPT");
+        scope.setScopeName("部门");
+        when(dataScopeService.listDataScopes()).thenReturn(List.of(scope));
+        when(dataScopeService.createDataScope("DEPT_SCOPE", "部门范围", null, 1, 1L))
+                .thenReturn(scope);
+        IamRoleDataScope binding = new IamRoleDataScope();
+        binding.setId(8L);
+        binding.setRoleId(10L);
+        when(dataScopeService.bindRoleDataScope(eq(10L), eq("DEPT"), eq(2L), isNull(), isNull(), eq(1L)))
+                .thenReturn(binding);
+        when(dataScopeService.listRoleDataScopes(10L)).thenReturn(List.of(binding));
+        when(dataPermissionService.authorize(eq(1L), eq("ADMIN"), eq(30001L), eq(2L), isNull(), isNull()))
+                .thenReturn(ResourceDecision.builder()
+                        .functionAllowed(true).dataAllowed(true).allowed(true)
+                        .matchedScopeIds(List.of(8L)).build());
+        when(dataPermissionService.getEffectiveDataScopes(1L, "ADMIN"))
+                .thenReturn(List.of(com.iam.platform.application.datascope.EffectiveDataScope.builder()
+                        .bindingId(8L).roleId(10L).scopeType("DEPT").orgId(2L).build()));
+
         mvc.perform(get("/systems/data-scopes").header("Authorization", AUTH))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[0].scopeCode").value("DEPT"));
+        mvc.perform(post("/systems/data-scopes").header("Authorization", AUTH)
+                        .param("scopeCode", "DEPT_SCOPE").param("scopeName", "部门范围")
+                        .param("sortNo", "1"))
+                .andExpect(status().isOk());
+        mvc.perform(post("/roles/10/data-scopes").header("Authorization", AUTH)
+                        .param("scopeType", "DEPT").param("orgId", "2"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.id").value(8));
+        mvc.perform(get("/roles/10/data-scopes").header("Authorization", AUTH))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.length()").value(1));
         mvc.perform(post("/open/authorize/resource").header("Authorization", AUTH)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"userId\":1,\"systemCode\":\"ADMIN\",\"apiId\":30001}"))
-                .andExpect(status().isNotFound());
+                        .content("{\"userId\":1,\"systemCode\":\"ADMIN\",\"apiId\":30001,\"targetOrgId\":2}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.allowed").value(true));
+        mvc.perform(get("/open/data-scopes").header("Authorization", AUTH)
+                        .param("userId", "1").param("systemCode", "ADMIN"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[0].scopeType").value("DEPT"));
+    }
+
+    /**
+     * 验证 RBAC3 角色继承、互斥、组织停用和调岗端点均已接通。
+     */
+    @Test
+    @DisplayName("R04/R09/R13/R14 RBAC3 管理端点")
+    void rbac3ManagementEndpoints() throws Exception {
+        when(roleService.createRole(eq("PROJECT_MANAGER"), eq("项目经理"), eq("FUNC"), isNull(), eq(2L)))
+                .thenReturn(new IamRole());
+        when(roleService.updateRole(eq(3L), eq("部门经理"), isNull(), eq("ACTIVE"), eq(2L), eq(1L)))
+                .thenReturn(new IamRole());
+        when(roleService.listRoleExclusions(3L)).thenReturn(List.of(10L));
+        when(organizationService.updateOrg(3L, "部门新名称", 2, null, "DISABLED", 1L))
+                .thenReturn(new IamOrg());
+        IamUser transferred = new IamUser();
+        transferred.setOrgId(12L);
+        when(accountService.transferUser(5L, 12L, "预算员", 1L)).thenReturn(transferred);
+        when(accountService.toView(transferred)).thenReturn(new UserView());
+
+        mvc.perform(post("/roles").header("Authorization", AUTH)
+                        .param("roleCode", "PROJECT_MANAGER").param("roleName", "项目经理")
+                        .param("roleType", "FUNC").param("parentId", "2"))
+                .andExpect(status().isOk());
+        mvc.perform(put("/roles/3").header("Authorization", AUTH)
+                        .param("roleName", "部门经理").param("status", "ACTIVE").param("parentId", "2"))
+                .andExpect(status().isOk());
+        mvc.perform(get("/roles/3/exclusions").header("Authorization", AUTH))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[0]").value(10));
+        mvc.perform(post("/roles/3/exclusions").header("Authorization", AUTH)
+                        .param("excludedRoleId", "10"))
+                .andExpect(status().isOk());
+        mvc.perform(delete("/roles/3/exclusions/10").header("Authorization", AUTH))
+                .andExpect(status().isOk());
+        mvc.perform(put("/organizations/3").header("Authorization", AUTH)
+                        .param("orgName", "部门新名称").param("sortNo", "2").param("status", "DISABLED"))
+                .andExpect(status().isOk());
+        mvc.perform(put("/users/5/organization").header("Authorization", AUTH)
+                        .param("orgId", "12").param("post", "预算员"))
+                .andExpect(status().isOk());
     }
 }

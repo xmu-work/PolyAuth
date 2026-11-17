@@ -20,7 +20,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class ApiService {
 
-    private static final String STATUS_ACTIVE = "ACTIVE";
+    private static final String STATUS_ACTIVE = IamApi.STATUS_ACTIVE;
 
     private final IamApiRepository apiRepository;
     private final SystemService systemService;

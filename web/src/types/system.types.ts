@@ -5,7 +5,6 @@ export interface System {
   systemCode: string
   systemName: string
   callbackUrl?: string
-  publicKey?: string
   status: CommonStatusCode
   description?: string
   isDeleted: number

@@ -69,6 +69,16 @@ export const businessRouteChildren: RouteRecordRaw[] = [
     },
   },
   {
+    path: 'data-scope',
+    name: 'DataScopePage',
+    component: () => import('@/views/dataScope/DataScopePage.vue'),
+    meta: {
+      title: '数据权限',
+      icon: 'DataAnalysis',
+      permissionId: ADMIN_MENU_PERMISSIONS.DATA_SCOPE,
+    },
+  },
+  {
     path: 'logs',
     name: 'AuditPage',
     component: () => import('@/views/audit/AuditPage.vue'),

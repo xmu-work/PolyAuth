@@ -8,12 +8,15 @@ import java.time.LocalDateTime;
 /**
  * 角色实体（iam_role）。
  *
- * <p>本项目只使用功能角色。parent_id 表示角色继承（子角色继承父角色权限）。
+ * <p>支持功能角色与岗位型数据角色。parent_id 表示角色继承，子角色继承父角色权限。
  */
 @Data
 @Entity
 @Table(name = "iam_role")
 public class IamRole {
+
+    public static final String STATUS_ACTIVE = "ACTIVE";
+    public static final String STATUS_DISABLED = "DISABLED";
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

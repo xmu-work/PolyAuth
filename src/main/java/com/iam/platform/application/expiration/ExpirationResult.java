@@ -1,0 +1,10 @@
+package com.iam.platform.application.expiration;
+
+/**
+ * 到期回收数量结果。
+ *
+ * @param userRoles 回收的用户角色授权数量
+ * @param dataScopes 回收的数据范围授权数量
+ */
+public record ExpirationResult(int userRoles, int dataScopes) {
+}

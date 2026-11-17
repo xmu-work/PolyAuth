@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import RoleListCard from './components/RoleListCard.vue'
 import RoleDetailCard from './components/RoleDetailCard.vue'
 import RoleCreateDialog from './components/RoleCreateDialog.vue'
+import RoleGovernanceCard from './components/RoleGovernanceCard.vue'
 
 /** 左列表 + 右详情的角色管理主页。 */
 const selectedRoleId = ref<number | null>(null)
@@ -30,6 +31,10 @@ function handleRoleCreated(): void {
     />
     <div class="role-page__aside">
       <RoleDetailCard :role-id="selectedRoleId" />
+      <RoleGovernanceCard
+        :role-id="selectedRoleId"
+        @updated="handleRoleCreated"
+      />
     </div>
     <RoleCreateDialog v-model="createDialogVisible" @success="handleRoleCreated" />
   </div>

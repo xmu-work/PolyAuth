@@ -1,6 +1,5 @@
 package com.iam.platform.application.decision;
 
-import com.iam.platform.application.role.RoleService;
 import com.iam.platform.common.enums.AccountStatus;
 import com.iam.platform.common.enums.OperationAction;
 import com.iam.platform.common.enums.RoleType;
@@ -11,7 +10,6 @@ import com.iam.platform.infrastructure.persistence.repository.IamRoleRepository;
 import com.iam.platform.infrastructure.persistence.repository.IamUserRepository;
 import com.iam.platform.infrastructure.persistence.repository.IamUserRoleRepository;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,7 +30,6 @@ import java.util.stream.Collectors;
  * → 角色-前端权限绑定（allowed_action 覆盖权限声明的操作）→ 权限属于该子系统且均启用。
  * 角色→权限的候选由单条 join 查询一次性取得，避免多轮查库。
  */
-@Slf4j
 @RequiredArgsConstructor
 @Service
 public class DecisionService {
@@ -108,7 +105,8 @@ public class DecisionService {
      */
     private Set<Long> activeRoleIds(Long userId) {
         LocalDateTime now = LocalDateTime.now();
-        Set<Long> directRoleIds = userRoleRepository.findByUserIdAndStatus(userId, RoleService.GRANT_ACTIVE).stream()
+        Set<Long> directRoleIds = userRoleRepository
+                .findByUserIdAndStatus(userId, IamUserRole.STATUS_ACTIVE).stream()
                 .filter(ur -> isEffective(ur, now))
                 .map(IamUserRole::getRoleId)
                 .collect(Collectors.toSet());
@@ -123,8 +121,9 @@ public class DecisionService {
             Set<Long> next = new HashSet<>();
             for (IamRole role : roles) {
                 if (role.getIsDeleted() != 0
-                        || !RoleType.FUNC.getCode().equals(role.getRoleType())
-                        || !RoleService.ROLE_ACTIVE.equals(role.getStatus())) {
+                        || (!RoleType.FUNC.getCode().equals(role.getRoleType())
+                        && !RoleType.DATA.getCode().equals(role.getRoleType()))
+                        || !IamRole.STATUS_ACTIVE.equals(role.getStatus())) {
                     continue;
                 }
                 if (!result.add(role.getId())) {

@@ -2,9 +2,12 @@ package com.iam.platform.application.organization;
 
 import com.iam.platform.common.enums.ErrorCode;
 import com.iam.platform.common.exception.BusinessException;
+import com.iam.platform.application.log.LogService;
+import com.iam.platform.application.auth.AuthService;
 import com.iam.platform.infrastructure.persistence.entity.IamOrg;
 import com.iam.platform.infrastructure.persistence.repository.IamOrgRepository;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -16,6 +19,8 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.*;
 
 /**
@@ -26,6 +31,8 @@ class OrganizationServiceTest {
 
     @Mock
     private IamOrgRepository orgRepository;
+    @Mock
+    private LogService logService;
     @InjectMocks
     private OrganizationService service;
 
@@ -144,5 +151,28 @@ class OrganizationServiceTest {
         assertThatThrownBy(() -> service.moveOrg(3L, 5L))
                 .satisfies(e -> assertThat(code(e)).isEqualTo(ErrorCode.ORG_MOVE_INVALID.getCode()));
         verify(orgRepository, never()).save(any());
+    }
+
+    /**
+     * 验证组织修改和停用保留节点并更新审计字段。
+     */
+    @Test
+    @DisplayName("R09 修改并停用组织节点")
+    void updateAndDisableOrganization() {
+        IamOrg department = org(3L, 2L, "0,1,2", "DEPT", 3);
+        department.setStatus("ACTIVE");
+        department.setOrgName("旧名称");
+        when(orgRepository.findById(3L)).thenReturn(Optional.of(department));
+        when(orgRepository.save(department)).thenReturn(department);
+
+        IamOrg updated = service.updateOrg(3L, "新名称", 9, 7L, "DISABLED", 1L);
+
+        assertThat(updated.getOrgName()).isEqualTo("新名称");
+        assertThat(updated.getSortNo()).isEqualTo(9);
+        assertThat(updated.getLeaderUserId()).isEqualTo(7L);
+        assertThat(updated.getStatus()).isEqualTo("DISABLED");
+        assertThat(updated.getUpdatedBy()).isEqualTo(1L);
+        verify(logService).recordPermissionChange(eq(1L), eq(AuthService.ADMIN_SYSTEM_CODE),
+                eq("UPDATE_ORGANIZATION"), eq("organization:3"), any(), any(), isNull(), any());
     }
 }

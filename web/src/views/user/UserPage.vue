@@ -7,6 +7,7 @@ import UserTableCard from './components/UserTableCard.vue'
 import UserCreateDialog from './components/UserCreateDialog.vue'
 import UserSealDialog from './components/UserSealDialog.vue'
 import UserDetailDrawer from './components/UserDetailDrawer.vue'
+import UserTransferDialog from './components/UserTransferDialog.vue'
 import type { User } from '@/types/user.types'
 
 /** 左组织筛选树 + 右用户列表的主页（契约 8.4）：本组件只负责布局与子组件协同 */
@@ -22,6 +23,8 @@ const sealingUser = ref<User | null>(null)
 
 const detailDrawerVisible = ref(false)
 const detailUserId = ref<number | null>(null)
+const transferDialogVisible = ref(false)
+const transferringUser = ref<User | null>(null)
 
 function handleSelect(orgId: number | null): void {
   selectedOrgId.value = orgId
@@ -58,6 +61,15 @@ function handleDetail(user: User): void {
   detailUserId.value = user.id
   detailDrawerVisible.value = true
 }
+
+function handleTransfer(user: User): void {
+  transferringUser.value = user
+  transferDialogVisible.value = true
+}
+
+function handleTransferred(): void {
+  tableReloadSignal.value += 1
+}
 </script>
 
 <template>
@@ -74,6 +86,7 @@ function handleDetail(user: User): void {
       @create="createDialogVisible = true"
       @seal="handleSeal"
       @detail="handleDetail"
+      @transfer="handleTransfer"
     />
     <UserCreateDialog v-model="createDialogVisible" @success="handleCreated" />
     <UserSealDialog
@@ -83,6 +96,11 @@ function handleDetail(user: User): void {
       @confirm="handleSealConfirm"
     />
     <UserDetailDrawer v-model="detailDrawerVisible" :user-id="detailUserId" />
+    <UserTransferDialog
+      v-model="transferDialogVisible"
+      :user="transferringUser"
+      @success="handleTransferred"
+    />
   </div>
 </template>
 

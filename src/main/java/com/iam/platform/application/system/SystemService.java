@@ -18,7 +18,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SystemService {
 
-    private static final String STATUS_ACTIVE = "ACTIVE";
+    private static final String STATUS_ACTIVE = IamSystem.STATUS_ACTIVE;
 
     private final IamSystemRepository systemRepository;
 

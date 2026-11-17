@@ -8,8 +8,8 @@ import { ADMIN_ACTION_PERMISSIONS as FP } from '@/constants/permissions'
 import { dateTimeColumnFormatter } from '@/utils/time'
 
 /**
- * 角色列表卡片（契约 8.5）：后端全量返回不分页；本项目只有功能角色。
- * 更新/停用/复制/删除 [缺] 端点，UI 不提供入口（契约 11.2 待办）。
+ * 角色列表卡片（契约 8.5）：同时展示功能角色与岗位型数据角色；
+ * 更新、启停、继承与互斥由详情区的治理卡片完成。
  */
 const props = defineProps<{
   selectedRoleId: number | null

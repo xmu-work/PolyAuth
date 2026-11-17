@@ -68,7 +68,7 @@ async function handleRevokeConfirm(): Promise<void> {
   revokeSubmitting.value = true
   try {
     await revokeRole(userId, roleId)
-    ElMessage.success('授权已回收，权限将在缓存收敛后失效（最迟 300 秒）')
+    ElMessage.success('授权已回收，下一次权限判定立即生效')
     revokeDialogVisible.value = false
     listReloadSignal.value += 1
   } catch {

@@ -3,13 +3,20 @@ package com.iam.platform.interfaces.openapi;
 import com.iam.platform.application.api.ApiService;
 import com.iam.platform.application.decision.DecisionService;
 import com.iam.platform.application.decision.PermissionCheckResult;
-import com.iam.platform.common.enums.ErrorCode;
-import com.iam.platform.common.exception.BusinessException;
+import com.iam.platform.application.datascope.DataPermissionService;
+import com.iam.platform.interfaces.openapi.dto.BatchCheckRequest;
+import com.iam.platform.interfaces.openapi.dto.ResourceAuthorizationRequest;
+import com.iam.platform.interfaces.openapi.vo.ResourceAuthorizationVO;
+import com.iam.platform.interfaces.openapi.vo.EffectiveDataScopeVO;
 import com.iam.platform.common.result.Result;
 import com.iam.platform.infrastructure.persistence.entity.IamApi;
 import jakarta.servlet.http.HttpServletRequest;
-import lombok.Data;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -22,20 +29,42 @@ import java.util.Set;
  * 避免把前端按钮 ID 当作后端接口 ID。
  */
 @RestController
+@Validated
 @RequestMapping("/open")
 @RequiredArgsConstructor
 public class OpenApiController {
 
-    private static final int MAX_BATCH_APIS = 200;
-
     private final DecisionService decisionService;
     private final ApiService apiService;
+    private final DataPermissionService dataPermissionService;
+
+    /**
+     * 同时校验功能权限与目标资源的数据范围。
+     */
+    @PostMapping("/authorize/resource")
+    public Result<ResourceAuthorizationVO> authorizeResource(
+            HttpServletRequest request,
+            @Valid
+            @RequestBody
+            ResourceAuthorizationRequest body) {
+        OpenApiAuth.requireUserScope(request, body.getUserId());
+        return Result.success(ResourceAuthorizationVO.from(dataPermissionService.authorize(
+                body.getUserId(), body.getSystemCode(), body.getApiId(), body.getTargetOrgId(),
+                body.getTargetProjectId(), body.getTargetUserId())));
+    }
 
     @GetMapping("/authorize")
     public Result<Boolean> authorize(HttpServletRequest request,
-                                     @RequestParam Long userId,
-                                     @RequestParam String systemCode,
-                                     @RequestParam Long apiId) {
+                                     @RequestParam
+                                     @Positive
+                                     Long userId,
+                                     @RequestParam
+                                     @NotBlank
+                                     @Size(max = 64)
+                                     String systemCode,
+                                     @RequestParam
+                                     @Positive
+                                     Long apiId) {
         OpenApiAuth.requireUserScope(request, userId);
         IamApi api = apiService.getApi(apiId);
         return Result.success(api.getPermissionId() != null
@@ -44,14 +73,10 @@ public class OpenApiController {
 
     @PostMapping("/authorize/batch")
     public Result<PermissionCheckResult> authorizeBatch(HttpServletRequest request,
-                                                        @RequestBody BatchCheckRequest body) {
+                                                        @Valid
+                                                        @RequestBody
+                                                        BatchCheckRequest body) {
         OpenApiAuth.requireUserScope(request, body.getUserId());
-        if (body.getApiIds() == null || body.getApiIds().isEmpty()) {
-            throw new BusinessException(ErrorCode.PARAM_MISSING, "API ID 列表不能为空");
-        }
-        if (body.getApiIds().size() > MAX_BATCH_APIS) {
-            throw new BusinessException(ErrorCode.PARAM_INVALID, "批量 API 数量超过上限 " + MAX_BATCH_APIS);
-        }
         PermissionCheckResult result = new PermissionCheckResult();
         for (Long apiId : body.getApiIds()) {
             IamApi api = apiService.getApi(apiId);
@@ -64,16 +89,34 @@ public class OpenApiController {
 
     @GetMapping("/permissions")
     public Result<Set<Long>> permissions(HttpServletRequest request,
-                                         @RequestParam Long userId,
-                                         @RequestParam String systemCode) {
+                                         @RequestParam
+                                         @Positive
+                                         Long userId,
+                                         @RequestParam
+                                         @NotBlank
+                                         @Size(max = 64)
+                                         String systemCode) {
         OpenApiAuth.requireUserScope(request, userId);
         return Result.success(decisionService.getUserPermissions(userId, systemCode));
     }
 
-    @Data
-    public static class BatchCheckRequest {
-        private Long userId;
-        private String systemCode;
-        private List<Long> apiIds;
+    /**
+     * 查询用户当前生效的数据范围授权。
+     */
+    @GetMapping("/data-scopes")
+    public Result<List<EffectiveDataScopeVO>> dataScopes(
+            HttpServletRequest request,
+            @RequestParam
+            @Positive
+            Long userId,
+            @RequestParam
+            @NotBlank
+            @Size(max = 64)
+            String systemCode) {
+        OpenApiAuth.requireUserScope(request, userId);
+        return Result.success(dataPermissionService.getEffectiveDataScopes(userId, systemCode).stream()
+                .map(EffectiveDataScopeVO::from)
+                .toList());
     }
+
 }

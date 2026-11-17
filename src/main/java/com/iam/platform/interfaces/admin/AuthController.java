@@ -6,8 +6,10 @@ import com.iam.platform.application.auth.LoginResponse;
 import com.iam.platform.common.result.Result;
 import com.iam.platform.interfaces.AuthInterceptor;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -15,7 +17,6 @@ import org.springframework.web.bind.annotation.*;
  *
  * <p>对应 API：/api/v1/auth/*
  */
-@Slf4j
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
@@ -27,7 +28,12 @@ public class AuthController {
      * 账号密码登录。
      */
     @PostMapping("/login")
-    public Result<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
+    public Result<LoginResponse> login(
+            @Valid
+            @RequestBody
+            LoginRequest request,
+            HttpServletRequest servletRequest) {
+        request.setClientIp(servletRequest.getRemoteAddr());
         return Result.success(authService.login(request));
     }
 
@@ -35,7 +41,9 @@ public class AuthController {
      * 登出。
      */
     @PostMapping("/logout")
-    public Result<Void> logout(@RequestHeader("Authorization") String authorization) {
+    public Result<Void> logout(
+            @RequestHeader("Authorization")
+            String authorization) {
         authService.logout(AuthInterceptor.bearerToken(authorization));
         return Result.success();
     }
@@ -44,9 +52,17 @@ public class AuthController {
      * 自助修改密码。
      */
     @PutMapping("/password")
-    public Result<Void> changePassword(@RequestAttribute(AuthInterceptor.ATTR_USER_ID) Long userId,
-                                       @RequestParam String oldPassword,
-                                       @RequestParam String newPassword) {
+    public Result<Void> changePassword(
+            @RequestAttribute(AuthInterceptor.ATTR_USER_ID)
+            Long userId,
+            @RequestParam
+            @NotBlank
+            @Size(max = 64)
+            String oldPassword,
+            @RequestParam
+            @NotBlank
+            @Size(max = 64)
+            String newPassword) {
         authService.changePassword(userId, oldPassword, newPassword);
         return Result.success();
     }
@@ -55,7 +71,9 @@ public class AuthController {
      * 令牌校验。
      */
     @GetMapping("/validate")
-    public Result<Boolean> validate(@RequestHeader("Authorization") String authorization) {
+    public Result<Boolean> validate(
+            @RequestHeader("Authorization")
+            String authorization) {
         return Result.success(authService.validateToken(AuthInterceptor.bearerToken(authorization)));
     }
 }

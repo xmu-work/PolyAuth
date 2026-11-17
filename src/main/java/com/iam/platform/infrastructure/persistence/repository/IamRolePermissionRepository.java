@@ -27,8 +27,11 @@ public interface IamRolePermissionRepository extends JpaRepository<IamRolePermis
             + "AND p.id = rp.permissionId AND p.isDeleted = 0 AND p.status = 'ACTIVE' "
             + "AND s.id = p.systemId AND s.systemCode = :systemCode "
             + "AND s.isDeleted = 0 AND s.status = 'ACTIVE'")
-    List<GrantedPermissionView> findGrantedPermissions(@Param("roleIds") Collection<Long> roleIds,
-                                                       @Param("systemCode") String systemCode);
+    List<GrantedPermissionView> findGrantedPermissions(
+            @Param("roleIds")
+            Collection<Long> roleIds,
+            @Param("systemCode")
+            String systemCode);
 
     interface GrantedPermissionView {
         Long getPermissionId();
