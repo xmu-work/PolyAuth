@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-import { Plus } from '@element-plus/icons-vue'
+import { Edit, Plus } from '@element-plus/icons-vue'
 import { getOrg } from '@/api/org.api'
 import { useDict } from '@/composables/useDict'
 import { OrgType } from '@/constants/enums'
+import { ADMIN_ACTION_PERMISSIONS as FP } from '@/constants/permissions'
 import type { Org } from '@/types/org.types'
 import { formatDateTime } from '@/utils/time'
+import OrgEditDialog from './OrgEditDialog.vue'
 
 /** 组织类型 → 徽标配色（视觉映射，文案仍出自 dict store，契约 9.2-7） */
 type TagType = 'primary' | 'success' | 'info' | 'warning' | 'danger'
@@ -25,6 +27,7 @@ const loading = ref(false)
 const error = ref<string | null>(null)
 const detail = ref<Org | null>(null)
 const parentName = ref<string | null>(null)
+const editDialogVisible = ref(false)
 
 watch(
   () => props.orgId,
@@ -72,6 +75,12 @@ async function loadDetail(): Promise<void> {
 function dash(value: string | number | null | undefined): string {
   return value === null || value === undefined || value === '' ? '—' : String(value)
 }
+
+function handleUpdated(org: Org): void {
+  detail.value = org
+  emit('loaded', org)
+  void loadDetail()
+}
 </script>
 
 <template>
@@ -81,17 +90,27 @@ function dash(value: string | number | null | undefined): string {
       <div class="org-detail-card__header">
         <div>
           <h2 class="org-detail-card__title">组织详情</h2>
-          <p class="org-detail-card__hint">只读视图；组织编辑/停用能力待后端补齐端点后开放</p>
+          <p class="org-detail-card__hint">可修改名称、排序、负责人并停用组织及其全部下级节点</p>
         </div>
-        <el-button
-          type="primary"
-          plain
-          :icon="Plus"
-          :disabled="!detail"
-          @click="detail && emit('create', detail)"
-        >
-          新增子节点
-        </el-button>
+        <div class="org-detail-card__actions">
+          <el-button
+            v-perm="FP.ORG_UPDATE"
+            :icon="Edit"
+            :disabled="!detail"
+            @click="editDialogVisible = true"
+          >
+            编辑/停用
+          </el-button>
+          <el-button
+            type="primary"
+            plain
+            :icon="Plus"
+            :disabled="!detail"
+            @click="detail && emit('create', detail)"
+          >
+            新增子节点
+          </el-button>
+        </div>
       </div>
     </template>
 
@@ -146,6 +165,11 @@ function dash(value: string | number | null | undefined): string {
       </el-descriptions>
     </template>
   </el-card>
+  <OrgEditDialog
+    v-model="editDialogVisible"
+    :org="detail"
+    @success="handleUpdated"
+  />
 </template>
 
 <style scoped>
@@ -165,6 +189,11 @@ function dash(value: string | number | null | undefined): string {
   margin: var(--space-0);
   color: var(--color-text-primary);
   font-size: var(--font-size-lg);
+}
+
+.org-detail-card__actions {
+  display: flex;
+  gap: var(--space-2);
 }
 
 .org-detail-card__hint {

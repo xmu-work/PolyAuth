@@ -2,7 +2,7 @@ package com.iam.platform;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 /**
@@ -12,7 +12,7 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
  * 采用结构化编程思想：自顶向下分层、单一职责、高内聚低耦合。
  */
 @SpringBootApplication
-@EnableAsync
+@EnableScheduling
 @EnableTransactionManagement
 public class IamApplication {
 

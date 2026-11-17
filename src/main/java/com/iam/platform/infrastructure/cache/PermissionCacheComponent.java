@@ -1,6 +1,5 @@
 package com.iam.platform.infrastructure.cache;
 
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
@@ -25,7 +24,6 @@ import java.util.UUID;
  * <p>分布式锁：锁值保存随机 owner token，释放时用 Lua 原子比较并删除，
  * 避免“锁因超时过期、他人获取后被原持有者误删”的问题。
  */
-@Slf4j
 @Component
 public class PermissionCacheComponent {
 

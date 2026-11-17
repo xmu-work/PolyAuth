@@ -29,3 +29,10 @@ export interface OrgCreatePayload {
 export interface OrgMovePayload {
   newParentId: number
 }
+
+export interface OrgUpdatePayload {
+  orgName?: string
+  sortNo?: number
+  leaderUserId?: number
+  status?: CommonStatusCode
+}

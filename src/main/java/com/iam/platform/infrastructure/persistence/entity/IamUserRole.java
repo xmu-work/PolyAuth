@@ -15,6 +15,10 @@ import java.time.LocalDateTime;
 @Table(name = "iam_user_role")
 public class IamUserRole {
 
+    public static final String STATUS_ACTIVE = "ACTIVE";
+    public static final String STATUS_EXPIRED = "EXPIRED";
+    public static final String STATUS_REVOKED = "REVOKED";
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")

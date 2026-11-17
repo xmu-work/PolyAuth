@@ -20,6 +20,14 @@ export interface RoleCreatePayload {
   roleName: string
   roleType: RoleTypeCode
   description?: string
+  parentId?: number
+}
+
+export interface RoleUpdatePayload {
+  roleName?: string
+  description?: string
+  status?: CommonStatusCode
+  parentId?: number
 }
 
 export interface UserRole {

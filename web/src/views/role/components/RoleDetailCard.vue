@@ -6,7 +6,7 @@ import { RoleType } from '@/constants/enums'
 import type { Role } from '@/types/role.types'
 import { formatDateTime } from '@/utils/time'
 
-/** 角色详情卡片（契约 8.5）：只读视图；更新/停用/删除、角色继承 [缺] 端点不提供入口 */
+/** 角色详情卡片（契约 8.5 / RBAC1）：只读详情，治理操作在独立卡片完成。 */
 const props = defineProps<{ roleId: number | null }>()
 
 const emit = defineEmits<{ loaded: [role: Role] }>()
@@ -60,7 +60,7 @@ async function loadDetail(): Promise<void> {
       <div class="role-detail-card__header">
         <div>
           <h2 class="role-detail-card__title">角色详情</h2>
-          <p class="role-detail-card__hint">只读视图；编辑/停用/删除与角色继承待后端补齐端点</p>
+          <p class="role-detail-card__hint">只读详情；继承、启停与互斥见下方治理卡片</p>
         </div>
       </div>
     </template>

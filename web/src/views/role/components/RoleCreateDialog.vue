@@ -2,7 +2,7 @@
 import { reactive, ref, watch } from 'vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessage } from 'element-plus'
-import { createRole } from '@/api/role.api'
+import { createRole, listRoles } from '@/api/role.api'
 import { RoleType } from '@/constants/enums'
 import { toFieldErrors } from '@/utils/formErrors'
 import type { Role } from '@/types/role.types'
@@ -20,13 +20,19 @@ interface RoleCreateForm {
   roleCode: string
   roleName: string
   description: string
+  roleType: (typeof RoleType)[keyof typeof RoleType]
+  parentId: number | undefined
 }
 
 const form = reactive<RoleCreateForm>({
   roleCode: '',
   roleName: '',
   description: '',
+  roleType: RoleType.FUNC,
+  parentId: undefined,
 })
+
+const roles = ref<Role[]>([])
 
 watch(visible, (open) => {
   if (!open) {
@@ -35,8 +41,13 @@ watch(visible, (open) => {
   form.roleCode = ''
   form.roleName = ''
   form.description = ''
+  form.roleType = RoleType.FUNC
+  form.parentId = undefined
   serverErrors.value = {}
   formRef.value?.clearValidate()
+  void listRoles().then((items) => {
+    roles.value = items
+  })
 })
 
 watch(form, () => {
@@ -75,8 +86,9 @@ async function submit(): Promise<void> {
     const role = await createRole({
       roleCode: form.roleCode.trim(),
       roleName: form.roleName.trim(),
-      roleType: RoleType.FUNC,
+      roleType: form.roleType,
       description: form.description.trim() || undefined,
+      parentId: form.parentId,
     })
     ElMessage.success(`角色「${role.roleName}」创建成功`)
     visible.value = false
@@ -97,6 +109,22 @@ async function submit(): Promise<void> {
       </el-form-item>
       <el-form-item label="角色名称" prop="roleName" :error="serverErrors.roleName">
         <el-input v-model="form.roleName" maxlength="50" placeholder="如 合同审计员" />
+      </el-form-item>
+      <el-form-item label="角色类型">
+        <el-select v-model="form.roleType" style="width: 100%">
+          <el-option label="功能角色" :value="RoleType.FUNC" />
+          <el-option label="岗位型数据角色" :value="RoleType.DATA" />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="父角色（继承，选填）">
+        <el-select v-model="form.parentId" clearable filterable style="width: 100%">
+          <el-option
+            v-for="role in roles"
+            :key="role.id"
+            :label="`${role.roleCode} · ${role.roleName}`"
+            :value="role.id"
+          />
+        </el-select>
       </el-form-item>
       <el-form-item label="描述（选填）" prop="description">
         <el-input

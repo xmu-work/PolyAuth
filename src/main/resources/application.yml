@@ -92,6 +92,7 @@ audit:
 
 # 权限缓存配置
 permission:
+  expiration-scan-ms: 60000
   cache:
     # 权限快照缓存 TTL（秒）
     ttl: 300
@@ -102,7 +103,8 @@ permission:
 
 logging:
   level:
-    com.iam.platform: INFO
+    root: INFO
+    com.iam.platform.interfaces: ${LOGGING_LEVEL_COM_IAM_PLATFORM_INTERFACES:DEBUG}
+    com.iam.platform.application: ${LOGGING_LEVEL_COM_IAM_PLATFORM_SERVICE:DEBUG}
+    com.iam.platform.infrastructure: ${LOGGING_LEVEL_COM_IAM_PLATFORM_INFRASTRUCTURE:DEBUG}
     org.hibernate.SQL: WARN
-  pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [requestId=%X{requestId:-}] %logger{36} - %msg%n"

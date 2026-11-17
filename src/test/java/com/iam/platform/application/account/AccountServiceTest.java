@@ -2,13 +2,17 @@ package com.iam.platform.application.account;
 
 import com.iam.platform.TestFixtures;
 import com.iam.platform.application.auth.AuthService;
+import com.iam.platform.application.log.LogService;
 import com.iam.platform.application.role.RoleService;
 import com.iam.platform.common.enums.ErrorCode;
 import com.iam.platform.common.exception.BusinessException;
 import com.iam.platform.infrastructure.crypto.CryptoComponent;
 import com.iam.platform.infrastructure.persistence.entity.IamUser;
+import com.iam.platform.infrastructure.persistence.entity.IamOrg;
+import com.iam.platform.infrastructure.persistence.repository.IamOrgRepository;
 import com.iam.platform.infrastructure.persistence.repository.IamUserRepository;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -25,6 +29,8 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -36,13 +42,18 @@ class AccountServiceTest {
     private AuthService authService;
     @Mock
     private RoleService roleService;
+    @Mock
+    private IamOrgRepository orgRepository;
+    @Mock
+    private LogService logService;
 
     private final CryptoComponent crypto = TestFixtures.crypto();
     private AccountService accountService;
 
     @BeforeEach
     void setUp() {
-        accountService = new AccountService(userRepository, crypto, authService, roleService);
+        accountService = new AccountService(
+                userRepository, crypto, authService, roleService, orgRepository, logService);
         ReflectionTestUtils.setField(accountService, "defaultPassword", "Init@123");
     }
 
@@ -166,8 +177,48 @@ class AccountServiceTest {
 
         UserView view = accountService.toView(user);
 
-        assertThat(view.getRealName()).isEqualTo("张三");
+        assertThat(view.getRealName()).isEqualTo("张*");
         assertThat(view.getPhoneMasked()).isEqualTo("138****5678");
         assertThat(view.getUserNo()).isEqualTo("u5");
+    }
+
+    /**
+     * 验证独立明文视图只在显式调用时返回完整姓名和电话。
+     */
+    @Test
+    @DisplayName("R49 授权接口返回敏感明文")
+    void sensitiveViewReturnsPlainValuesWhenExplicitlyRequested() {
+        IamUser user = TestFixtures.user(5L, "NORMAL", crypto, "p");
+        user.setPhoneEnc(crypto.encrypt("13812345678"));
+        when(userRepository.findById(5L)).thenReturn(Optional.of(user));
+
+        SensitiveUserView view = accountService.getSensitiveView(5L);
+
+        assertThat(view.getRealName()).isEqualTo("张三");
+        assertThat(view.getPhone()).isEqualTo("13812345678");
+    }
+
+    /**
+     * 验证调岗同时更新组织与岗位，不自动删除已有授权。
+     */
+    @Test
+    @DisplayName("R04 员工调岗更新组织与岗位")
+    void transferUserUpdatesOrganizationAndPost() {
+        IamUser user = TestFixtures.user(5L, "NORMAL", crypto, "p");
+        IamOrg org = new IamOrg();
+        org.setId(12L);
+        org.setStatus("ACTIVE");
+        org.setIsDeleted(0);
+        when(userRepository.findById(5L)).thenReturn(Optional.of(user));
+        when(orgRepository.findById(12L)).thenReturn(Optional.of(org));
+        when(userRepository.save(user)).thenReturn(user);
+
+        IamUser updated = accountService.transferUser(5L, 12L, "预算员", 1L);
+
+        assertThat(updated.getOrgId()).isEqualTo(12L);
+        assertThat(updated.getPost()).isEqualTo("预算员");
+        verify(roleService, never()).revokeAllRoles(anyLong(), anyLong());
+        verify(logService).recordPermissionChange(eq(1L), eq(AuthService.ADMIN_SYSTEM_CODE),
+                eq("TRANSFER_USER"), eq("user:5"), any(), any(), isNull(), any());
     }
 }

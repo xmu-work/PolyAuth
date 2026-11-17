@@ -16,6 +16,7 @@ import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.HandlerMapping;
 
 import java.util.Set;
+import java.util.regex.Pattern;
 
 /**
  * 认证与鉴权拦截器。
@@ -34,6 +35,15 @@ public class AuthInterceptor implements HandlerInterceptor {
 
     /** 请求属性：当前登录用户 ID */
     public static final String ATTR_USER_ID = "iam.userId";
+    /** 请求属性：当前用户名快照，仅用于审计。 */
+    public static final String ATTR_USERNAME = "iam.username";
+    /** 请求属性：是否已写入审计，避免 preHandle 失败与 afterCompletion 重复。 */
+    public static final String ATTR_AUDITED = "iam.audited";
+
+    private static final Pattern SENSITIVE_QUERY = Pattern.compile(
+            "(?i)(^|&)(password|passwd|pwd|token|accessToken|refreshToken|authorization|secret|"
+                    + "oldPassword|newPassword|realName|name|phone|mobile|email|idCard)"
+                    + "=([^&]*)");
 
     /** 仅需登录、无需功能点登记的接口（登出、令牌校验、自助改密） */
     private static final Set<String> LOGIN_ONLY_PATTERNS = Set.of("/auth/logout", "/auth/validate", "/auth/password");
@@ -55,44 +65,37 @@ public class AuthInterceptor implements HandlerInterceptor {
             return true;
         }
 
-        Long userId = authService.authenticate(bearerToken(request.getHeader("Authorization")));
-        request.setAttribute(ATTR_USER_ID, userId);
+        try {
+            Long userId = authService.authenticate(bearerToken(request.getHeader("Authorization")));
+            request.setAttribute(ATTR_USER_ID, userId);
+            request.setAttribute(ATTR_USERNAME, authService.getUserNo(userId));
 
-        String path = relativePath(request);
-        if (isLoginOnly(path) || isInfra(path)) {
+            String path = relativePath(request);
+            if (isLoginOnly(path) || isInfra(path)) {
+                return true;
+            }
+
+            String pattern = (String) request.getAttribute(HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE);
+            IamApi api = apiService.findByRequest(pattern, request.getMethod())
+                    .orElseThrow(() -> new BusinessException(ErrorCode.NO_FUNCTION_PERM,
+                            "接口未登记为 API，默认拒绝: " + request.getMethod() + " " + path));
+            if (api.getPermissionId() == null
+                    || !decisionService.hasPermission(userId, AuthService.ADMIN_SYSTEM_CODE, api.getPermissionId())) {
+                throw new BusinessException(ErrorCode.NO_FUNCTION_PERM, "无功能权限: " + api.getApiName());
+            }
             return true;
+        } catch (RuntimeException exception) {
+            recordAudit(request, response, exception);
+            throw exception;
         }
-
-        String pattern = (String) request.getAttribute(HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE);
-        IamApi api = apiService.findByRequest(pattern, request.getMethod())
-                .orElseThrow(() -> new BusinessException(ErrorCode.NO_FUNCTION_PERM,
-                        "接口未登记为 API，默认拒绝: " + request.getMethod() + " " + path));
-        if (api.getPermissionId() == null
-                || !decisionService.hasPermission(userId, AuthService.ADMIN_SYSTEM_CODE, api.getPermissionId())) {
-            throw new BusinessException(ErrorCode.NO_FUNCTION_PERM, "无功能权限: " + api.getApiName());
-        }
-        return true;
     }
 
     @Override
     public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) {
-        if (!(handler instanceof HandlerMethod) || !isMutating(request.getMethod())) {
+        if (!(handler instanceof HandlerMethod)) {
             return;
         }
-        Long userId = (Long) request.getAttribute(ATTR_USER_ID);
-        String path = relativePath(request);
-        if (userId == null || isInfra(path)) {
-            return;
-        }
-        boolean success = ex == null && response.getStatus() < 400;
-        logService.record(userId, null, AuthService.ADMIN_SYSTEM_CODE,
-                request.getMethod() + " " + path,
-                path,
-                request.getQueryString(),
-                request.getRemoteAddr(),
-                success,
-                ex == null ? null : ex.getMessage(),
-                RequestIdFilter.requestId(request));
+        recordAudit(request, response, ex);
     }
 
     private String relativePath(HttpServletRequest request) {
@@ -114,8 +117,36 @@ public class AuthInterceptor implements HandlerInterceptor {
         return INFRA_PREFIXES.stream().anyMatch(path::startsWith);
     }
 
-    private boolean isMutating(String method) {
-        return "POST".equals(method) || "PUT".equals(method) || "DELETE".equals(method) || "PATCH".equals(method);
+    /**
+     * 写入不含敏感参数值的请求审计日志。
+     */
+    private void recordAudit(HttpServletRequest request, HttpServletResponse response, Exception exception) {
+        String path = relativePath(request);
+        if (isInfra(path) || Boolean.TRUE.equals(request.getAttribute(ATTR_AUDITED))) {
+            return;
+        }
+        request.setAttribute(ATTR_AUDITED, true);
+        Long userId = (Long) request.getAttribute(ATTR_USER_ID);
+        String username = (String) request.getAttribute(ATTR_USERNAME);
+        boolean success = exception == null && response.getStatus() < 400;
+        logService.record(userId, username, AuthService.ADMIN_SYSTEM_CODE,
+                request.getMethod() + " " + path,
+                path,
+                sanitizeQuery(request.getQueryString()),
+                request.getRemoteAddr(),
+                success,
+                exception == null ? null : exception.getClass().getSimpleName(),
+                RequestIdFilter.requestId(request));
+    }
+
+    /**
+     * 对查询串中的密码、令牌、密钥等敏感值做不可逆占位替换。
+     */
+    private String sanitizeQuery(String queryString) {
+        if (queryString == null || queryString.isBlank()) {
+            return null;
+        }
+        return SENSITIVE_QUERY.matcher(queryString).replaceAll("$1$2=***");
     }
 
     /**

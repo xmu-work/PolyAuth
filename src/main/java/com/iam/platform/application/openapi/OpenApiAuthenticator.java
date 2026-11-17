@@ -6,7 +6,6 @@ import com.iam.platform.infrastructure.crypto.CryptoComponent;
 import com.iam.platform.infrastructure.persistence.entity.IamSystem;
 import com.iam.platform.infrastructure.persistence.repository.IamSystemRepository;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -22,12 +21,11 @@ import java.security.MessageDigest;
  * <p>签名算法：signature = hex(HMAC-SHA256(appSecret, appId + "\n" + timestamp + "\n" + nonce))，
  * 其中 timestamp 为 epoch 毫秒。
  */
-@Slf4j
 @Service
 @RequiredArgsConstructor
 public class OpenApiAuthenticator {
 
-    private static final String STATUS_ACTIVE = "ACTIVE";
+    private static final String STATUS_ACTIVE = IamSystem.STATUS_ACTIVE;
 
     private final IamSystemRepository systemRepository;
     private final ReplayGuard replayGuard;
@@ -52,9 +50,11 @@ public class OpenApiAuthenticator {
 
         IamSystem system = systemRepository.findBySystemCode(appId)
                 .filter(s -> s.getIsDeleted() == 0)
-                .filter(s -> STATUS_ACTIVE.equals(s.getStatus()))
                 .filter(s -> !isBlank(s.getAppSecret()))
                 .orElseThrow(() -> new BusinessException(ErrorCode.SIGNATURE_INVALID, "接入系统不存在或未配置密钥: " + appId));
+        if (!STATUS_ACTIVE.equals(system.getStatus())) {
+            throw new BusinessException(ErrorCode.APP_DISABLED, "接入系统已停用: " + appId);
+        }
 
         String expected = cryptoComponent.hmacHex(system.getAppSecret(), canonical(appId, timestamp, nonce));
         if (!constantTimeEquals(expected, signature)) {

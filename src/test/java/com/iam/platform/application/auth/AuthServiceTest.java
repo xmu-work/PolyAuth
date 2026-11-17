@@ -1,6 +1,7 @@
 package com.iam.platform.application.auth;
 
 import com.iam.platform.TestFixtures;
+import com.iam.platform.application.log.LogService;
 import com.iam.platform.common.enums.ErrorCode;
 import com.iam.platform.common.exception.BusinessException;
 import com.iam.platform.infrastructure.crypto.CryptoComponent;
@@ -31,13 +32,15 @@ class AuthServiceTest {
     private IamUserRepository userRepository;
     @Mock
     private IamTokenRepository tokenRepository;
+    @Mock
+    private LogService logService;
 
     private final CryptoComponent crypto = TestFixtures.crypto();
     private AuthService authService;
 
     @BeforeEach
     void setUp() {
-        authService = new AuthService(userRepository, tokenRepository, crypto);
+        authService = new AuthService(userRepository, tokenRepository, crypto, logService);
         ReflectionTestUtils.setField(authService, "jwtSecret", "test-secret-key-at-least-256-bits-long-0123456789");
         ReflectionTestUtils.setField(authService, "accessTokenExpire", 7200L);
         ReflectionTestUtils.setField(authService, "issuer", "iam-platform");
@@ -77,6 +80,8 @@ class AuthServiceTest {
         assertThat(response.getDisplayName()).isEqualTo("张三");
         assertThat(user.getLastLoginAt()).isNotNull();
         verify(tokenRepository).save(any(IamToken.class));
+        verify(logService).record(eq(7L), eq("u7"), eq(AuthService.ADMIN_SYSTEM_CODE),
+                eq("LOGIN"), eq("u7"), isNull(), isNull(), eq(true), isNull(), isNull());
     }
 
     @Test
@@ -98,6 +103,12 @@ class AuthServiceTest {
         assertThatThrownBy(() -> authService.login(request("nobody", "pwd")))
                 .satisfies(e -> assertThat(code(e)).isEqualTo(ErrorCode.UNAUTHENTICATED.getCode()));
         verify(tokenRepository, never()).save(any());
+        verify(logService).record(isNull(), eq("u7"), eq(AuthService.ADMIN_SYSTEM_CODE),
+                eq("LOGIN"), eq("u7"), isNull(), isNull(), eq(false),
+                eq(String.valueOf(ErrorCode.UNAUTHENTICATED.getCode())), isNull());
+        verify(logService).record(isNull(), eq("nobody"), eq(AuthService.ADMIN_SYSTEM_CODE),
+                eq("LOGIN"), eq("nobody"), isNull(), isNull(), eq(false),
+                eq(String.valueOf(ErrorCode.UNAUTHENTICATED.getCode())), isNull());
     }
 
     @Test

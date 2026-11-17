@@ -20,7 +20,12 @@ const props = defineProps<{
   reloadSignal: number
 }>()
 
-const emit = defineEmits<{ create: []; seal: [user: User]; detail: [user: User] }>()
+const emit = defineEmits<{
+  create: []
+  seal: [user: User]
+  detail: [user: User]
+  transfer: [user: User]
+}>()
 
 const { dictLabel, accountStatusOptions } = useDict()
 const { resolve: resolveOrgNames, nameOf } = useOrgNames()
@@ -116,6 +121,10 @@ function seal(row: unknown): void {
   emit('seal', row as User)
 }
 
+function transfer(row: unknown): void {
+  emit('transfer', row as User)
+}
+
 function disable(row: unknown): void {
   void changeStatus(row as User, AccountStatus.DISABLED)
 }
@@ -177,7 +186,7 @@ function rowChanging(row: unknown): boolean {
 
     <el-table v-else v-loading="loading" :data="rows" class="user-table-card__table">
       <el-table-column prop="userNo" label="账号" min-width="90" />
-      <el-table-column prop="realName" label="姓名" min-width="110" />
+      <el-table-column prop="realName" label="姓名（脱敏）" min-width="120" />
       <el-table-column prop="phoneMasked" label="手机号（脱敏）" min-width="130">
         <template #default="{ row }">{{ asUser(row).phoneMasked ?? '—' }}</template>
       </el-table-column>
@@ -200,6 +209,15 @@ function rowChanging(row: unknown): boolean {
       <el-table-column label="操作" width="200" fixed="right">
         <template #default="{ row }">
           <el-button link type="primary" @click="detail(row)">详情</el-button>
+          <el-button
+            v-if="statusOf(row) !== AccountStatus.SEALED"
+            v-perm.disable="FP.USER_TRANSFER"
+            link
+            type="primary"
+            @click="transfer(row)"
+          >
+            调岗
+          </el-button>
           <el-popconfirm
             v-if="statusOf(row) === AccountStatus.NORMAL"
             title="确认停用该用户？停用后将无法登录"

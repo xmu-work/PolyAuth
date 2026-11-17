@@ -16,6 +16,9 @@ import java.time.LocalDateTime;
 @Table(name = "iam_org")
 public class IamOrg {
 
+    public static final String STATUS_ACTIVE = "ACTIVE";
+    public static final String STATUS_DISABLED = "DISABLED";
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")

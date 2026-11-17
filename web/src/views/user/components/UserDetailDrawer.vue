@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-import { getUser } from '@/api/user.api'
+import { getSensitiveUser, getUser } from '@/api/user.api'
 import { useDict } from '@/composables/useDict'
 import { useOrgNames } from '@/composables/useOrgTree'
 import { AccountStatus } from '@/constants/enums'
 import type { User } from '@/types/user.types'
+import type { SensitiveUser } from '@/types/user.types'
 import { formatDateTime } from '@/utils/time'
+import { ADMIN_ACTION_PERMISSIONS as FP } from '@/constants/permissions'
 
 /**
  * 用户详情抽屉（契约 8.4 / 10.3）：只渲染安全视图字段（realName/phoneMasked）。
@@ -23,6 +25,8 @@ const { resolve: resolveOrgNames, nameOf } = useOrgNames()
 const loading = ref(false)
 const error = ref<string | null>(null)
 const detail = ref<User | null>(null)
+const sensitive = ref<SensitiveUser | null>(null)
+const sensitiveLoading = ref(false)
 
 type TagType = 'primary' | 'success' | 'info' | 'warning' | 'danger'
 const STATUS_TAG: Record<string, TagType> = {
@@ -51,6 +55,7 @@ async function loadDetail(): Promise<void> {
       return
     }
     detail.value = user
+    sensitive.value = null
     await resolveOrgNames([user.orgId])
   } catch (caught) {
     if (props.userId !== userId) {
@@ -62,6 +67,18 @@ async function loadDetail(): Promise<void> {
     if (props.userId === userId) {
       loading.value = false
     }
+  }
+}
+
+async function revealSensitive(): Promise<void> {
+  if (props.userId === null) {
+    return
+  }
+  sensitiveLoading.value = true
+  try {
+    sensitive.value = await getSensitiveUser(props.userId)
+  } finally {
+    sensitiveLoading.value = false
   }
 }
 
@@ -79,9 +96,20 @@ function dash(value: string | number | null | undefined): string {
       </template>
     </el-result>
     <template v-else-if="detail">
+      <div class="user-detail-drawer__actions">
+        <el-button
+          v-perm="FP.USER_SENSITIVE_VIEW"
+          type="warning"
+          plain
+          :loading="sensitiveLoading"
+          @click="revealSensitive"
+        >
+          查看姓名与电话明文
+        </el-button>
+      </div>
       <el-descriptions :column="1" border>
         <el-descriptions-item label="用户账号">{{ detail.userNo }}</el-descriptions-item>
-        <el-descriptions-item label="姓名">{{ detail.realName }}</el-descriptions-item>
+        <el-descriptions-item label="姓名（脱敏）">{{ detail.realName }}</el-descriptions-item>
         <el-descriptions-item label="手机号（脱敏）">{{ dash(detail.phoneMasked) }}</el-descriptions-item>
         <el-descriptions-item label="所属组织">{{ nameOf(detail.orgId) }}</el-descriptions-item>
         <el-descriptions-item label="岗位">{{ dash(detail.post) }}</el-descriptions-item>
@@ -94,6 +122,15 @@ function dash(value: string | number | null | undefined): string {
         <el-descriptions-item label="离职时间">{{ formatDateTime(detail.leaveTime) }}</el-descriptions-item>
         <el-descriptions-item label="创建时间">{{ formatDateTime(detail.createdAt) }}</el-descriptions-item>
         <el-descriptions-item label="更新时间">{{ formatDateTime(detail.updatedAt) }}</el-descriptions-item>
+      </el-descriptions>
+      <el-descriptions
+        v-if="sensitive"
+        class="user-detail-drawer__sensitive"
+        :column="1"
+        border
+      >
+        <el-descriptions-item label="姓名明文">{{ sensitive.realName }}</el-descriptions-item>
+        <el-descriptions-item label="电话明文">{{ dash(sensitive.phone) }}</el-descriptions-item>
       </el-descriptions>
       <el-alert
         class="user-detail-drawer__note"
@@ -109,6 +146,16 @@ function dash(value: string | number | null | undefined): string {
 
 <style scoped>
 .user-detail-drawer__note {
+  margin-top: var(--space-4);
+}
+
+.user-detail-drawer__actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: var(--space-3);
+}
+
+.user-detail-drawer__sensitive {
   margin-top: var(--space-4);
 }
 </style>

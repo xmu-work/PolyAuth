@@ -10,17 +10,19 @@ import com.iam.platform.common.enums.RoleType;
 import com.iam.platform.common.exception.BusinessException;
 import com.iam.platform.infrastructure.persistence.entity.IamPermission;
 import com.iam.platform.infrastructure.persistence.entity.IamRole;
+import com.iam.platform.infrastructure.persistence.entity.IamRoleExclusion;
 import com.iam.platform.infrastructure.persistence.entity.IamRolePermission;
 import com.iam.platform.infrastructure.persistence.entity.IamUser;
 import com.iam.platform.infrastructure.persistence.entity.IamUserRole;
 import com.iam.platform.infrastructure.persistence.repository.IamPermissionRepository;
 import com.iam.platform.infrastructure.persistence.repository.IamRolePermissionRepository;
+import com.iam.platform.infrastructure.persistence.repository.IamRoleExclusionRepository;
 import com.iam.platform.infrastructure.persistence.repository.IamRoleRepository;
 import com.iam.platform.infrastructure.persistence.repository.IamUserRepository;
 import com.iam.platform.infrastructure.persistence.repository.IamUserRoleRepository;
 import com.iam.platform.interfaces.RequestIdFilter;
+import com.iam.platform.infrastructure.cache.BusinessLockExecutor;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,14 +40,13 @@ import java.util.stream.Collectors;
  * <p>角色的整个生命周期集中在这里：角色定义、用户-角色授权、角色-前端权限授权。
  * 不再另设 GrantService，避免同一角色能力散落在多个服务中。
  */
-@Slf4j
 @RequiredArgsConstructor
 @Service
 public class RoleService {
 
-    public static final String ROLE_ACTIVE = "ACTIVE";
-    public static final String GRANT_ACTIVE = "ACTIVE";
-    public static final String GRANT_REVOKED = "REVOKED";
+    public static final String ROLE_ACTIVE = IamRole.STATUS_ACTIVE;
+    public static final String GRANT_ACTIVE = IamUserRole.STATUS_ACTIVE;
+    public static final String GRANT_REVOKED = IamUserRole.STATUS_REVOKED;
 
     private static final int MAX_BATCH_PERMISSIONS = 200;
 
@@ -54,14 +55,28 @@ public class RoleService {
     private final IamUserRoleRepository userRoleRepository;
     private final IamPermissionRepository permissionRepository;
     private final IamRolePermissionRepository rolePermissionRepository;
+    private final IamRoleExclusionRepository roleExclusionRepository;
     private final DecisionService decisionService;
     private final LogService logService;
+    private final BusinessLockExecutor lockExecutor;
 
     @Transactional
     public IamRole createRole(String roleCode, String roleName, String roleType, String description) {
+        return createRole(roleCode, roleName, roleType, description, null);
+    }
+
+    /**
+     * 创建角色并指定父角色。
+     */
+    @Transactional
+    public IamRole createRole(String roleCode, String roleName, String roleType, String description,
+                              Long parentId) {
         RoleType.fromCode(roleType);
         if (roleRepository.findByRoleCode(roleCode).isPresent()) {
             throw new BusinessException(ErrorCode.RESOURCE_DUPLICATE, "角色编码已存在: " + roleCode);
+        }
+        if (parentId != null) {
+            validateParentRole(parentId);
         }
 
         LocalDateTime now = LocalDateTime.now();
@@ -69,12 +84,127 @@ public class RoleService {
         role.setRoleCode(roleCode);
         role.setRoleName(roleName);
         role.setRoleType(roleType);
+        role.setParentId(parentId);
         role.setDescription(description);
         role.setStatus(ROLE_ACTIVE);
         role.setIsDeleted(0);
         role.setCreatedAt(now);
         role.setUpdatedAt(now);
         return roleRepository.save(role);
+    }
+
+    /**
+     * 修改角色基础信息和父角色。
+     */
+    @Transactional
+    public IamRole updateRole(Long roleId, String roleName, String description, String status,
+                              Long parentId, Long operatorId) {
+        return lockExecutor.execute("role:update:" + roleId,
+                () -> updateRoleLocked(roleId, roleName, description, status, parentId, operatorId));
+    }
+
+    /**
+     * 在角色级锁内完成角色更新。
+     */
+    private IamRole updateRoleLocked(Long roleId, String roleName, String description, String status,
+                                     Long parentId, Long operatorId) {
+        IamRole role = getRole(roleId);
+        if (roleId.equals(parentId)) {
+            throw new BusinessException(ErrorCode.ROLE_INHERIT_CYCLE, "角色不能继承自身");
+        }
+        if (parentId != null) {
+            validateParentRole(parentId);
+            if (wouldCreateCycle(roleId, parentId)) {
+                throw new BusinessException(ErrorCode.ROLE_INHERIT_CYCLE, "角色继承关系不能成环");
+            }
+        }
+        if (status != null && !ROLE_ACTIVE.equals(status) && !IamRole.STATUS_DISABLED.equals(status)) {
+            throw new BusinessException(ErrorCode.PARAM_INVALID, "角色状态必须为 ACTIVE 或 DISABLED");
+        }
+
+        Map<String, Object> before = roleSnapshot(role);
+        if (roleName != null && !roleName.isBlank()) {
+            role.setRoleName(roleName);
+        }
+        role.setDescription(description);
+        role.setParentId(parentId);
+        if (status != null) {
+            role.setStatus(status);
+        }
+        role.setUpdatedAt(LocalDateTime.now());
+        role.setUpdatedBy(operatorId);
+        IamRole saved = roleRepository.save(role);
+        recordPermissionChange(operatorId, "UPDATE_ROLE", "role:" + roleId,
+                before, roleSnapshot(saved));
+        return saved;
+    }
+
+    /**
+     * 新建一对角色互斥关系。
+     */
+    @Transactional
+    public void bindRoleExclusion(Long roleId, Long excludedRoleId, Long operatorId) {
+        long firstId = Math.min(roleId, excludedRoleId);
+        long secondId = Math.max(roleId, excludedRoleId);
+        lockExecutor.execute("role-exclusion:" + firstId + ":" + secondId,
+                () -> bindRoleExclusionLocked(roleId, excludedRoleId, operatorId));
+    }
+
+    /**
+     * 在角色互斥唯一键锁内保存互斥关系。
+     */
+    private Void bindRoleExclusionLocked(Long roleId, Long excludedRoleId, Long operatorId) {
+        if (roleId == null || excludedRoleId == null || roleId.equals(excludedRoleId)) {
+            throw new BusinessException(ErrorCode.PARAM_INVALID, "互斥角色不能相同");
+        }
+        getRole(roleId);
+        getRole(excludedRoleId);
+        if (!userRoleRepository.findUserIdsWithBothActiveRoles(roleId, excludedRoleId).isEmpty()) {
+            throw new BusinessException(ErrorCode.ROLE_EXCLUSION_CONFLICT,
+                    "已有用户同时拥有这两个角色，请先回收冲突授权");
+        }
+        Long first = Math.min(roleId, excludedRoleId);
+        Long second = Math.max(roleId, excludedRoleId);
+        if (roleExclusionRepository.findByRoleIdAndExcludedRoleId(first, second).isPresent()) {
+            throw new BusinessException(ErrorCode.RESOURCE_DUPLICATE, "角色互斥关系已存在");
+        }
+        IamRoleExclusion exclusion = new IamRoleExclusion();
+        exclusion.setRoleId(first);
+        exclusion.setExcludedRoleId(second);
+        exclusion.setCreatedBy(operatorId);
+        exclusion.setCreatedAt(LocalDateTime.now());
+        roleExclusionRepository.save(exclusion);
+        recordPermissionChange(operatorId, "BIND_ROLE_EXCLUSION", "role:" + first + "/exclude:" + second,
+                null, Map.of("roleId", first, "excludedRoleId", second));
+        return null;
+    }
+
+    /**
+     * 删除一对角色互斥关系。
+     */
+    @Transactional
+    public void unbindRoleExclusion(Long roleId, Long excludedRoleId, Long operatorId) {
+        Long first = Math.min(roleId, excludedRoleId);
+        Long second = Math.max(roleId, excludedRoleId);
+        IamRoleExclusion exclusion = roleExclusionRepository
+                .findByRoleIdAndExcludedRoleId(first, second)
+                .orElseThrow(() -> new BusinessException(
+                        ErrorCode.RESOURCE_NOT_FOUND, "角色互斥关系不存在"));
+        roleExclusionRepository.delete(exclusion);
+        recordPermissionChange(operatorId, "UNBIND_ROLE_EXCLUSION", "role:" + first + "/exclude:" + second,
+                Map.of("roleId", first, "excludedRoleId", second), null);
+    }
+
+    /**
+     * 查询角色的全部互斥关系。
+     */
+    public List<Long> listRoleExclusions(Long roleId) {
+        getRole(roleId);
+        return roleExclusionRepository.findByRoleIdOrExcludedRoleId(roleId, roleId).stream()
+                .map(item -> roleId.equals(item.getRoleId()) ? item.getExcludedRoleId() : item.getRoleId())
+                .distinct()
+                .sorted()
+                .toList();
     }
 
     public IamRole getRole(Long roleId) {
@@ -93,6 +223,15 @@ public class RoleService {
     @Transactional
     public IamUserRole grantRole(Long userId, Long roleId, LocalDateTime expireTime,
                                  Long grantBy, String grantReason) {
+        return lockExecutor.execute("role:grant:" + userId + ":" + roleId,
+                () -> grantRoleLocked(userId, roleId, expireTime, grantBy, grantReason));
+    }
+
+    /**
+     * 在用户与角色唯一键锁内完成授予或恢复。
+     */
+    private IamUserRole grantRoleLocked(Long userId, Long roleId, LocalDateTime expireTime,
+                                        Long grantBy, String grantReason) {
         IamUser user = userRepository.findById(userId)
                 .filter(u -> u.getIsDeleted() == 0)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "用户不存在: " + userId));
@@ -114,6 +253,7 @@ public class RoleService {
         if (grant != null && GRANT_ACTIVE.equals(grant.getStatus())) {
             throw new BusinessException(ErrorCode.GRANT_DUPLICATE);
         }
+        checkRoleExclusion(userId, roleId);
         checkGrantBoundary(grantBy, roleId);
         Map<String, Object> before = grant == null ? null : grantSnapshot(grant);
         if (grant == null) {
@@ -128,7 +268,6 @@ public class RoleService {
         grant.setGrantReason(grantReason);
         grant.setStatus(GRANT_ACTIVE);
         grant.setUpdatedAt(now);
-        log.info("授予角色: userId={}, roleId={}", userId, roleId);
         IamUserRole saved = userRoleRepository.save(grant);
         recordPermissionChange(grantBy, "GRANT_ROLE", "user:" + userId + "/role:" + roleId,
                 before, grantSnapshot(saved));
@@ -295,7 +434,9 @@ public class RoleService {
     }
 
     private boolean isFunctionRole(IamRole role) {
-        return role.getIsDeleted() == 0 && RoleType.FUNC.getCode().equals(role.getRoleType());
+        return role.getIsDeleted() == 0
+                && (RoleType.FUNC.getCode().equals(role.getRoleType())
+                || RoleType.DATA.getCode().equals(role.getRoleType()));
     }
 
     private Set<Long> currentPermissionIds(Long roleId) {
@@ -324,6 +465,84 @@ public class RoleService {
         if (allowedAction != null) {
             snapshot.put("allowedAction", allowedAction);
         }
+        return snapshot;
+    }
+
+    /**
+     * 校验目标用户已拥有的有效角色是否与待授予角色互斥。
+     */
+    private void checkRoleExclusion(Long userId, Long roleId) {
+        Set<Long> activeRoleIds = userRoleRepository.findByUserIdAndStatus(userId, GRANT_ACTIVE).stream()
+                .filter(grant -> isGrantEffective(grant, LocalDateTime.now()))
+                .map(IamUserRole::getRoleId)
+                .collect(Collectors.toSet());
+        if (activeRoleIds.isEmpty()) {
+            return;
+        }
+        for (IamRoleExclusion exclusion : roleExclusionRepository
+                .findByRoleIdOrExcludedRoleId(roleId, roleId)) {
+            Long peerRoleId = roleId.equals(exclusion.getRoleId())
+                    ? exclusion.getExcludedRoleId()
+                    : exclusion.getRoleId();
+            if (activeRoleIds.contains(peerRoleId)) {
+                throw new BusinessException(
+                        ErrorCode.ROLE_EXCLUSION_CONFLICT,
+                        "角色与已授予角色互斥: " + peerRoleId);
+            }
+        }
+    }
+
+    /**
+     * 判断用户角色授权是否处于有效期内。
+     */
+    private boolean isGrantEffective(IamUserRole grant, LocalDateTime now) {
+        boolean started = grant.getEffectiveTime() == null || !grant.getEffectiveTime().isAfter(now);
+        boolean notExpired = grant.getExpireTime() == null || grant.getExpireTime().isAfter(now);
+        return started && notExpired;
+    }
+
+    /**
+     * 校验父角色存在、启用且未删除。
+     */
+    private void validateParentRole(Long parentId) {
+        IamRole parent = roleRepository.findById(parentId)
+                .filter(item -> item.getIsDeleted() == 0)
+                .orElseThrow(() -> new BusinessException(
+                        ErrorCode.RESOURCE_NOT_FOUND, "父角色不存在: " + parentId));
+        if (!ROLE_ACTIVE.equals(parent.getStatus())) {
+            throw new BusinessException(ErrorCode.PARAM_INVALID, "父角色已停用: " + parentId);
+        }
+    }
+
+    /**
+     * 沿父角色链检测设置新父角色后是否形成环。
+     */
+    private boolean wouldCreateCycle(Long roleId, Long parentId) {
+        Long cursor = parentId;
+        Set<Long> visited = new HashSet<>();
+        while (cursor != null && visited.add(cursor)) {
+            if (roleId.equals(cursor)) {
+                return true;
+            }
+            cursor = roleRepository.findById(cursor)
+                    .map(IamRole::getParentId)
+                    .orElse(null);
+        }
+        return false;
+    }
+
+    /**
+     * 构造角色基础信息快照。
+     */
+    private Map<String, Object> roleSnapshot(IamRole role) {
+        Map<String, Object> snapshot = new LinkedHashMap<>();
+        snapshot.put("roleId", role.getId());
+        snapshot.put("roleCode", role.getRoleCode());
+        snapshot.put("roleName", role.getRoleName());
+        snapshot.put("roleType", role.getRoleType());
+        snapshot.put("parentId", role.getParentId());
+        snapshot.put("status", role.getStatus());
+        snapshot.put("description", role.getDescription());
         return snapshot;
     }
 

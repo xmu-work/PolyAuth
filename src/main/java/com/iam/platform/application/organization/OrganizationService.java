@@ -1,12 +1,14 @@
 package com.iam.platform.application.organization;
 
+import com.iam.platform.application.auth.AuthService;
+import com.iam.platform.application.log.LogService;
 import com.iam.platform.common.enums.ErrorCode;
 import com.iam.platform.common.enums.OrgType;
 import com.iam.platform.common.exception.BusinessException;
 import com.iam.platform.infrastructure.persistence.entity.IamOrg;
 import com.iam.platform.infrastructure.persistence.repository.IamOrgRepository;
+import com.iam.platform.interfaces.RequestIdFilter;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,6 +16,8 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
  * 组织机构管理应用服务（M03）。
@@ -23,15 +27,15 @@ import java.util.List;
  *
  * <p>祖先路径 ancestors 存"0,根ID,…,父ID"，根节点为"0"；子树查询按祖先路径前缀匹配。
  */
-@Slf4j
 @RequiredArgsConstructor
 @Service
 public class OrganizationService {
 
-    private static final String STATUS_ACTIVE = "ACTIVE";
+    private static final String STATUS_ACTIVE = IamOrg.STATUS_ACTIVE;
     private static final Comparator<IamOrg> BY_SORT = Comparator.comparing(IamOrg::getSortNo).thenComparing(IamOrg::getId);
 
     private final IamOrgRepository orgRepository;
+    private final LogService logService;
 
     /**
      * 新建组织节点。
@@ -72,6 +76,52 @@ public class OrganizationService {
         org.setCreatedAt(now);
         org.setUpdatedAt(now);
         return orgRepository.save(org);
+    }
+
+    /**
+     * 修改组织名称、排序号、负责人，并可停用或启用组织。
+     */
+    @Transactional
+    public IamOrg updateOrg(Long orgId, String orgName, Integer sortNo, Long leaderUserId,
+                            String status, Long operatorId) {
+        IamOrg org = getOrg(orgId);
+        Map<String, Object> before = orgSnapshot(org);
+        if (status != null && !STATUS_ACTIVE.equals(status)
+                && !IamOrg.STATUS_DISABLED.equals(status)) {
+            throw new BusinessException(ErrorCode.PARAM_INVALID, "组织状态必须为 ACTIVE 或 DISABLED");
+        }
+        if (sortNo != null && sortNo < 0) {
+            throw new BusinessException(ErrorCode.PARAM_INVALID, "组织排序号不能为负数");
+        }
+        LocalDateTime now = LocalDateTime.now();
+        if (orgName != null && !orgName.isBlank()) {
+            org.setOrgName(orgName);
+        }
+        if (sortNo != null) {
+            org.setSortNo(sortNo);
+        }
+        if (leaderUserId != null) {
+            org.setLeaderUserId(leaderUserId);
+        }
+        if (status != null) {
+            org.setStatus(status);
+            if (IamOrg.STATUS_DISABLED.equals(status)) {
+                List<IamOrg> descendants = descendantsOf(org);
+                descendants.forEach(child -> {
+                    child.setStatus(IamOrg.STATUS_DISABLED);
+                    child.setUpdatedAt(now);
+                    child.setUpdatedBy(operatorId);
+                });
+                orgRepository.saveAll(descendants);
+            }
+        }
+        org.setUpdatedAt(now);
+        org.setUpdatedBy(operatorId);
+        IamOrg saved = orgRepository.save(org);
+        logService.recordPermissionChange(operatorId, AuthService.ADMIN_SYSTEM_CODE,
+                "UPDATE_ORGANIZATION", "organization:" + orgId,
+                before, orgSnapshot(saved), null, RequestIdFilter.currentRequestId());
+        return saved;
     }
 
     /**
@@ -133,7 +183,6 @@ public class OrganizationService {
             d.setUpdatedAt(now);
         }
         orgRepository.saveAll(descendants);
-        log.info("移动组织: orgId={}, newParentId={}, 下级 {} 个", orgId, newParentId, descendants.size());
         return orgRepository.save(node);
     }
 
@@ -165,5 +214,23 @@ public class OrganizationService {
     /** node 是否位于 ancestorId 的子树中 */
     private boolean isDescendant(IamOrg node, Long ancestorId) {
         return ("," + node.getAncestors() + ",").contains("," + ancestorId + ",");
+    }
+
+    /**
+     * 构造组织节点审计快照，保留移动前路径和历史归属。
+     */
+    private Map<String, Object> orgSnapshot(IamOrg org) {
+        Map<String, Object> snapshot = new LinkedHashMap<>();
+        snapshot.put("id", org.getId());
+        snapshot.put("parentId", org.getParentId());
+        snapshot.put("ancestors", org.getAncestors());
+        snapshot.put("orgCode", org.getOrgCode());
+        snapshot.put("orgName", org.getOrgName());
+        snapshot.put("orgType", org.getOrgType());
+        snapshot.put("orgLevel", org.getOrgLevel());
+        snapshot.put("sortNo", org.getSortNo());
+        snapshot.put("leaderUserId", org.getLeaderUserId());
+        snapshot.put("status", org.getStatus());
+        return snapshot;
     }
 }

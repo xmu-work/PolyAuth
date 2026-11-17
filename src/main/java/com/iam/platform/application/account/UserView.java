@@ -7,7 +7,7 @@ import java.time.LocalDateTime;
 /**
  * 用户安全视图 DTO。
  *
- * <p>对外只返回解密后的姓名与脱敏电话，不返回密码哈希、密文与检索哈希。
+ * <p>对外只返回脱敏姓名与脱敏电话，不返回密码哈希、密文与检索哈希。
  */
 @Data
 public class UserView {

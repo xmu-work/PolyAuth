@@ -40,3 +40,15 @@ export interface UserStatusPayload {
   targetStatus: AccountStatusCode
   reason?: string
 }
+
+export interface UserTransferPayload {
+  orgId: number
+  post?: string
+}
+
+export interface SensitiveUser {
+  id: number
+  userNo: string
+  realName: string
+  phone?: string
+}

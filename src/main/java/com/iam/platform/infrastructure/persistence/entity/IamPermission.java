@@ -16,6 +16,8 @@ import java.time.LocalDateTime;
 @Table(name = "iam_permission")
 public class IamPermission {
 
+    public static final String STATUS_ACTIVE = "ACTIVE";
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

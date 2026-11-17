@@ -15,6 +15,9 @@ import java.time.LocalDateTime;
 @Table(name = "iam_token")
 public class IamToken {
 
+    public static final String STATUS_ACTIVE = "ACTIVE";
+    public static final String STATUS_REVOKED = "REVOKED";
+
     @Id
     @Column(name = "token_id", length = 64)
     private String tokenId;

@@ -2,7 +2,7 @@ package com.iam.platform.interfaces;
 
 import com.iam.platform.application.api.ApiService;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
@@ -22,7 +22,6 @@ import java.util.Set;
  * <p>未登记到 iam_api、未映射前端权限或未受保护的管理端接口会进入告警列表，
  * 运行期由鉴权拦截器按 fail-closed 拒绝。
  */
-@Slf4j
 @Component
 @RequiredArgsConstructor
 public class ApiRegistrationAudit {
@@ -34,13 +33,15 @@ public class ApiRegistrationAudit {
     private final ApplicationContext applicationContext;
     private final ApiService apiService;
 
+    @Value("${iam.api-registration.fail-fast:false}")
+    private boolean failFast;
+
     @EventListener(ContextRefreshedEvent.class)
     public void auditUnregisteredApis() {
         RequestMappingHandlerMapping mapping;
         try {
             mapping = applicationContext.getBean("requestMappingHandlerMapping", RequestMappingHandlerMapping.class);
         } catch (Exception e) {
-            log.debug("未找到 RequestMappingHandlerMapping，跳过接口登记检查");
             return;
         }
 
@@ -58,11 +59,8 @@ public class ApiRegistrationAudit {
                     }
                 }));
 
-        if (missing.isEmpty()) {
-            log.info("API 登记检查通过：全部管理端接口均已登记并映射到前端权限");
-        } else {
-            log.warn("有 {} 个管理端 API 未登记或未映射到前端权限，运行期将按 fail-closed 策略拒绝：\n  {}",
-                    missing.size(), String.join("\n  ", missing));
+        if (!missing.isEmpty() && failFast) {
+            throw new IllegalStateException("存在未登记或未映射前端权限的管理端 API");
         }
     }
 

@@ -23,7 +23,7 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class PermissionService {
 
-    private static final String STATUS_ACTIVE = "ACTIVE";
+    private static final String STATUS_ACTIVE = IamPermission.STATUS_ACTIVE;
     private static final Set<String> PERMISSION_TYPES = Set.of("MENU", "BUTTON");
 
     private final IamPermissionRepository permissionRepository;
