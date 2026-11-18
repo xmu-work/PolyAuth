@@ -1,0 +1,127 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="1000" viewBox="0 0 1500 1000" font-family="Microsoft YaHei, PingFang SC, SimHei, sans-serif">
+  <style>text[fill="#b03030"]{paint-order:stroke;stroke:#ffffff;stroke-width:2.8px;stroke-linejoin:round}</style>
+  <defs>
+    <marker id="arr" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#333"/>
+    </marker>
+  </defs>
+  <rect width="1500" height="1000" fill="#ffffff"/>
+
+  <!-- 区域 -->
+  <rect x="40" y="90" width="300" height="720" fill="#fafafa" stroke="#999" stroke-width="1.4" stroke-dasharray="8,5"/>
+  <text x="56" y="116" font-size="14" font-weight="bold" fill="#555">外部 / DMZ</text>
+  <rect x="380" y="90" width="560" height="720" fill="#f6f9fd" stroke="#1f4e8c" stroke-width="1.4" stroke-dasharray="8,5"/>
+  <text x="396" y="116" font-size="14" font-weight="bold" fill="#13396b">应用区（Docker Swarm overlay 网络 iam-net）</text>
+  <rect x="980" y="90" width="480" height="720" fill="#fdfbf3" stroke="#8a6d1d" stroke-width="1.4" stroke-dasharray="8,5"/>
+  <text x="996" y="116" font-size="14" font-weight="bold" fill="#5c4710">数据区（内网，不暴露公网）</text>
+
+  <!-- 客户端 -->
+  <rect x="70" y="190" width="240" height="100" rx="6" fill="#fff" stroke="#222" stroke-width="1.6"/>
+  <text x="190" y="222" text-anchor="middle" font-size="14" font-weight="bold">终端浏览器</text>
+  <text x="190" y="244" text-anchor="middle" font-size="11" fill="#555">Vue 3 管理后台</text>
+  <text x="190" y="264" text-anchor="middle" font-size="11" fill="#555">HTTPS 443</text>
+
+  <rect x="70" y="360" width="240" height="100" rx="6" fill="#fff" stroke="#222" stroke-width="1.6"/>
+  <text x="190" y="392" text-anchor="middle" font-size="14" font-weight="bold">公网入口</text>
+  <text x="190" y="414" text-anchor="middle" font-size="11" fill="#555">弹性 IP / 安全组</text>
+  <text x="190" y="434" text-anchor="middle" font-size="11" fill="#555">只开放 443 / 80</text>
+
+  <rect x="70" y="530" width="240" height="100" rx="6" fill="#fff" stroke="#222" stroke-width="1.6"/>
+  <text x="190" y="562" text-anchor="middle" font-size="14" font-weight="bold">运维终端</text>
+  <text x="190" y="584" text-anchor="middle" font-size="11" fill="#555">SSH 22（白名单 IP）</text>
+  <text x="190" y="604" text-anchor="middle" font-size="11" fill="#555">镜像构建机 compiler</text>
+
+  <!-- manager 集群 -->
+  <rect x="410" y="170" width="500" height="160" rx="6" fill="#fff" stroke="#1f4e8c" stroke-width="1.8"/>
+  <text x="660" y="196" text-anchor="middle" font-size="14" font-weight="bold" fill="#13396b">manager 节点 ×3（Swarm 控制面 + 入口）</text>
+  <rect x="430" y="212" width="220" height="100" rx="4" fill="#eef4fc" stroke="#1f4e8c"/>
+  <text x="540" y="240" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#13396b">Nginx 反向代理</text>
+  <text x="540" y="262" text-anchor="middle" font-size="10.5" fill="#33507a">host 模式 :80 / TLS 终止</text>
+  <text x="540" y="282" text-anchor="middle" font-size="10.5" fill="#33507a">转发 /api → iam_app:8080</text>
+  <text x="540" y="300" text-anchor="middle" font-size="10.5" fill="#33507a">静态资源 /healthz</text>
+  <rect x="670" y="212" width="220" height="100" rx="4" fill="#eef4fc" stroke="#1f4e8c"/>
+  <text x="780" y="240" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#13396b">iam-web ×3（global）</text>
+  <text x="780" y="262" text-anchor="middle" font-size="10.5" fill="#33507a">Vue 构建产物</text>
+  <text x="780" y="282" text-anchor="middle" font-size="10.5" fill="#33507a">每 manager 一份副本</text>
+
+  <!-- app 集群 -->
+  <rect x="410" y="380" width="500" height="190" rx="6" fill="#fff" stroke="#1f4e8c" stroke-width="1.8"/>
+  <text x="660" y="406" text-anchor="middle" font-size="14" font-weight="bold" fill="#13396b">app 节点 ×3（iam-app 副本）</text>
+  <rect x="430" y="422" width="140" height="120" rx="4" fill="#dce9f9" stroke="#1f4e8c"/>
+  <text x="500" y="448" text-anchor="middle" font-size="12" font-weight="bold" fill="#13396b">iam-app #1</text>
+  <text x="500" y="470" text-anchor="middle" font-size="10.5" fill="#33507a">Spring Boot 3.4</text>
+  <text x="500" y="490" text-anchor="middle" font-size="10.5" fill="#33507a">:8080 业务</text>
+  <text x="500" y="510" text-anchor="middle" font-size="10.5" fill="#33507a">:8081 actuator</text>
+  <text x="500" y="530" text-anchor="middle" font-size="10" fill="#667">JVM 1.28G 限额</text>
+  <rect x="590" y="422" width="140" height="120" rx="4" fill="#dce9f9" stroke="#1f4e8c"/>
+  <text x="660" y="448" text-anchor="middle" font-size="12" font-weight="bold" fill="#13396b">iam-app #2</text>
+  <text x="660" y="478" text-anchor="middle" font-size="10.5" fill="#33507a">同镜像同配置</text>
+  <text x="660" y="498" text-anchor="middle" font-size="10.5" fill="#33507a">无状态、可替换</text>
+  <text x="660" y="518" text-anchor="middle" font-size="10.5" fill="#33507a">健康检查 /actuator</text>
+  <rect x="750" y="422" width="140" height="120" rx="4" fill="#dce9f9" stroke="#1f4e8c"/>
+  <text x="820" y="448" text-anchor="middle" font-size="12" font-weight="bold" fill="#13396b">iam-app #3</text>
+  <text x="820" y="478" text-anchor="middle" font-size="10.5" fill="#33507a">同镜像同配置</text>
+  <text x="820" y="498" text-anchor="middle" font-size="10.5" fill="#33507a">滚动更新 stop-first</text>
+  <text x="820" y="518" text-anchor="middle" font-size="10.5" fill="#33507a">失败暂停（pause）</text>
+  <text x="660" y="560" text-anchor="middle" font-size="10.5" fill="#666">副本按 node.labels.role=app 放置；每节点 1 个 JVM，更新时先停旧副本</text>
+
+  <!-- 数据节点 -->
+  <rect x="1010" y="180" width="210" height="170" rx="6" fill="#fff7e0" stroke="#8a6d1d" stroke-width="1.8"/>
+  <text x="1115" y="208" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#5c4710">course-node1</text>
+  <text x="1115" y="230" text-anchor="middle" font-size="12" fill="#5c4710">MySQL 8.0 / InnoDB</text>
+  <text x="1115" y="252" text-anchor="middle" font-size="10.5" fill="#7a6220">:3306，utf8mb4</text>
+  <text x="1115" y="272" text-anchor="middle" font-size="10.5" fill="#7a6220">innodb_buffer_pool 384M</text>
+  <text x="1115" y="292" text-anchor="middle" font-size="10.5" fill="#7a6220">/srv/iam/mysql（本地盘）</text>
+  <text x="1115" y="314" text-anchor="middle" font-size="10.5" fill="#7a6220">业务库 iam_platform</text>
+  <text x="1115" y="334" text-anchor="middle" font-size="10" fill="#8a6d1d">role=db 标签约束</text>
+
+  <rect x="1250" y="180" width="190" height="170" rx="6" fill="#fff7e0" stroke="#8a6d1d" stroke-width="1.8"/>
+  <text x="1345" y="208" text-anchor="middle" font-size="13" font-weight="bold" fill="#5c4710">Redis 7（同节点）</text>
+  <text x="1345" y="232" text-anchor="middle" font-size="11" fill="#7a6220">:6379，AOF 持久化</text>
+  <text x="1345" y="254" text-anchor="middle" font-size="10.5" fill="#7a6220">权限版本号 / 快照</text>
+  <text x="1345" y="274" text-anchor="middle" font-size="10.5" fill="#7a6220">分布式锁 / 幂等键</text>
+  <text x="1345" y="294" text-anchor="middle" font-size="10.5" fill="#7a6220">防重放 nonce</text>
+  <text x="1345" y="314" text-anchor="middle" font-size="10.5" fill="#7a6220">/srv/iam/redis</text>
+  <text x="1345" y="334" text-anchor="middle" font-size="10" fill="#8a6d1d">noeviction</text>
+
+  <!-- SWR -->
+  <rect x="1010" y="420" width="430" height="120" rx="6" fill="#fff" stroke="#555" stroke-width="1.6"/>
+  <text x="1225" y="450" text-anchor="middle" font-size="14" font-weight="bold">华为云 SWR 镜像仓库</text>
+  <text x="1225" y="474" text-anchor="middle" font-size="11" fill="#555">iam-app / iam-web / mysql / redis 镜像</text>
+  <text x="1225" y="496" text-anchor="middle" font-size="11" fill="#555">compiler 构建并 push；节点只 pull</text>
+  <text x="1225" y="518" text-anchor="middle" font-size="10.5" fill="#777">--with-registry-auth 分发拉取凭据</text>
+
+  <!-- 密钥 -->
+  <rect x="1010" y="600" width="430" height="120" rx="6" fill="#fff" stroke="#555" stroke-width="1.6"/>
+  <text x="1225" y="630" text-anchor="middle" font-size="14" font-weight="bold">Docker Secrets</text>
+  <text x="1225" y="654" text-anchor="middle" font-size="11" fill="#555">jwt_secret · crypto_aes_key · redis_password</text>
+  <text x="1225" y="676" text-anchor="middle" font-size="11" fill="#555">db_app_password · mysql_root_password</text>
+  <text x="1225" y="698" text-anchor="middle" font-size="10.5" fill="#777">以 /run/secrets 文件挂载，不写入镜像与日志</text>
+
+  <!-- 网络链路 -->
+  <line x1="190" y1="290" x2="190" y2="358" stroke="#333" stroke-width="1.6" marker-end="url(#arr)"/>
+  <text x="202" y="330" font-size="11" fill="#b03030">HTTPS 443</text>
+
+  <path d="M310,410 L360,410 L360,240 L408,240" fill="none" stroke="#333" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="318" y="398" font-size="10.5" fill="#b03030">TCP 80</text>
+
+  <path d="M310,580 L360,580 L360,300 L408,300" fill="none" stroke="#333" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="318" y="568" font-size="10.5" fill="#b03030">SSH 22</text>
+
+  <line x1="660" y1="330" x2="660" y2="378" stroke="#333" stroke-width="1.6" marker-end="url(#arr)"/>
+  <text x="672" y="360" font-size="10.5" fill="#b03030">HTTP 8080 / 8081</text>
+
+  <path d="M910,410 L980,410 L980,352 L1108,352" fill="none" stroke="#333" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="1030" y="398" font-size="10.5" fill="#b03030">JDBC 3306</text>
+
+  <path d="M910,530 L960,530 L960,560 L1460,560 L1460,352 L1400,352" fill="none" stroke="#333" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="1180" y="552" font-size="10.5" fill="#b03030">Redis 6379</text>
+
+  <path d="M820,570 L820,590 L1100,590 L1100,542" fill="none" stroke="#333" stroke-width="1.4" marker-end="url(#arr)" stroke-dasharray="6,4"/>
+  <text x="880" y="612" font-size="10.5" fill="#b03030">拉取镜像</text>
+
+  <text x="40" y="860" font-size="11.5" fill="#666">当前 4 台形态：manage（manager）、compiler（构建）、course-node1（role=db）、course-node2（role=app）；扩展到 8 台时增加 2 个 manager 与 2 个 app 节点，副本扩至 3。</text>
+  <text x="40" y="884" font-size="11.5" fill="#666">网络：公网仅暴露 443/80；应用与数据节点只通过 overlay 网络 iam-net 通信，MySQL/Redis 不发布宿主端口；密钥通过 Docker Secrets 注入。</text>
+  <text x="40" y="908" font-size="11.5" fill="#666">可用性：app 无状态、可水平扩展；MySQL 单副本 + 本地盘（当前课程环境的已知单点，见 2.3.3 风险 R3），生产化需主从复制或云数据库。</text>
+  <text x="40" y="932" font-size="11.5" fill="#777">可移植性：镜像统一推送华为云 SWR，节点运行 Linux + Docker；应用配置全部来自环境变量，不依赖宿主目录（数据盘除外）。</text>
+</svg>

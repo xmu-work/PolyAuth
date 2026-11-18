@@ -1,0 +1,122 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1520" height="1150" viewBox="0 0 1520 1150" font-family="Microsoft YaHei, PingFang SC, SimHei, sans-serif">
+  <style>text[fill="#b03030"]{paint-order:stroke;stroke:#ffffff;stroke-width:2.8px;stroke-linejoin:round}</style>
+  <defs>
+    <marker id="sync" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L9,3 L0,6 Z" fill="#222"/>
+    </marker>
+    <marker id="ret" markerWidth="12" markerHeight="12" refX="10" refY="4" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L10,4 L0,8" fill="none" stroke="#222" stroke-width="1.2"/>
+    </marker>
+  </defs>
+  <rect width="1520" height="1150" fill="#ffffff"/>
+
+  <!-- 生命线 -->
+  <rect x="10" y="70" width="160" height="60" fill="#eef4fc" stroke="#1f4e8c" stroke-width="1.6"/>
+  <text x="90" y="96" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#13396b">admin: 管理员</text>
+  <text x="90" y="116" text-anchor="middle" font-size="10.5" fill="#33507a">调用者</text>
+  <rect x="200" y="70" width="160" height="60" fill="#fff" stroke="#222" stroke-width="1.6"/>
+  <text x="280" y="94" text-anchor="middle" font-size="12" font-weight="bold">roleCtrl: RoleController</text>
+  <text x="280" y="116" text-anchor="middle" font-size="10.5" fill="#555">«boundary»</text>
+  <rect x="390" y="70" width="160" height="60" fill="#eef4fc" stroke="#1f4e8c" stroke-width="1.6"/>
+  <text x="470" y="96" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#13396b">roleSvc: RoleService</text>
+  <text x="470" y="116" text-anchor="middle" font-size="10.5" fill="#33507a">«service» M04</text>
+  <rect x="580" y="70" width="160" height="60" fill="#fff7e0" stroke="#8a6d1d" stroke-width="1.6"/>
+  <text x="660" y="92" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#5c4710">lock: BusinessLockExecutor</text>
+  <text x="660" y="112" text-anchor="middle" font-size="10.5" fill="#7a6220">Redis 分布式锁</text>
+  <rect x="770" y="70" width="160" height="60" fill="#fff7e0" stroke="#8a6d1d" stroke-width="1.6"/>
+  <text x="850" y="96" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#5c4710">db: MySQL</text>
+  <text x="850" y="116" text-anchor="middle" font-size="10.5" fill="#7a6220">授权事实</text>
+  <rect x="960" y="70" width="160" height="60" fill="#fff7e0" stroke="#8a6d1d" stroke-width="1.6"/>
+  <text x="1040" y="92" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#5c4710">cache: PermissionCache</text>
+  <text x="1040" y="112" text-anchor="middle" font-size="10.5" fill="#7a6220">权限版本号</text>
+  <rect x="1150" y="70" width="160" height="60" fill="#eef4fc" stroke="#1f4e8c" stroke-width="1.6"/>
+  <text x="1230" y="96" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#13396b">logs: LogService</text>
+  <text x="1230" y="116" text-anchor="middle" font-size="10.5" fill="#33507a">«service» M08</text>
+  <rect x="1340" y="70" width="160" height="60" fill="#eef4fc" stroke="#1f4e8c" stroke-width="1.6"/>
+  <text x="1420" y="92" text-anchor="middle" font-size="12" font-weight="bold" fill="#13396b">web: 管理前台</text>
+  <text x="1420" y="112" text-anchor="middle" font-size="10.5" fill="#33507a">60 秒轮询</text>
+
+  <line x1="90" y1="130" x2="90" y2="1090" stroke="#888" stroke-width="1" stroke-dasharray="6,5"/>
+  <line x1="280" y1="130" x2="280" y2="1090" stroke="#888" stroke-width="1" stroke-dasharray="6,5"/>
+  <line x1="470" y1="130" x2="470" y2="1090" stroke="#888" stroke-width="1" stroke-dasharray="6,5"/>
+  <line x1="660" y1="130" x2="660" y2="1090" stroke="#888" stroke-width="1" stroke-dasharray="6,5"/>
+  <line x1="850" y1="130" x2="850" y2="1090" stroke="#888" stroke-width="1" stroke-dasharray="6,5"/>
+  <line x1="1040" y1="130" x2="1040" y2="1090" stroke="#888" stroke-width="1" stroke-dasharray="6,5"/>
+  <line x1="1230" y1="130" x2="1230" y2="1090" stroke="#888" stroke-width="1" stroke-dasharray="6,5"/>
+  <line x1="1420" y1="130" x2="1420" y2="1090" stroke="#888" stroke-width="1" stroke-dasharray="6,5"/>
+
+  <!-- 执行条 -->
+  <rect x="85" y="200" width="10" height="670" fill="#cfdff5" stroke="#1f4e8c" stroke-width="1"/>
+  <rect x="275" y="200" width="10" height="665" fill="#cfdff5" stroke="#1f4e8c" stroke-width="1"/>
+  <rect x="275" y="900" width="10" height="70" fill="#cfdff5" stroke="#1f4e8c" stroke-width="1"/>
+  <rect x="465" y="245" width="10" height="580" fill="#cfdff5" stroke="#1f4e8c" stroke-width="1"/>
+  <rect x="655" y="295" width="10" height="45" fill="#cfdff5" stroke="#1f4e8c" stroke-width="1"/>
+  <rect x="655" y="745" width="10" height="40" fill="#cfdff5" stroke="#1f4e8c" stroke-width="1"/>
+  <rect x="845" y="380" width="10" height="45" fill="#cfdff5" stroke="#1f4e8c" stroke-width="1"/>
+  <rect x="845" y="465" width="10" height="45" fill="#cfdff5" stroke="#1f4e8c" stroke-width="1"/>
+  <rect x="1035" y="635" width="10" height="45" fill="#cfdff5" stroke="#1f4e8c" stroke-width="1"/>
+  <rect x="1225" y="550" width="10" height="45" fill="#cfdff5" stroke="#1f4e8c" stroke-width="1"/>
+  <rect x="1415" y="900" width="10" height="70" fill="#cfdff5" stroke="#1f4e8c" stroke-width="1"/>
+
+  <!-- 消息 -->
+  <line x1="95" y1="200" x2="273" y2="200" stroke="#222" stroke-width="1.6" marker-end="url(#sync)"/>
+  <text x="184" y="190" text-anchor="middle" font-size="10.5" fill="#b03030">1 grantPermissions(角色, 权限集, 操作)</text>
+
+  <line x1="285" y1="245" x2="463" y2="245" stroke="#222" stroke-width="1.6" marker-end="url(#sync)"/>
+  <text x="374" y="235" text-anchor="middle" font-size="10.5" fill="#b03030">2 grantPermissions(...)</text>
+
+  <line x1="475" y1="295" x2="653" y2="295" stroke="#222" stroke-width="1.6" marker-end="url(#sync)"/>
+  <text x="564" y="285" text-anchor="middle" font-size="10.5" fill="#b03030">3 tryLock(角色维度)</text>
+  <line x1="655" y1="335" x2="477" y2="335" stroke="#222" stroke-width="1.4" stroke-dasharray="6,4" marker-end="url(#ret)"/>
+  <text x="566" y="325" text-anchor="middle" font-size="10.5" fill="#b03030">返回持有者 token</text>
+
+  <line x1="475" y1="380" x2="843" y2="380" stroke="#222" stroke-width="1.6" marker-end="url(#sync)"/>
+  <text x="659" y="370" text-anchor="middle" font-size="10.5" fill="#b03030">4 校验角色/权限有效性与互斥约束</text>
+  <line x1="845" y1="420" x2="477" y2="420" stroke="#222" stroke-width="1.4" stroke-dasharray="6,4" marker-end="url(#ret)"/>
+  <text x="661" y="410" text-anchor="middle" font-size="10.5" fill="#b03030">返回校验结果</text>
+
+  <line x1="475" y1="465" x2="843" y2="465" stroke="#222" stroke-width="1.6" marker-end="url(#sync)"/>
+  <text x="659" y="455" text-anchor="middle" font-size="10.5" fill="#b03030">5 saveRolePermissions(授权事实)</text>
+  <line x1="845" y1="505" x2="477" y2="505" stroke="#222" stroke-width="1.4" stroke-dasharray="6,4" marker-end="url(#ret)"/>
+  <text x="661" y="495" text-anchor="middle" font-size="10.5" fill="#b03030">返回保存结果</text>
+
+  <line x1="475" y1="550" x2="1223" y2="550" stroke="#222" stroke-width="1.6" marker-end="url(#sync)"/>
+  <text x="849" y="540" text-anchor="middle" font-size="10.5" fill="#b03030">6 recordPermissionChange(变更前后快照)</text>
+  <line x1="1225" y1="590" x2="477" y2="590" stroke="#222" stroke-width="1.4" stroke-dasharray="6,4" marker-end="url(#ret)"/>
+  <text x="851" y="580" text-anchor="middle" font-size="10.5" fill="#b03030">返回</text>
+
+  <line x1="475" y1="635" x2="1033" y2="635" stroke="#222" stroke-width="1.6" marker-end="url(#sync)"/>
+  <text x="754" y="625" text-anchor="middle" font-size="10.5" fill="#b03030">7 bumpVersion()</text>
+  <line x1="1035" y1="675" x2="477" y2="675" stroke="#222" stroke-width="1.4" stroke-dasharray="6,4" marker-end="url(#ret)"/>
+  <text x="756" y="665" text-anchor="middle" font-size="10.5" fill="#b03030">返回新版本号</text>
+
+  <line x1="475" y1="745" x2="653" y2="745" stroke="#222" stroke-width="1.6" marker-end="url(#sync)"/>
+  <text x="564" y="735" text-anchor="middle" font-size="10.5" fill="#b03030">8 unlock(持有者 token)</text>
+  <line x1="655" y1="780" x2="477" y2="780" stroke="#222" stroke-width="1.4" stroke-dasharray="6,4" marker-end="url(#ret)"/>
+  <text x="566" y="770" text-anchor="middle" font-size="10.5" fill="#b03030">返回</text>
+
+  <line x1="465" y1="820" x2="287" y2="820" stroke="#222" stroke-width="1.4" stroke-dasharray="6,4" marker-end="url(#ret)"/>
+  <text x="376" y="810" text-anchor="middle" font-size="10.5" fill="#b03030">9 返回授权结果</text>
+
+  <line x1="275" y1="860" x2="97" y2="860" stroke="#222" stroke-width="1.4" stroke-dasharray="6,4" marker-end="url(#ret)"/>
+  <text x="186" y="850" text-anchor="middle" font-size="10.5" fill="#b03030">10 返回 200</text>
+
+  <line x1="1425" y1="900" x2="287" y2="900" stroke="#222" stroke-width="1.6" marker-end="url(#sync)"/>
+  <text x="856" y="890" text-anchor="middle" font-size="10.5" fill="#b03030">11 轮询：查询当前权限</text>
+
+  <line x1="275" y1="955" x2="1417" y2="955" stroke="#222" stroke-width="1.4" stroke-dasharray="6,4" marker-end="url(#ret)"/>
+  <text x="846" y="945" text-anchor="middle" font-size="10.5" fill="#b03030">12 返回最新权限集合（新版本快照）</text>
+
+  <!-- 说明 -->
+  <rect x="700" y="265" width="380" height="46" fill="#fbfbfb" stroke="#999" stroke-width="1.1" stroke-dasharray="5,4"/>
+  <text x="712" y="284" font-size="10.5" fill="#444">锁获取失败 → 409 LOCK_ACQUIRE_FAILED，</text>
+  <text x="712" y="300" font-size="10.5" fill="#444">不写入任何授权数据（FR-41）。</text>
+
+  <rect x="1080" y="690" width="360" height="62" fill="#fbfbfb" stroke="#999" stroke-width="1.1" stroke-dasharray="5,4"/>
+  <text x="1092" y="709" font-size="10.5" fill="#444">版本号递增后旧快照不可达，由 TTL 淘汰；</text>
+  <text x="1092" y="725" font-size="10.5" fill="#444">不执行 KEYS 扫描，避免阻塞 Redis；</text>
+  <text x="1092" y="741" font-size="10.5" fill="#444">下一次请求即按新版本判定。</text>
+
+  <text x="60" y="1130" font-size="11" fill="#666">说明：本图把“授权事实写入（MySQL）— 审计快照（M08）— 版本失效（Redis）— 锁释放”放在同一业务事务边界内；前端无需重新登录，轮询即获得新权限。</text>
+  <text x="60" y="1148" font-size="11" fill="#666">对应需求：FR-27、FR-28、FR-40、FR-41、FR-42、NFR-08；对应架构故事 S4（可修改性/即时生效）。</text>
+</svg>
