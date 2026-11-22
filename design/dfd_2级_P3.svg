@@ -19,11 +19,8 @@
 <text x="910.0" y="456.0" text-anchor="middle" font-size="17" font-weight="bold" fill="#13396b">P3.2 账号状态校验</text>
 <text x="910.0" y="480.0" text-anchor="middle" font-size="13" font-weight="normal" fill="#33507a">getUserFunctionPoints ①</text>
 <rect x="1180" y="400" width="280" height="120" rx="18" fill="#e8f1fc" stroke="#1f4e8c" stroke-width="1.8"/>
-<text x="1320.0" y="456.0" text-anchor="middle" font-size="17" font-weight="bold" fill="#13396b">P3.3 计算功能点集合</text>
-<text x="1320.0" y="480.0" text-anchor="middle" font-size="13" font-weight="normal" fill="#33507a">getUserFunctionPoints ②~⑤</text>
-<rect x="1180" y="680" width="280" height="110" rx="18" fill="#f3f3f3" stroke="#1f4e8c" stroke-width="1.8" stroke-dasharray="8,5"/>
-<text x="1320.0" y="731.0" text-anchor="middle" font-size="17" font-weight="bold" fill="#13396b">P3.4 数据范围判定</text>
-<text x="1320.0" y="755.0" text-anchor="middle" font-size="13" font-weight="normal" fill="#33507a">RBAC3 阶段实现</text>
+<text x="1320.0" y="456.0" text-anchor="middle" font-size="17" font-weight="bold" fill="#13396b">P3.3 计算功能权限</text>
+<text x="1320.0" y="480.0" text-anchor="middle" font-size="13" font-weight="normal" fill="#33507a">角色继承/绑定/API 映射</text>
 <rect x="1640" y="400" width="280" height="120" rx="18" fill="#e8f1fc" stroke="#1f4e8c" stroke-width="1.8"/>
 <text x="1780.0" y="456.0" text-anchor="middle" font-size="17" font-weight="bold" fill="#13396b">P3.5 生成判定结果</text>
 <text x="1780.0" y="480.0" text-anchor="middle" font-size="13" font-weight="normal" fill="#33507a">hasPermission / 拦截器</text>
@@ -41,8 +38,6 @@
 <text x="1789.0" y="180" text-anchor="middle" font-size="13.5" font-weight="normal" fill="#5c4710">D3 角色权限库</text>
 <rect x="1500" y="650" width="240" height="48" fill="#f3f3f3" stroke="#8a6d1d" stroke-width="1.6"/><line x1="1518" y1="650" x2="1518" y2="698" stroke="#8a6d1d" stroke-width="1.6"/>
 <text x="1629.0" y="680" text-anchor="middle" font-size="13.5" font-weight="normal" fill="#5c4710">D7 决策缓存(Redis)</text>
-<rect x="1180" y="880" width="280" height="48" fill="#f3f3f3" stroke="#8a6d1d" stroke-width="1.6"/><line x1="1198" y1="880" x2="1198" y2="928" stroke="#8a6d1d" stroke-width="1.6"/>
-<text x="1329.0" y="910" text-anchor="middle" font-size="13.5" font-weight="normal" fill="#5c4710">D4 数据权限库</text>
 <path d="M240,360 L380,430" fill="none" stroke="#333" stroke-width="1.4" marker-end="url(#arr)"/>
 <rect x="240" y="359" width="121" height="18" fill="#fff" opacity="0.9"/>
 <text x="300" y="372" text-anchor="middle" font-size="13" font-weight="normal" fill="#b03030">鉴权请求(带令牌)</text>
@@ -76,15 +71,6 @@
 <path d="M1040,500 L1120,500 L1120,580 L1690,580 L1690,520" fill="none" stroke="#333" stroke-width="1.4" marker-end="url(#arr)"/>
 <rect x="1196" y="559" width="108" height="18" fill="#fff" opacity="0.9"/>
 <text x="1250" y="572" text-anchor="middle" font-size="13" font-weight="normal" fill="#b03030">账号异常：空集合</text>
-<path d="M600,520 L600,735 L1180,735" fill="none" stroke="#333" stroke-width="1.4" stroke-dasharray="6,4" marker-end="url(#arr)"/>
-<rect x="788" y="714" width="184" height="18" fill="#fff" opacity="0.9"/>
-<text x="880" y="727" text-anchor="middle" font-size="13" font-weight="normal" fill="#b03030">目标数据(组织/项目/本人)</text>
-<path d="M1460,760 L1880,760 L1880,520" fill="none" stroke="#333" stroke-width="1.4" stroke-dasharray="6,4" marker-end="url(#arr)"/>
-<rect x="1646" y="739" width="108" height="18" fill="#fff" opacity="0.9"/>
-<text x="1700" y="752" text-anchor="middle" font-size="13" font-weight="normal" fill="#b03030">数据范围判定结果</text>
-<path d="M1320,790 L1320,880" fill="none" stroke="#333" stroke-width="1.4" stroke-dasharray="6,4" marker-end="url(#arr)"/>
-<rect x="1342" y="827" width="57" height="18" fill="#fff" opacity="0.9"/>
-<text x="1370" y="840" text-anchor="middle" font-size="13" font-weight="normal" fill="#b03030">数据范围</text>
 <path d="M1440,520 L1560,650" fill="none" stroke="#333" stroke-width="1.4" stroke-dasharray="6,4" marker-end="url(#arr)"/>
 <rect x="1359" y="657" width="82" height="18" fill="#fff" opacity="0.9"/>
 <text x="1400" y="670" text-anchor="middle" font-size="13" font-weight="normal" fill="#b03030">读写决策缓存</text>
@@ -99,10 +85,8 @@
 <text x="1700" y="810" text-anchor="middle" font-size="13" font-weight="normal" fill="#b03030">鉴权日志(成功与否)</text>
 <rect x="60" y="960" width="22" height="15" rx="4" fill="#e8f1fc" stroke="#1f4e8c"/>
 <text x="90" y="973" font-size="14">子加工</text>
-<rect x="172" y="960" width="22" height="15" rx="4" fill="#f3f3f3" stroke="#1f4e8c" stroke-dasharray="4,3"/>
-<text x="202" y="973" font-size="14">后续阶段实现</text>
-<rect x="326" y="960" width="22" height="15" fill="#fff" stroke="#222"/>
-<text x="356" y="973" font-size="14">外部实体</text>
-<rect x="452" y="960" width="22" height="15" fill="#fff7e0" stroke="#8a6d1d"/>
-<text x="482" y="973" font-size="14">数据存储</text>
-<text x="578" y="973" font-size="14" fill="#b03030">带斜线/双竖线为重复绘制；P4 为父图中的其他加工；审计日志在 RBAC3 阶段实现</text></svg>
+<rect x="172" y="960" width="22" height="15" fill="#fff" stroke="#222"/>
+<text x="202" y="973" font-size="14">外部实体</text>
+<rect x="298" y="960" width="22" height="15" fill="#fff7e0" stroke="#8a6d1d"/>
+<text x="328" y="973" font-size="14">数据存储</text>
+<text x="424" y="973" font-size="14" fill="#b03030">带斜线/双竖线为重复绘制；P4 为父图中的其他加工；审计日志在 RBAC3 阶段实现</text></svg>

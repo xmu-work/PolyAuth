@@ -5,6 +5,7 @@ import com.polyauth.oop.application.exception.ApplicationErrorCode;
 import com.polyauth.oop.application.exception.UseCaseException;
 import com.polyauth.oop.application.port.AccessTokenIssuer;
 import com.polyauth.oop.application.port.AccessTokenExpiredException;
+import com.polyauth.oop.application.port.AccountCrypto;
 import com.polyauth.oop.application.port.AuditTrail;
 import com.polyauth.oop.application.port.NameCipher;
 import com.polyauth.oop.application.port.PasswordVerifier;
@@ -38,6 +39,7 @@ public class AuthenticationUseCase {
     private final NameCipher nameCipher;
     private final TokenSecretHasher tokenSecretHasher;
     private final AccessTokenIssuer tokenIssuer;
+    private final AccountCrypto accountCrypto;
     private final AuditTrail auditTrail;
     private final Clock clock;
 
@@ -50,6 +52,7 @@ public class AuthenticationUseCase {
                                  NameCipher nameCipher,
                                  TokenSecretHasher tokenSecretHasher,
                                  AccessTokenIssuer tokenIssuer,
+                                 AccountCrypto accountCrypto,
                                  AuditTrail auditTrail,
                                  Clock clock) {
         this.userRepository = userRepository;
@@ -58,6 +61,7 @@ public class AuthenticationUseCase {
         this.nameCipher = nameCipher;
         this.tokenSecretHasher = tokenSecretHasher;
         this.tokenIssuer = tokenIssuer;
+        this.accountCrypto = accountCrypto;
         this.auditTrail = auditTrail;
         this.clock = clock;
     }
@@ -102,6 +106,8 @@ public class AuthenticationUseCase {
                     now.plusSeconds(issued.expiresIn()),
                     command.clientIp());
             tokenRepository.save(session);
+            userRepository.save(user.recordLogin(
+                    LocalDateTime.ofInstant(now, clock.getZone())));
             auditTrail.recordLogin(user.id(), user.userNo(), systemCode, true,
                     null, command.clientIp(), command.requestId());
             return new LoginResult(issued.value(), "Bearer", issued.expiresIn(),
@@ -170,6 +176,27 @@ public class AuthenticationUseCase {
                 .filter(user -> !user.deleted())
                 .map(UserAccount::userNo)
                 .orElse(null);
+    }
+
+    /**
+     * 自助修改当前账号密码。
+     */
+    public void changePassword(Long userId, String oldPassword, String newPassword) {
+        UserAccount user = userRepository.findById(userId)
+                .filter(item -> !item.deleted())
+                .orElseThrow(() -> new UseCaseException(
+                        ApplicationErrorCode.UNAUTHENTICATED, "请先登录"));
+        if (!passwordVerifier.verify(oldPassword, user.passwordHash())) {
+            throw new UseCaseException(
+                    ApplicationErrorCode.PARAM_INVALID, "原密码不正确");
+        }
+        if (newPassword == null || newPassword.isBlank()) {
+            throw new UseCaseException(
+                    ApplicationErrorCode.PARAM_INVALID, "新密码不能为空");
+        }
+        userRepository.save(user.changePassword(
+                accountCrypto.hashPassword(newPassword), userId,
+                LocalDateTime.ofInstant(clock.instant(), clock.getZone())));
     }
 
     private void validateAccount(UserAccount user) {

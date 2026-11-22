@@ -73,6 +73,21 @@ public final class RoleGrant {
     }
 
     /**
+     * 复用已回收的授权记录重新生效。
+     */
+    public RoleGrant reactivate(Instant effective, Instant expires,
+                                Long operatorId, String grantReason,
+                                Instant now) {
+        if (expires != null && !expires.isAfter(effective)) {
+            throw new DomainRuleException(
+                    DomainErrorCode.INVALID_GRANT_PERIOD,
+                    "失效时间必须晚于生效时间");
+        }
+        return new RoleGrant(id, userId, roleId, effective, expires, operatorId,
+                grantReason, createdAt, now, null, RoleGrantStatus.ACTIVE, version);
+    }
+
+    /**
      * 判断授权在目标时刻是否生效。
      */
     public boolean isEffective(Instant now) {

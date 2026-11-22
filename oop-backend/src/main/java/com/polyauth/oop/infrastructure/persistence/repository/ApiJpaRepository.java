@@ -3,6 +3,7 @@ package com.polyauth.oop.infrastructure.persistence.repository;
 import com.polyauth.oop.infrastructure.persistence.entity.ApiEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -15,4 +16,13 @@ public interface ApiJpaRepository extends JpaRepository<ApiEntity, Long> {
 
     Optional<ApiEntity> findBySystemIdAndApiPathAndHttpMethodAndIsDeleted(
             Long systemId, String apiPath, String httpMethod, Integer isDeleted);
+
+    Optional<ApiEntity> findByApiPathAndHttpMethodAndIsDeleted(
+            String apiPath, String httpMethod, Integer isDeleted);
+
+    List<ApiEntity> findBySystemIdAndIsDeletedOrderByIdAsc(
+            Long systemId, Integer isDeleted);
+
+    List<ApiEntity> findByPermissionIdAndIsDeletedOrderByIdAsc(
+            Long permissionId, Integer isDeleted);
 }

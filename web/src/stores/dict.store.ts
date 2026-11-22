@@ -7,8 +7,6 @@ import {
   ChangeTypeLabel,
   CommonStatus,
   CommonStatusLabel,
-  DataScopeType,
-  DataScopeTypeLabel,
   GrantStatus,
   GrantStatusLabel,
   OperationAction,
@@ -20,7 +18,6 @@ import {
   type AccountStatusCode,
   type ChangeTypeCode,
   type CommonStatusCode,
-  type DataScopeTypeCode,
   type GrantStatusCode,
   type OperationActionCode,
   type OrgTypeCode,
@@ -46,9 +43,6 @@ export const useDictStore = defineStore('dict', () => {
     toOptions<OperationActionCode>(OperationAction, OperationActionLabel),
   )
   const commonStatusOptions = computed(() => toOptions<CommonStatusCode>(CommonStatus, CommonStatusLabel))
-  const dataScopeTypeOptions = computed(() =>
-    toOptions<DataScopeTypeCode>(DataScopeType, DataScopeTypeLabel),
-  )
   const changeTypeOptions = computed(() => toOptions<ChangeTypeCode>(ChangeType, ChangeTypeLabel))
   const grantStatusOptions = computed(() =>
     toOptions<GrantStatusCode>(GrantStatus, GrantStatusLabel),
@@ -60,7 +54,6 @@ export const useDictStore = defineStore('dict', () => {
     orgTypeOptions,
     operationActionOptions,
     commonStatusOptions,
-    dataScopeTypeOptions,
     changeTypeOptions,
     grantStatusOptions,
   }

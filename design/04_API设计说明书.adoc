@@ -20,11 +20,10 @@
 本设计同时描述：
 
 . 结构化后端的完整 RBAC3 管理 API。
-. OOP 后端当前已迁移的角色与认证 API。
+. OOP 后端与结构化后端对齐的完整外部 API。
 . 课程项目管理系统使用的 8 个统一身份外部 API。
 
-两套后端共享路径、HTTP 状态码、业务码和必要响应字段，但当前功能覆盖不同。
-“已实现”只表示结构化后端能力时，必须在接口状态中明确写出。
+两套后端共享路径、HTTP 状态码、业务码、必要响应字段和 50 个功能权限端点。
 
 == 2 基础约定
 
@@ -96,7 +95,6 @@ Authorization: Bearer <accessToken>
 | PUT | `/roles/{roleId}` | `UpdateRoleDTO`
 | POST | `/roles/{roleId}/permissions` | 权限主键裸数组
 | DELETE | `/roles/{roleId}/permissions` | 权限主键裸数组
-| POST | `/open/authorize/resource` | 资源授权查询对象
 |===
 
 角色更新固定使用 JSON：
@@ -124,12 +122,12 @@ Authorization: Bearer <accessToken>
 
 | POST | `/auth/login` | 已实现
 | POST | `/auth/logout` | 已实现
-| GET | `/auth/me` | 未迁移
-| GET | `/auth/permissions/{permission}` | 未迁移
-| GET | `/auth/departments` | 未迁移
+| GET | `/auth/me` | 已实现
+| GET | `/auth/permissions/{permission}` | 已实现
+| GET | `/auth/departments` | 已实现
 | GET | `/auth/api-permissions/{operationId}` | 已实现
-| GET | `/auth/departments/{departmentId}/users` | 未迁移
-| GET | `/auth/users/{userId}` | 未迁移
+| GET | `/auth/departments/{departmentId}/users` | 已实现
+| GET | `/auth/users/{userId}` | 已实现
 |===
 
 登录响应中的 `userId` 为本地数据库主键字符串，是管理后台兼容字段。统一身份用户标识使用
@@ -221,7 +219,7 @@ JWT `sub` 或 `/auth/me.subject`，值为 `user_no`。`/auth/users/{userId}` 使
 | GET | `/apis/{apiId}` | API 详情
 |===
 
-=== 6.6 系统与数据范围
+=== 6.6 系统
 
 [cols="1,2,3"]
 |===
@@ -230,12 +228,6 @@ JWT `sub` 或 `/auth/me.subject`，值为 `user_no`。`/auth/users/{userId}` 使
 | POST | `/systems` | 登记系统
 | GET | `/systems` | 系统列表
 | GET | `/systems/{systemId}` | 系统详情
-| POST | `/systems/data-scopes` | 创建数据范围字典
-| GET | `/systems/data-scopes` | 查询数据范围字典
-| POST | `/systems/role-data-scopes` | 兼容旧契约的角色范围绑定
-| GET | `/roles/{roleId}/data-scopes` | 查询角色数据范围
-| POST | `/roles/{roleId}/data-scopes` | 授予角色数据范围
-| DELETE | `/roles/{roleId}/data-scopes/{bindingId}` | 回收角色数据范围
 |===
 
 === 6.7 组织机构
@@ -259,8 +251,6 @@ JWT `sub` 或 `/auth/me.subject`，值为 `user_no`。`/auth/users/{userId}` 使
 | 方法 | 路径 | 说明
 
 | GET | `/open/permissions` | 查询用户前端权限主键集合
-| GET | `/open/data-scopes` | 查询用户当前生效的数据范围
-| POST | `/open/authorize/resource` | 功能权限与数据范围联合判定
 | GET | `/logs` | 统一日志分页查询
 | GET | `/logs/export` | 导出筛选后的 CSV
 |===
@@ -276,6 +266,7 @@ JWT `sub` 或 `/auth/me.subject`，值为 `user_no`。`/auth/users/{userId}` 使
 | 1001 | PARAM_INVALID | 400
 | 1004 | IDEMPOTENCY_CONFLICT | 409
 | 1005 | RESOURCE_NOT_FOUND | 404
+| 1006 | METHOD_NOT_ALLOWED | 405
 | 2001 | UNAUTHENTICATED | 401
 | 2002 | TOKEN_INVALID | 401
 | 2003 | TOKEN_EXPIRED | 401
@@ -283,7 +274,6 @@ JWT `sub` 或 `/auth/me.subject`，值为 `user_no`。`/auth/users/{userId}` 使
 | 2005 | ACCOUNT_SEALED | 403
 | 2006 | ACCOUNT_DISABLED | 403
 | 2007 | NO_FUNCTION_PERM | 403
-| 2008 | OUT_OF_DATA_SCOPE | 403
 | 2009 | SIGNATURE_INVALID | 401
 | 2010 | REPLAY_DETECTED | 401
 | 2011 | APP_DISABLED | 403
@@ -295,7 +285,6 @@ JWT `sub` 或 `/auth/me.subject`，值为 `user_no`。`/auth/users/{userId}` 使
 | 3009 | RESOURCE_DUPLICATE | 409
 | 3010 | TARGET_USER_ABNORMAL | 409
 | 3011 | ROLE_EXCLUSION_CONFLICT | 409
-| 3012 | DATA_SCOPE_INVALID | 400
 | 5000 | INTERNAL_ERROR | 500
 | 5001 | SERVICE_UNAVAILABLE | 503
 |===
@@ -330,5 +319,5 @@ JWT `sub` 或 `/auth/me.subject`，值为 `user_no`。`/auth/users/{userId}` 使
 * 令牌校验失败使用数字 2001。
 * 不存在的 operationId 使用 `API_OPERATION_NOT_FOUND`。
 
-OOP 尚未迁移的接口不能视为共享已实现能力。执行双后端测试前需分别启动 8080 和 8081，
-并使用相同 schema/seed 基线。
+两套后端注册相同的外部端点。执行双后端测试前需分别启动 8080 和 8081，
+并使用相同 schema/seed 基线；真实 MySQL 契约脚本通过后才能作为现场运行结论。

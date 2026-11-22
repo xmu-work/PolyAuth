@@ -2,21 +2,20 @@ import sys
 from svglib import Svg
 
 ROW, TOP = 270, 90
-s = Svg(2320, TOP + 5 * ROW + 90, "P2 账号与授权管理 — 2级数据流图")
+s = Svg(2320, TOP + 4 * ROW + 90, "P2 账号与授权管理 — 2级数据流图")
 
 # 左侧通栏：E2；右侧通栏：父图中的 P5、P4（虚线框表示本图边界外的加工）
-s.entity(40, TOP + 40, 170, 5 * ROW - 60, "E2 管理员", "")
-s.process(1830, TOP + 40 + ROW, 200, 4 * ROW - 60, "P5", "变更通知", dashed=True)
-s.process(2080, TOP + 40, 200, 5 * ROW - 60, "P4", "日志审计", dashed=True)
+s.entity(40, TOP + 40, 170, 4 * ROW - 60, "E2 管理员", "")
+s.process(1830, TOP + 40 + ROW, 200, 3 * ROW - 60, "P5", "变更通知", dashed=True)
+s.process(2080, TOP + 40, 200, 4 * ROW - 60, "P4", "日志审计", dashed=True)
 
 rows = [
     ("P2.1 建立账号", "AccountService.createUser", "建账号请求", False),
     ("P2.2 变更账号状态/封存", "AccountService.changeStatus", "状态变更请求", False),
     ("P2.3 授予/撤销用户角色", "GrantService.grantRole/revokeRole", "授予/撤销请求", False),
     ("P2.4 绑定/解绑角色功能点", "FunctionPermissionService.bind/unbind", "绑定/解绑请求", False),
-    ("P2.5 数据范围授权（RBAC3）", "DataPermissionService（待实现）", "数据范围授权请求", True),
 ]
-log_labels = ["账号日志", "封存日志", "授权日志", "绑定日志", "授权日志"]
+log_labels = ["账号日志", "封存日志", "授权日志", "绑定日志"]
 
 for i, (name, impl, req, later) in enumerate(rows):
     y0 = TOP + i * ROW
@@ -67,11 +66,6 @@ st(1000, y0 + 222, "D3 角色权限库")
 s.flow([(1030, y0 + 222), (760, y0 + 190)], "角色/功能点", 820, y0 + 220)
 s.flow([(880, y0 + 190), (1220, y0 + 222)], "角色-功能点绑定", 1360, y0 + 214)
 
-# 行 5：P2.5 数据范围授权
-y0 = TOP + 4 * ROW
-st(1000, y0 + 222, "D4 数据权限库")
-s.flow([(880, y0 + 190), (1220, y0 + 222)], "角色-数据范围授权", 1370, y0 + 214, dashed=True)
-
-s.legend(TOP + 5 * ROW + 50, [("process", "子加工"), ("faded", "后续阶段实现"), ("entity", "外部实体"), ("store", "数据存储"),
+s.legend(TOP + 4 * ROW + 50, [("process", "子加工"), ("entity", "外部实体"), ("store", "数据存储"),
                                ("text", "左上角带斜线/双竖线为重复绘制；虚线框 P4、P5 为父图中的其他加工")])
 s.save(sys.argv[1])

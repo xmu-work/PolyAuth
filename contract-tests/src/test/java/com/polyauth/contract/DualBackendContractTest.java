@@ -137,6 +137,83 @@ class DualBackendContractTest {
                 .isEqualTo("API_OPERATION_NOT_FOUND");
     }
 
+    @Test
+    @DisplayName("FR-38 双后端均返回统一身份当前用户")
+    void identityCurrentUserIsAvailable() throws Exception {
+        ContractHttpClient.Response response = client.get("/auth/me", token);
+
+        assertThat(response.status()).isEqualTo(200);
+        JsonNode body = client.json(response);
+        assertThat(body.path("subject").asText()).isNotBlank();
+        assertThat(body.path("roles").isArray()).isTrue();
+        assertThat(body.path("permissions").isArray()).isTrue();
+    }
+
+    @Test
+    @DisplayName("FR-09 双后端均返回组织树")
+    void organizationTreeIsAvailable() throws Exception {
+        ContractHttpClient.Response response = client.get("/organizations", token);
+
+        assertThat(response.status()).isEqualTo(200);
+        JsonNode body = client.json(response);
+        assertThat(body.path("code").asInt()).isZero();
+        assertThat(body.path("data").isArray()).isTrue();
+    }
+
+    @Test
+    @DisplayName("FR-35 双后端均返回业务系统列表")
+    void systemListIsAvailable() throws Exception {
+        ContractHttpClient.Response response = client.get("/systems", token);
+
+        assertThat(response.status()).isEqualTo(200);
+        assertThat(client.json(response).path("data").isArray()).isTrue();
+    }
+
+    @Test
+    @DisplayName("FR-17 双后端均返回前端权限树")
+    void permissionTreeIsAvailable() throws Exception {
+        ContractHttpClient.Response response =
+                client.get("/permissions?systemId=1", token);
+
+        assertThat(response.status()).isEqualTo(200);
+        assertThat(client.json(response).path("data").isArray()).isTrue();
+    }
+
+    @Test
+    @DisplayName("FR-19 双后端均返回后端 API 目录")
+    void apiCatalogIsAvailable() throws Exception {
+        ContractHttpClient.Response response =
+                client.get("/apis?systemId=1", token);
+
+        assertThat(response.status()).isEqualTo(200);
+        assertThat(client.json(response).path("data").isArray()).isTrue();
+    }
+
+    @Test
+    @DisplayName("FR-02 双后端均返回用户分页")
+    void userPageIsAvailable() throws Exception {
+        ContractHttpClient.Response response =
+                client.get("/users?page=1&size=20", token);
+
+        assertThat(response.status()).isEqualTo(200);
+        JsonNode data = client.json(response).path("data");
+        assertThat(data.path("page").asInt()).isEqualTo(1);
+        assertThat(data.path("pageSize").asInt()).isEqualTo(20);
+        assertThat(data.path("list").isArray()).isTrue();
+    }
+
+    @Test
+    @DisplayName("FR-45 双后端均返回统一日志分页")
+    void auditLogPageIsAvailable() throws Exception {
+        ContractHttpClient.Response response =
+                client.get("/logs?page=1&size=20", token);
+
+        assertThat(response.status()).isEqualTo(200);
+        JsonNode data = client.json(response).path("data");
+        assertThat(data.path("total").isNumber()).isTrue();
+        assertThat(data.path("list").isArray()).isTrue();
+    }
+
     private static Map<String, String> roleForm(String code, String name) {
         Map<String, String> form = new LinkedHashMap<>();
         form.put("roleCode", code);

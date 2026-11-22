@@ -65,7 +65,9 @@ public class JpaRolePermissionRepositoryAdapter implements RolePermissionReposit
     }
 
     private RolePermissionGrant toDomain(RolePermissionEntity entity) {
-        return new RolePermissionGrant(entity.getRoleId(), entity.getPermissionId(),
-                OperationAction.valueOf(entity.getAllowedAction()));
+        return new RolePermissionGrant(entity.getId(), entity.getRoleId(),
+                entity.getPermissionId(),
+                OperationAction.valueOf(entity.getAllowedAction()),
+                entity.getCreatedAt(), entity.getCreatedBy());
     }
 }

@@ -15,6 +15,7 @@ import java.time.Clock;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
@@ -85,5 +86,30 @@ public class PermissionAccessUseCase {
      */
     public boolean hasPermission(Long userId, String systemCode, Long permissionId) {
         return permissions(userId, systemCode).contains(permissionId);
+    }
+
+    /**
+     * 查询用户当前有效角色编码，供统一身份契约返回。
+     */
+    public Set<String> roleCodes(Long userId) {
+        UserAccount user = userRepository.findById(userId).orElse(null);
+        if (user == null || !user.canAuthenticate()) {
+            return Set.of();
+        }
+        List<RoleGrant> grants = roleGrantRepository.findByUserId(userId);
+        Map<Long, Role> roles = roleRepository.findAll().stream()
+                .collect(Collectors.toMap(
+                        Role::id, Function.identity(), (left, right) -> left));
+        Set<Long> roleIds = com.polyauth.oop.domain.service.RoleHierarchy
+                .activeRoleIds(grants.stream()
+                                .filter(grant -> grant.isEffective(clock.instant()))
+                                .map(RoleGrant::roleId)
+                                .collect(Collectors.toSet()),
+                        roleId -> java.util.Optional.ofNullable(roles.get(roleId)));
+        return roleIds.stream()
+                .map(roles::get)
+                .filter(java.util.Objects::nonNull)
+                .map(Role::roleCode)
+                .collect(Collectors.toCollection(TreeSet::new));
     }
 }

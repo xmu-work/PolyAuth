@@ -11,16 +11,19 @@ import com.polyauth.oop.interfaces.security.AuthInterceptor;
 import com.polyauth.oop.interfaces.vo.ApiPermissionCheckVO;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestAttribute;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -48,8 +51,11 @@ public class AuthController {
      * 账号密码登录并签发 JWT。
      */
     @PostMapping("/login")
-    public LoginResult login(@Valid @RequestBody LoginRequestDTO request,
-                             HttpServletRequest servletRequest) {
+    public LoginResult login(
+            @Valid
+            @RequestBody
+            LoginRequestDTO request,
+            HttpServletRequest servletRequest) {
         return authenticationUseCase.login(new LoginCommand(
                 request.username(), request.password(), request.systems(),
                 servletRequest.getRemoteAddr(), RequestIdFilter.requestId(servletRequest)));
@@ -60,7 +66,9 @@ public class AuthController {
      */
     @PostMapping("/logout")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void logout(@RequestHeader("Authorization") String authorization) {
+    public void logout(
+            @RequestHeader("Authorization")
+            String authorization) {
         authenticationUseCase.logout(AuthInterceptor.bearerToken(authorization));
     }
 
@@ -68,7 +76,9 @@ public class AuthController {
      * 校验当前访问令牌是否有效。
      */
     @GetMapping("/validate")
-    public ApiResult<Boolean> validate(@RequestHeader("Authorization") String authorization) {
+    public ApiResult<Boolean> validate(
+            @RequestHeader("Authorization")
+            String authorization) {
         return ApiResult.success(
                 authenticationUseCase.validate(AuthInterceptor.bearerToken(authorization)));
     }
@@ -78,12 +88,33 @@ public class AuthController {
      */
     @GetMapping("/api-permissions/{operationId}")
     public ApiPermissionCheckVO apiPermission(
-            @RequestAttribute(AuthInterceptor.ATTR_USER_ID) Long userId,
-            @RequestAttribute(AuthInterceptor.ATTR_SYSTEM_CODE) String systemCode,
+            @RequestAttribute(AuthInterceptor.ATTR_USER_ID)
+            Long userId,
+            @RequestAttribute(AuthInterceptor.ATTR_SYSTEM_CODE)
+            String systemCode,
             @PathVariable
             @Size(min = 1, max = 128)
             String operationId) {
         return new ApiPermissionCheckVO(operationId,
                 operationAccessUseCase.operationAllowed(userId, systemCode, operationId));
+    }
+
+    /**
+     * 当前用户自助修改密码。
+     */
+    @PutMapping("/password")
+    public ApiResult<Void> changePassword(
+            @RequestAttribute(AuthInterceptor.ATTR_USER_ID)
+            Long userId,
+            @RequestParam
+            @NotBlank
+            @Size(max = 64)
+            String oldPassword,
+            @RequestParam
+            @NotBlank
+            @Size(max = 64)
+            String newPassword) {
+        authenticationUseCase.changePassword(userId, oldPassword, newPassword);
+        return ApiResult.success();
     }
 }

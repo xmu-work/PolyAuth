@@ -1,8 +1,7 @@
-# RBAC Docker Swarm 部署栈（含前端，8 台目标形态）
+# RBAC Docker Swarm 正式部署栈（8 台，全部 2 核 2G）
 # 用法：在任一 manager 节点，cd deploy/swarm && docker stack deploy -c iam-stack.yml --with-registry-auth iam
-# 当前 4 台阶段请先用 iam-stack-backend.yml（只含 mysql/redis/app）。
-# 镜像地址里的 ORG 请替换为你在华为云 SWR 创建的组织名，region 按实际控制台地址调整。
-# 注意：app 的 replicas=3 要求有 3 台 role=app 节点，节点不够时先把 replicas 改小。
+# 拓扑：3 manager（web）+ 3 role=app（结构化后端）+ 1 role=db + 1 role=oop。
+# 每台 2 核 2G；每个应用节点只放一个 JVM，滚动更新使用 stop-first，避免同节点双 JVM 被 OOM。
 
 version: "3.8"
 
@@ -13,6 +12,7 @@ networks:
 secrets:
   jwt_secret:           { external: true }
   crypto_aes_key:       { external: true }
+  hmac_key:             { external: true }
   db_app_password:      { external: true }
   mysql_root_password:  { external: true }
   redis_password:       { external: true }
@@ -21,7 +21,7 @@ secrets:
 services:
 
   mysql:
-    image: swr.cn-north-4.myhuaweicloud.com/ORG/mysql:8.0
+    image: swr.cn-north-4.myhuaweicloud.com/ooad-mytx/mysql:8.0
     networks:
       iam-net:
         aliases: [mysql]
@@ -42,7 +42,7 @@ services:
       - mysql_root_password
       - db_app_password
     volumes:
-      # 数据落在 swarm-04 本地磁盘；换节点 = 丢数据，所以必须配合 placement 约束
+      # 数据落在唯一 role=db 节点的本地磁盘；换节点 = 丢数据，所以必须配合 placement 约束
       - /srv/iam/mysql:/var/lib/mysql
     stop_grace_period: 1m
     deploy:
@@ -61,7 +61,7 @@ services:
       start_period: 120s
 
   redis:
-    image: swr.cn-north-4.myhuaweicloud.com/ORG/redis:7-alpine
+    image: swr.cn-north-4.myhuaweicloud.com/ooad-mytx/redis:7-alpine
     networks:
       iam-net:
         aliases: [redis]
@@ -85,7 +85,7 @@ services:
       retries: 5
 
   app:
-    image: swr.cn-north-4.myhuaweicloud.com/ORG/iam-app:1.0.0
+    image: swr.cn-north-4.myhuaweicloud.com/ooad-mytx/iam-app:1.0.1
     networks:
       iam-net:
         aliases: [app]
@@ -103,13 +103,14 @@ services:
       SPRING_DATA_REDIS_HOST: redis
       SPRING_DATA_REDIS_PORT: "6379"
       SPRING_DATA_REDIS_TIMEOUT: "3000ms"
-      LOGGING_LEVEL_COM_IAM_PLATFORM_INTERFACES: DEBUG
-      LOGGING_LEVEL_COM_IAM_PLATFORM_SERVICE: DEBUG
-      LOGGING_LEVEL_COM_IAM_PLATFORM_INFRASTRUCTURE: DEBUG
+      LOGGING_LEVEL_COM_POLYAUTH_STRUCTURED_INTERFACES: DEBUG
+      LOGGING_LEVEL_COM_POLYAUTH_STRUCTURED_APPLICATION: DEBUG
+      LOGGING_LEVEL_COM_POLYAUTH_STRUCTURED_INFRASTRUCTURE: DEBUG
       TZ: Asia/Shanghai
     secrets:
       - jwt_secret
       - crypto_aes_key
+      - hmac_key
       - db_app_password
       - redis_password
       - iam_default_password
@@ -136,8 +137,62 @@ services:
       retries: 5
       start_period: 120s
 
+  oop:
+    image: swr.cn-north-4.myhuaweicloud.com/ooad-mytx/iam-oop-app:1.0.1
+    networks:
+      iam-net:
+        aliases: [oop]
+    ports:
+      # 单副本 OOP 后端发布在 role=oop 节点，供教师直接检查 DDD API。
+      - target: 8080
+        published: 8082
+        protocol: tcp
+        mode: host
+    environment:
+      SERVER_PORT: "8080"
+      MANAGEMENT_SERVER_PORT: "8082"
+      MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: "health,info"
+      MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS: "never"
+      SPRING_DATASOURCE_URL: "jdbc:mysql://mysql:3306/iam_platform_oop?useUnicode=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true"
+      SPRING_DATASOURCE_USERNAME: iam_app
+      SPRING_DATASOURCE_DRUID_INITIAL_SIZE: "2"
+      SPRING_DATASOURCE_DRUID_MIN_IDLE: "2"
+      SPRING_DATASOURCE_DRUID_MAX_ACTIVE: "8"
+      SPRING_DATASOURCE_DRUID_STAT_VIEW_SERVLET_ENABLED: "false"
+      LOGGING_LEVEL_COM_POLYAUTH_OOP_INTERFACES: DEBUG
+      LOGGING_LEVEL_COM_POLYAUTH_OOP_APPLICATION: DEBUG
+      LOGGING_LEVEL_COM_POLYAUTH_OOP_INFRASTRUCTURE: DEBUG
+      TZ: Asia/Shanghai
+    secrets:
+      - jwt_secret
+      - crypto_aes_key
+      - hmac_key
+      - db_app_password
+      - redis_password
+      - iam_default_password
+    stop_grace_period: 30s
+    deploy:
+      replicas: 1
+      placement:
+        constraints: [node.labels.role == oop]
+      resources:
+        limits: { memory: 1280M }
+        reservations: { memory: 512M }
+      restart_policy: { condition: on-failure, delay: 15s }
+      update_config:
+        parallelism: 1
+        delay: 30s
+        order: stop-first
+        failure_action: pause
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8082/actuator/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 120s
+
   web:
-    image: swr.cn-north-4.myhuaweicloud.com/ORG/iam-web:1.0.0
+    image: swr.cn-north-4.myhuaweicloud.com/ooad-mytx/iam-web:1.0.1
     networks:
       iam-net:
         aliases: [web]

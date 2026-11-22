@@ -3,6 +3,7 @@ package com.polyauth.oop.infrastructure.persistence.repository;
 import com.polyauth.oop.infrastructure.persistence.entity.SystemEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -11,4 +12,6 @@ import java.util.Optional;
 public interface SystemJpaRepository extends JpaRepository<SystemEntity, Long> {
 
     Optional<SystemEntity> findBySystemCodeAndIsDeleted(String systemCode, Integer isDeleted);
+
+    List<SystemEntity> findByIsDeleted(Integer isDeleted);
 }

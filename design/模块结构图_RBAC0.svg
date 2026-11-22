@@ -53,7 +53,7 @@
 <text x="220.0" y="498.0" text-anchor="middle" font-size="12.5" font-weight="normal" fill="#33507a">AuthService.revokeUserTokens</text>
 <rect x="350" y="450" width="220" height="64" fill="#e8f1fc" stroke="#1f4e8c" stroke-width="1.6"/>
 <text x="460.0" y="479.0" text-anchor="middle" font-size="14" font-weight="bold" fill="#13396b">回收全部角色</text>
-<text x="460.0" y="498.0" text-anchor="middle" font-size="12.5" font-weight="normal" fill="#33507a">GrantService.revokeAllRoles</text>
+<text x="460.0" y="498.0" text-anchor="middle" font-size="12.5" font-weight="normal" fill="#33507a">RoleService.revokeAllRoles</text>
 <line x1="276.0" y1="364" x2="220.0" y2="450" stroke="#1f4e8c" stroke-width="1.4" marker-end="url(#arrb)"/>
 <rect x="253" y="399" width="88" height="17" fill="#fff" opacity="0.9"/>
 <text x="256.0" y="411.0" text-anchor="start" font-size="12" font-weight="normal" fill="#555">userId↓</text>
@@ -63,7 +63,7 @@
 <text x="600" y="620" text-anchor="middle" font-size="17" font-weight="bold" fill="#13396b">② P1 登录认证</text>
 <rect x="390" y="650" width="420" height="70" fill="#e8f1fc" stroke="#1f4e8c" stroke-width="1.6"/>
 <text x="600.0" y="682.0" text-anchor="middle" font-size="15" font-weight="bold" fill="#13396b">登录主控</text>
-<text x="600.0" y="701.0" text-anchor="middle" font-size="12.5" font-weight="normal" fill="#33507a">AuthController.login → AuthService.login</text>
+<text x="600.0" y="701.0" text-anchor="middle" font-size="12.5" font-weight="normal" fill="#33507a">IdentityAuthController.login → AuthService.login</text>
 <rect x="80" y="820" width="220" height="64" fill="#e8f1fc" stroke="#1f4e8c" stroke-width="1.6"/>
 <text x="190.0" y="849.0" text-anchor="middle" font-size="14" font-weight="bold" fill="#13396b">核对密码</text>
 <text x="190.0" y="868.0" text-anchor="middle" font-size="12.5" font-weight="normal" fill="#33507a">CryptoComponent.verifyPassword</text>
@@ -96,8 +96,8 @@
 <text x="1365.0" y="329.0" text-anchor="middle" font-size="14" font-weight="bold" fill="#13396b">输入：令牌认证</text>
 <text x="1365.0" y="348.0" text-anchor="middle" font-size="12.5" font-weight="normal" fill="#33507a">AuthService.authenticate</text>
 <rect x="1510" y="300" width="250" height="64" fill="#e8f1fc" stroke="#1f4e8c" stroke-width="1.6"/>
-<text x="1635.0" y="329.0" text-anchor="middle" font-size="14" font-weight="bold" fill="#13396b">变换：定位功能点</text>
-<text x="1635.0" y="348.0" text-anchor="middle" font-size="12.5" font-weight="normal" fill="#33507a">FunctionPermissionService.findByApi</text>
+<text x="1635.0" y="329.0" text-anchor="middle" font-size="14" font-weight="bold" fill="#13396b">变换：定位 API</text>
+<text x="1635.0" y="348.0" text-anchor="middle" font-size="12.5" font-weight="normal" fill="#33507a">ApiService.findByRequest</text>
 <rect x="1780" y="300" width="250" height="64" fill="#e8f1fc" stroke="#1f4e8c" stroke-width="1.6"/>
 <text x="1905.0" y="329.0" text-anchor="middle" font-size="14" font-weight="bold" fill="#13396b">变换：功能权限判定</text>
 <text x="1905.0" y="348.0" text-anchor="middle" font-size="12.5" font-weight="normal" fill="#33507a">DecisionService.hasPermission</text>
@@ -126,23 +126,23 @@
 <text x="1340.0" y="673.0" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#13396b">① 账号为正常状态</text>
 <line x1="1905.0" y1="534" x2="1340.0" y2="640" stroke="#1f4e8c" stroke-width="1.4" marker-end="url(#arrb)"/>
 <rect x="1454" y="640" width="200" height="56" fill="#e8f1fc" stroke="#1f4e8c" stroke-width="1.6"/>
-<text x="1554.0" y="673.0" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#13396b">② 有效的用户-角色绑定</text>
+<text x="1554.0" y="673.0" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#13396b">② 有效期内的角色绑定</text>
 <line x1="1905.0" y1="534" x2="1554.0" y2="640" stroke="#1f4e8c" stroke-width="1.4" marker-end="url(#arrb)"/>
 <rect x="1668" y="640" width="200" height="56" fill="#e8f1fc" stroke="#1f4e8c" stroke-width="1.6"/>
-<text x="1768.0" y="673.0" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#13396b">③ 过滤停用角色</text>
+<text x="1768.0" y="673.0" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#13396b">③ 启用角色及父角色</text>
 <line x1="1905.0" y1="534" x2="1768.0" y2="640" stroke="#1f4e8c" stroke-width="1.4" marker-end="url(#arrb)"/>
 <rect x="1882" y="640" width="200" height="56" fill="#e8f1fc" stroke="#1f4e8c" stroke-width="1.6"/>
-<text x="1982.0" y="673.0" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#13396b">④ 取角色绑定的功能点</text>
+<text x="1982.0" y="673.0" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#13396b">④ 取角色权限候选</text>
 <line x1="1905.0" y1="534" x2="1982.0" y2="640" stroke="#1f4e8c" stroke-width="1.4" marker-end="url(#arrb)"/>
 <rect x="2096" y="640" width="200" height="56" fill="#e8f1fc" stroke="#1f4e8c" stroke-width="1.6"/>
-<text x="2196.0" y="673.0" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#13396b">⑤ 只保留本系统有效功能点</text>
+<text x="2196.0" y="673.0" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#13396b">⑤ 过滤系统、操作与状态</text>
 <line x1="1905.0" y1="534" x2="2196.0" y2="640" stroke="#1f4e8c" stroke-width="1.4" marker-end="url(#arrb)"/>
-<text x="1780" y="760" text-anchor="middle" font-size="13" font-weight="normal" fill="#33507a">开放接口 OpenApiController 直接调用 hasPermission / checkPermissions / getUserFunctionPoints，复用同一判定逻辑（FR-38）</text>
+<text x="1780" y="760" text-anchor="middle" font-size="13" font-weight="normal" fill="#33507a">开放接口 OpenApiController 直接调用 DecisionService.hasPermission / getUserPermissions，复用同一判定逻辑（FR-38）</text>
 <line x1="40" y1="960" x2="2360" y2="960" stroke="#bbb" stroke-dasharray="6,4"/>
 <text x="1200" y="990" text-anchor="middle" font-size="15" font-weight="bold" fill="#5c4710">公共下层模块（被上面多数模块调用，为减少连线未逐一画出）</text>
 <rect x="120" y="1010" width="560" height="64" fill="#fff7e0" stroke="#8a6d1d" stroke-width="1.6"/>
 <text x="400.0" y="1039.0" text-anchor="middle" font-size="15" font-weight="bold" fill="#13396b">数据访问：JPA Repository</text>
-<text x="400.0" y="1058.0" text-anchor="middle" font-size="12.5" font-weight="normal" fill="#33507a">IamUser/Role/UserRole/RoleFunction/FunctionPoint/Module/System/Token</text>
+<text x="400.0" y="1058.0" text-anchor="middle" font-size="12.5" font-weight="normal" fill="#33507a">IamUser/Role/UserRole/RolePermission/Permission/System/Token</text>
 <rect x="700" y="1010" width="360" height="64" fill="#fff7e0" stroke="#8a6d1d" stroke-width="1.6"/>
 <text x="880.0" y="1039.0" text-anchor="middle" font-size="15" font-weight="bold" fill="#13396b">加密脱敏：CryptoComponent</text>
 <text x="880.0" y="1058.0" text-anchor="middle" font-size="12.5" font-weight="normal" fill="#33507a">AES-GCM 加解密 / PBKDF2 / SHA-256 / 脱敏</text>
@@ -151,7 +151,7 @@
 <text x="1320.0" y="1058.0" text-anchor="middle" font-size="12.5" font-weight="normal" fill="#33507a">BusinessException / GlobalExceptionHandler / Result</text>
 <rect x="1580" y="1010" width="360" height="64" fill="#fff7e0" stroke="#8a6d1d" stroke-width="1.6"/>
 <text x="1760.0" y="1039.0" text-anchor="middle" font-size="15" font-weight="bold" fill="#13396b">状态常量</text>
-<text x="1760.0" y="1058.0" text-anchor="middle" font-size="12.5" font-weight="normal" fill="#33507a">RoleService.ROLE_ACTIVE / GrantService.GRANT_ACTIVE</text>
+<text x="1760.0" y="1058.0" text-anchor="middle" font-size="12.5" font-weight="normal" fill="#33507a">IamRole / IamUserRole 状态字段</text>
 <rect x="60" y="1130" width="22" height="15" fill="#e8f1fc" stroke="#1f4e8c"/>
 <text x="90" y="1143" font-size="14">模块</text>
 <rect x="158" y="1130" width="22" height="15" fill="#fff7e0" stroke="#8a6d1d"/>

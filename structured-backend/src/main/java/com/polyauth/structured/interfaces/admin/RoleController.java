@@ -1,11 +1,8 @@
 package com.polyauth.structured.interfaces.admin;
 
 import com.polyauth.structured.application.role.RoleService;
-import com.polyauth.structured.application.datascope.DataScopeService;
 import com.polyauth.structured.common.result.Result;
-import com.polyauth.structured.interfaces.admin.dto.BindRoleDataScopeDTO;
 import com.polyauth.structured.interfaces.admin.dto.UpdateRoleDTO;
-import com.polyauth.structured.interfaces.admin.vo.RoleDataScopeVO;
 import com.polyauth.structured.interfaces.admin.vo.RoleVO;
 import com.polyauth.structured.interfaces.admin.vo.RolePermissionVO;
 import com.polyauth.structured.interfaces.admin.vo.UserRoleVO;
@@ -37,7 +34,6 @@ import java.util.List;
 public class RoleController {
 
     private final RoleService roleService;
-    private final DataScopeService dataScopeService;
 
     @PostMapping
     public Result<RoleVO> create(
@@ -51,7 +47,7 @@ public class RoleController {
             String roleName,
             @RequestParam(defaultValue = "FUNC")
             @NotBlank
-            @Pattern(regexp = "FUNC|DATA")
+            @Pattern(regexp = "FUNC")
             String roleType,
             @RequestParam(required = false)
             @Size(max = 500)
@@ -79,53 +75,6 @@ public class RoleController {
         return Result.success(RoleVO.from(roleService.updateRole(
                 roleId, dto.getRoleName(), dto.getDescription(),
                 dto.getStatus(), dto.getParentId(), operatorId)));
-    }
-
-    /**
-     * 查询角色的数据范围授权。
-     */
-    @GetMapping("/{roleId}/data-scopes")
-    public Result<List<RoleDataScopeVO>> roleDataScopes(
-            @PathVariable
-            @Positive
-            Long roleId) {
-        return Result.success(dataScopeService.listRoleDataScopes(roleId).stream()
-                .map(RoleDataScopeVO::from)
-                .toList());
-    }
-
-    /**
-     * 为角色绑定数据范围。
-     */
-    @PostMapping("/{roleId}/data-scopes")
-    public Result<RoleDataScopeVO> bindRoleDataScope(
-            @PathVariable
-            @Positive
-            Long roleId,
-            @Valid
-            BindRoleDataScopeDTO dto,
-            @RequestAttribute(AuthInterceptor.ATTR_USER_ID)
-            Long operatorId) {
-        return Result.success(RoleDataScopeVO.from(dataScopeService.bindRoleDataScope(
-                roleId, dto.getScopeType(), dto.getOrgId(), dto.getProjectId(),
-                dto.getExpireTime(), operatorId)));
-    }
-
-    /**
-     * 回收角色数据范围授权。
-     */
-    @DeleteMapping("/{roleId}/data-scopes/{bindingId}")
-    public Result<Void> revokeRoleDataScope(
-            @PathVariable
-            @Positive
-            Long roleId,
-            @PathVariable
-            @Positive
-            Long bindingId,
-            @RequestAttribute(AuthInterceptor.ATTR_USER_ID)
-            Long operatorId) {
-        dataScopeService.revokeRoleDataScope(bindingId, operatorId);
-        return Result.success();
     }
 
     /**

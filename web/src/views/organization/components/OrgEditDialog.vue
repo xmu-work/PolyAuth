@@ -86,7 +86,7 @@ async function submit(): Promise<void> {
         type="warning"
         :closable="false"
         show-icon
-        title="停用会同时停用全部下级组织；已绑定数据范围将无法匹配这些节点。"
+        title="停用会同时停用全部下级组织。"
       />
     </el-form>
     <template #footer>

@@ -1,6 +1,8 @@
 # 后端升级方案 V1.1：上线组织机构接口
 
-接在 `DEPLOYMENT_4NODES.md` 之后执行。目标：把线上 `iam-app:1.0.0`（旧版，组织接口为占位实现，调用即 500）升级到包含组织接口的 `iam-app:1.0.1`。
+> 本文保留为 `iam-app:1.0.1` 的历史升级记录。当前正式节点规划、完整栈部署和验收步骤以 `DEPLOYMENT_8NODES.md` 为准。
+
+目标：把线上 `iam-app:1.0.0`（旧版，组织接口为占位实现，调用即 500）升级到包含组织接口的 `iam-app:1.0.1`。
 
 ## 0. 现状与变更范围
 
@@ -15,15 +17,15 @@
 
 数据变更只有 `db/upgrade_v1.1_org.sql`：全部 `INSERT IGNORE`，可重复执行。本地已在 MySQL 8.0 上验证：旧 schema + 旧 seed 执行升级脚本（两次）后，功能点、角色绑定、组织三张表的数据与全新 `schema.sql + seed.sql` 逐行一致。
 
-审计日志接口（`AuditController`）新版本仍未实现，升级后访问审计页面依然 500，不属于本次范围。
+当前版本已提供统一日志查询与导出接口 `GET /logs`、`GET /logs/export`；本文讨论的 V1.1 增量只负责组织机构接口。
 
 ## 1. 前置条件
 
 1. 本文与 `upgrade_v1.1_org.sql` 已合入 main（服务器只跟 main）。
-2. compiler、manage 上的 SWR 登录未过期（24 小时有效，过期按 `DEPLOYMENT_4NODES.md` 4.2 重新 `docker login`）。
+2. 构建节点和 manager 上的 SWR 登录未过期（24 小时有效，过期按 `DEPLOYMENT_8NODES.md` 第 3 节重新 `docker login`）。
 3. 选一个没人在测的时间段：`update_config.order: stop-first`，更新期间后端停 1~2 分钟。
 
-## 2. 备份数据库（course-node1）
+## 2. 备份数据库（data-01）
 
 ```bash
 mkdir -p /srv/iam/backup
@@ -33,7 +35,7 @@ docker exec "$CID" sh -c 'exec mysqldump -uroot -p"$(cat /run/secrets/mysql_root
 ls -lh /srv/iam/backup
 ```
 
-## 3. 构建并推送 1.0.1（compiler）
+## 3. 构建并推送 1.0.1（构建节点）
 
 ```bash
 cd ~/RBAC
@@ -42,7 +44,7 @@ git pull
 git log --oneline -1                          # 应为合入本文的那次提交
 
 export JAVA_HOME=$HOME/jdk-21.0.2
-$HOME/apache-maven-3.9.16/bin/mvn -B package  # 带测试构建：72 个测试应全部通过，不依赖数据库
+$HOME/apache-maven-3.9.16/bin/mvn -B package  # 带测试构建；结构化 121 项和 OOP 24 项应全部通过
 cp structured-backend/target/polyauth-structured-backend-1.0.0-SNAPSHOT.jar app.jar
 
 REG=swr.cn-north-4.myhuaweicloud.com/ooad-mytx
@@ -50,12 +52,12 @@ docker build -f deploy/swarm/Dockerfile.app-prebuilt -t $REG/iam-app:1.0.1 .
 docker push $REG/iam-app:1.0.1
 ```
 
-## 4. 执行增量 SQL（course-node1）
+## 4. 执行增量 SQL（data-01）
 
 旧版应用不读取新增的这几行数据，所以先改数据、后换镜像也不影响线上。
 
 ```bash
-# 从 compiler 转传：scp ~/PolyAuth/db/upgrade_v1.1_org.sql <course-node1>:/tmp/
+# 从构建节点转传：scp ~/RBAC/db/upgrade_v1.1_org.sql data-01:/tmp/
 CID=$(docker ps -qf name=iam_mysql)
 docker exec -i "$CID" sh -c 'exec mysql -uroot -p"$(cat /run/secrets/mysql_root_password)" --default-character-set=utf8mb4 iam_platform' \
   < /tmp/upgrade_v1.1_org.sql
@@ -63,7 +65,7 @@ docker exec -i "$CID" sh -c 'exec mysql -uroot -p"$(cat /run/secrets/mysql_root_
 
 最后一行输出应为 `30  30  2`（功能点 / 超级管理员绑定 / 组织）。
 
-## 5. 滚动更新应用（manage）
+## 5. 滚动更新应用（manager）
 
 ```bash
 cd ~/RBAC && git pull                         # 栈文件里的镜像标签已改为 1.0.1
@@ -74,7 +76,7 @@ docker service ps iam_app --no-trunc | head -3 # 新任务 Running，旧任务 S
 
 栈文件 `deploy/swarm/iam-stack-backend.yml` 已同步改成 `1.0.1`，以后重新执行 `docker stack deploy` 不会把镜像退回 1.0.0。
 
-## 6. 验证（manage）
+## 6. 验证（manager）
 
 ```bash
 docker run --rm --network iam-net curlimages/curl -s http://app:8081/actuator/health
@@ -98,7 +100,7 @@ docker service logs iam_app --since 5m 2>&1 | grep -E 'ERROR|Exception' || echo 
 
 | 场景 | 操作 |
 | --- | --- |
-| 新镜像起不来或接口异常 | manage：`docker service rollback iam_app`（回到 1.0.0）。增量 SQL 新增的行不影响旧版本，可以保留 |
-| 数据需要恢复 | course-node1：用第 2 步的备份导回 `docker exec -i "$CID" sh -c 'exec mysql -uroot -p"$(cat /run/secrets/mysql_root_password)" iam_platform' < /srv/iam/backup/<备份文件>.sql` |
+| 新镜像起不来或接口异常 | manager：`docker service rollback iam_app`（回到 1.0.0）。增量 SQL 新增的行不影响旧版本，可以保留 |
+| 数据需要恢复 | data-01：用第 2 步的备份导回 `docker exec -i "$CID" sh -c 'exec mysql -uroot -p"$(cat /run/secrets/mysql_root_password)" iam_platform' < /srv/iam/backup/<备份文件>.sql` |
 
 回滚后把栈文件里的镜像标签改回 `1.0.0`，避免下次 `stack deploy` 又拉起 1.0.1。

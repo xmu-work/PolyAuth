@@ -43,9 +43,17 @@ crypto:
   aes-key: ${AES_KEY:iam-aes-256-key-please-change-in-production}
   hmac-key: ${HMAC_KEY:iam-hmac-key-please-change-in-production}
 
+open-api:
+  timestamp-tolerance: 300
+  nonce-ttl: 300
+
+idempotency:
+  ttl: 600
+  max-body-bytes: 1048576
+
 logging:
   level:
     root: INFO
-    com.polyauth.oop.interfaces: DEBUG
-    com.polyauth.oop.application: DEBUG
-    com.polyauth.oop.infrastructure: DEBUG
+    com.polyauth.oop.interfaces: ${LOGGING_LEVEL_COM_POLYAUTH_OOP_INTERFACES:DEBUG}
+    com.polyauth.oop.application: ${LOGGING_LEVEL_COM_POLYAUTH_OOP_APPLICATION:DEBUG}
+    com.polyauth.oop.infrastructure: ${LOGGING_LEVEL_COM_POLYAUTH_OOP_INFRASTRUCTURE:DEBUG}

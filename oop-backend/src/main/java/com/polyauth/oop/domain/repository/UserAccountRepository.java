@@ -1,7 +1,9 @@
 package com.polyauth.oop.domain.repository;
 
 import com.polyauth.oop.domain.model.UserAccount;
+import com.polyauth.oop.domain.model.DomainPage;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -12,6 +14,11 @@ public interface UserAccountRepository {
     Optional<UserAccount> findById(Long userId);
 
     Optional<UserAccount> findByUserNo(String userNo);
+
+    DomainPage<UserAccount> findPage(int page, int pageSize, Long orgId,
+                                     String accountStatus);
+
+    List<UserAccount> findByOrgId(Long orgId);
 
     UserAccount save(UserAccount user);
 }

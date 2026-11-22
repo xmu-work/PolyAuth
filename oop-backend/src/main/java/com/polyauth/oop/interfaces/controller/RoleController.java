@@ -65,7 +65,7 @@ public class RoleController {
             @Size(max = 128)
             String roleName,
             @RequestParam(defaultValue = "FUNC")
-            @Pattern(regexp = "FUNC|DATA")
+            @Pattern(regexp = "FUNC")
             String roleType,
             @RequestParam(required = false)
             @Size(max = 500)
@@ -102,7 +102,10 @@ public class RoleController {
      * 查询角色详情。
      */
     @GetMapping("/{roleId}")
-    public ApiResult<RoleVO> get(@PathVariable @Positive Long roleId) {
+    public ApiResult<RoleVO> get(
+            @PathVariable
+            @Positive
+            Long roleId) {
         return ApiResult.success(RoleVO.from(roleManagementUseCase.getRole(roleId)));
     }
 
@@ -172,6 +175,18 @@ public class RoleController {
     }
 
     /**
+     * 查询角色下的用户分配。
+     */
+    @GetMapping("/{roleId}/assignments")
+    public ApiResult<List<UserRoleVO>> roleAssignments(
+            @PathVariable
+            @Positive
+            Long roleId) {
+        return ApiResult.success(roleManagementUseCase.roleAssignments(roleId).stream()
+                .map(UserRoleVO::from).toList());
+    }
+
+    /**
      * 给角色绑定前端权限。
      */
     @PostMapping("/{roleId}/permissions")
@@ -182,9 +197,12 @@ public class RoleController {
             @RequestBody
             @NotNull
             @Size(max = 200)
-            List<Long> permissionIds,
+            List<@Positive Long> permissionIds,
             @RequestParam
             @NotBlank
+            @Pattern(regexp = "NONE|VIEW|ALL|VIEW_EDIT|VIEW_ADD|VIEW_APPROVE|"
+                    + "VIEW_EXPORT|VIEW_EDIT_APPROVE|VIEW_ADD_EDIT|VIEW_EDIT_EXPORT|"
+                    + "VIEW_SELF|VIEW_EDIT_SELF")
             String allowedAction,
             @RequestAttribute(AuthInterceptor.ATTR_USER_ID)
             Long operatorId) {
@@ -198,11 +216,81 @@ public class RoleController {
      */
     @GetMapping("/{roleId}/permissions")
     public ApiResult<List<RolePermissionVO>> rolePermissions(
-            @PathVariable @Positive Long roleId) {
+            @PathVariable
+            @Positive
+            Long roleId) {
         return ApiResult.success(roleManagementUseCase.rolePermissions(roleId).stream()
                 .map(RolePermissionVO::from)
                 .toList());
     }
+
+    /**
+     * 解除角色前端权限绑定。
+     */
+    @DeleteMapping("/{roleId}/permissions")
+    public ApiResult<Void> unbindPermissions(
+            @PathVariable
+            @Positive
+            Long roleId,
+            @RequestBody
+            @NotNull
+            @Size(max = 200)
+            List<@Positive Long> permissionIds,
+            @RequestAttribute(AuthInterceptor.ATTR_USER_ID)
+            Long operatorId) {
+        roleManagementUseCase.unbindPermissions(
+                roleId, permissionIds, operatorId);
+        return ApiResult.success();
+    }
+
+    /**
+     * 查询角色互斥关系。
+     */
+    @GetMapping("/{roleId}/exclusions")
+    public ApiResult<List<Long>> exclusions(
+            @PathVariable
+            @Positive
+            Long roleId) {
+        return ApiResult.success(roleManagementUseCase.exclusions(roleId));
+    }
+
+    /**
+     * 新建角色互斥关系。
+     */
+    @PostMapping("/{roleId}/exclusions")
+    public ApiResult<Void> bindExclusion(
+            @PathVariable
+            @Positive
+            Long roleId,
+            @RequestParam
+            @NotNull
+            @Positive
+            Long excludedRoleId,
+            @RequestAttribute(AuthInterceptor.ATTR_USER_ID)
+            Long operatorId) {
+        roleManagementUseCase.bindExclusion(
+                roleId, excludedRoleId, operatorId);
+        return ApiResult.success();
+    }
+
+    /**
+     * 删除角色互斥关系。
+     */
+    @DeleteMapping("/{roleId}/exclusions/{excludedRoleId}")
+    public ApiResult<Void> unbindExclusion(
+            @PathVariable
+            @Positive
+            Long roleId,
+            @PathVariable
+            @Positive
+            Long excludedRoleId,
+            @RequestAttribute(AuthInterceptor.ATTR_USER_ID)
+            Long operatorId) {
+        roleManagementUseCase.unbindExclusion(
+                roleId, excludedRoleId, operatorId);
+        return ApiResult.success();
+    }
+
 
     private static java.time.Instant instant(LocalDateTime value) {
         return value == null ? null : value.atZone(BUSINESS_ZONE).toInstant();

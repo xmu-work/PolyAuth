@@ -11,12 +11,15 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 public class WebConfig implements WebMvcConfigurer {
 
     private final AuthInterceptor authInterceptor;
+    private final OpenApiAuthInterceptor openApiAuthInterceptor;
 
     /**
      * 注入认证与鉴权拦截器。
      */
-    public WebConfig(AuthInterceptor authInterceptor) {
+    public WebConfig(AuthInterceptor authInterceptor,
+                     OpenApiAuthInterceptor openApiAuthInterceptor) {
         this.authInterceptor = authInterceptor;
+        this.openApiAuthInterceptor = openApiAuthInterceptor;
     }
 
     @Override
@@ -24,5 +27,7 @@ public class WebConfig implements WebMvcConfigurer {
         registry.addInterceptor(authInterceptor)
                 .addPathPatterns("/**")
                 .excludePathPatterns("/auth/login", "/open/**");
+        registry.addInterceptor(openApiAuthInterceptor)
+                .addPathPatterns("/open/**");
     }
 }

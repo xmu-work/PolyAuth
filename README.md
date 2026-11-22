@@ -1,17 +1,16 @@
 # PolyAuth：多系统统一权限管理平台
 
-PolyAuth 是面向多业务系统的统一身份与 RBAC3 权限平台，集中管理系统、前端菜单/按钮权限、后端 API、账号、组织、角色继承、角色互斥、数据范围和审计。项目采用 Maven 多模块，同时维护**结构化后端**与**面向对象后端**，通过共享 HTTP 契约验证外部行为等价。
+PolyAuth 是面向多业务系统的统一身份与功能权限平台，集中管理系统、前端菜单/按钮权限、后端 API、账号、组织、角色继承、角色互斥和审计。项目采用 Maven 多模块，同时维护**结构化后端**与**面向对象后端**，通过共享 HTTP 契约验证外部行为等价。
 
 ## 项目边界
 
 本项目实现课程要求的 RBAC3 核心能力，并持续迁移为可独立运行的双后端系统。
 
 - `structured-backend`：保留完整管理能力，按“校验 → 处理 → 持久化”组织 Service。
-- `oop-backend`：当前完成本地认证、角色生命周期、角色授权、权限解析和默认拒绝的 OOP 纵向切片，继续扩展组织、数据权限和系统管理。
+- `oop-backend`：完整实现认证、统一身份、用户、组织、系统、权限树、API 目录、角色治理、审计查询、OpenAPI 和幂等，外部端点与结构化后端对齐。
 - 两套后端不互相依赖，不共享业务实现；共享数据库基线、API 路径、错误码和黑盒契约测试。
 
 - “能访问哪个菜单、页面和按钮”由角色与前端权限树决定；“能调用哪个后端 API”再由 API 到权限的映射独立校验。
-- “能查看哪个分公司、部门、项目或本人的数据”由角色数据范围与目标组织/项目/用户联合判定。
 - 组织机构同时作为账号归属主数据和分公司、部门、项目范围的映射依据。
 - 角色支持功能角色与岗位型数据角色，均支持继承；互斥角色不能同时授予同一用户。
 
@@ -33,7 +32,7 @@ PolyAuth 是面向多业务系统的统一身份与 RBAC3 权限平台，集中�
 
 ## 已实现能力
 
-以下为结构化后端的完整能力基线；OOP 后端当前实现的纵向切片在“架构”和“验证状态”中单独说明。
+以下能力基线同时适用于结构化后端和 OOP 后端；两者共用相同的 HTTP 路径、请求参数、响应结构、错误码和数据库基线。
 
 ### 身份认证与账号
 
@@ -60,14 +59,11 @@ PolyAuth 是面向多业务系统的统一身份与 RBAC3 权限平台，集中�
 - 后端 `iam_api` 独立建模，通过 `permission_id` 映射到前端权限；一个权限可映射多个 API。
 - 角色与前端权限批量绑定、解绑和查询；系统、权限、角色和账号状态参与判定。
 - 统一身份按 `operationId` 查询单个 API 的全局权限，管理后台仍可读取前端权限主键集合。
-- 全公司、本分公司、本部门、本项目、本人五类数据范围。
-- 功能权限与数据权限联合判定；角色继承链上的数据范围自动合并。
-- 数据范围临时授权、到期自动失效、回收与前后快照。
 
 ### 授权与安全
 
 - 用户角色授予、撤销和查询，支持授权有效期。
-- 互斥角色授予冲突拒绝，授权、回收、角色互斥和数据范围写操作使用 Redis 分布式锁。
+- 互斥角色授予冲突拒绝；授权、回收、角色权限绑定和角色互斥写操作使用 Redis 分布式锁。
 - 管理员不能授予超出自身功能权限的角色。
 - 按请求定位 API 后，再检查 API 所属权限是否授予；未登记或未映射权限的 API 默认拒绝（fail-closed）。
 - OpenAPI 支持接入方 HMAC 签名、时间戳、nonce 防重放；普通用户令牌只能查询本人。
@@ -82,6 +78,7 @@ PolyAuth 是面向多业务系统的统一身份与 RBAC3 权限平台，集中�
 - 统一日志分页查询，支持用户、用户名、系统、类型、动作、成功状态和时间范围过滤。
 - 审计日志 CSV 导出，包含公式注入防护；登录成败和只读鉴权请求均留痕。
 - 数据库触发器拒绝修改和删除 `iam_log`，保证只追加。
+- 前端每次菜单切换调用 `GET /auth/permissions/{permission}`，由认证拦截器与 `LayerLoggingAspect` 产生对应后端 Logback 和审计记录。
 - 权限缓存使用版本号失效，不使用 Redis `KEYS` 扫描。
 - 分布式锁使用 owner token 与原子解锁。
 
@@ -108,7 +105,7 @@ PolyAuth 是面向多业务系统的统一身份与 RBAC3 权限平台，集中�
 PolyAuth/
 ├── pom.xml                       Maven 聚合与共享版本
 ├── structured-backend/           完整结构化实现，端口 8080
-├── oop-backend/                  独立 OOP 实现，端口 8081
+├── oop-backend/                  完整 OOP/DDD 实现，端口 8081
 ├── contract-tests/               不依赖生产类的 HTTP 契约
 ├── db/                           共享 schema、seed 与升级脚本
 ├── web/                          Vue 管理后台
@@ -134,7 +131,7 @@ infrastructure → domain + application/port
 分层组织 1:N 用户
 ```
 
-普通操作与权限变更统一保存在 `iam_log`；统一日志、令牌等技术支撑表不属于 RBAC 核心 E-R 图。角色互斥由 `iam_role_exclusion` 建模，角色数据范围由 `iam_role_data_scope` 建模。
+普通操作与权限变更统一保存在 `iam_log`；统一日志、令牌等技术支撑表不属于 RBAC 核心 E-R 图。角色互斥由 `iam_role_exclusion` 建模。
 
 ## 快速开始
 
@@ -217,6 +214,10 @@ pnpm build
 
 前端通过 Vite 代理访问真实后端；不包含 Mock 插件、Mock 数据或 Mock 开关。
 
+### Docker Swarm
+
+正式部署采用 8 台 2 核 2G 节点：3 台 manager、3 台结构化应用、1 台数据库、1 台 OOP 应用。完整标签、构建、密钥、数据库初始化、OOP 端口和菜单日志验收步骤见 [DEPLOYMENT_8NODES.md](DEPLOYMENT_8NODES.md)。
+
 ## 鉴权规则
 
 - `POST /auth/login` 为公开接口。
@@ -224,9 +225,8 @@ pnpm build
 - 登录响应的 `userId` 是本地数据库主键字符串；统一身份用户标识使用 JWT `sub` 或 `/auth/me.subject`，值为 `user_no`。
 - 管理端请求携带 `Authorization: Bearer <token>`。
 - 管理端请求必须先匹配已登记的 `iam_api`，再检查该 API 映射的前端权限；任一环节缺失都默认拒绝。
-- 数据权限开放接口可携带 `X-App-Id`、`X-Timestamp`、`X-Nonce`、`X-Signature` 进行接入方认证。
+- 开放 API 可携带 `X-App-Id`、`X-Timestamp`、`X-Nonce`、`X-Signature` 进行接入方认证。
 - OpenAPI 普通用户令牌只能查询本人；接入方签名可查询授权范围内的用户。
-- `/open/authorize/resource` 同时接收功能 API 与目标组织、项目或用户上下文，功能权限和数据范围都通过才放行。
 
 ## API 概览
 
@@ -257,8 +257,6 @@ pnpm build
 | PUT | `/api/v1/roles/{roleId}` | JSON 修改角色、状态和父角色 |
 | GET/POST | `/api/v1/roles/{roleId}/exclusions` | 查询 / 新建角色互斥 |
 | DELETE | `/api/v1/roles/{roleId}/exclusions/{excludedRoleId}` | 解除角色互斥 |
-| GET/POST | `/api/v1/roles/{roleId}/data-scopes` | 查询 / 授予角色数据范围 |
-| DELETE | `/api/v1/roles/{roleId}/data-scopes/{bindingId}` | 回收角色数据范围 |
 | POST | `/api/v1/roles/{roleId}/assignments` | 将角色分配给用户 |
 | DELETE | `/api/v1/roles/{roleId}/assignments/{userId}` | 撤销用户角色 |
 | GET | `/api/v1/roles/{roleId}/assignments` | 查询角色下的用户分配 |
@@ -272,22 +270,18 @@ pnpm build
 | GET/POST | `/api/v1/apis` | 后端 API 列表 / 登记 |
 | GET | `/api/v1/apis/{apiId}` | 后端 API 详情 |
 | GET | `/api/v1/open/permissions` | 管理后台读取用户前端权限主键集合 |
-| GET | `/api/v1/open/data-scopes` | 查询用户当前生效的数据范围 |
-| POST | `/api/v1/open/authorize/resource` | 功能权限与数据权限联合判定 |
-| GET/POST | `/api/v1/systems/data-scopes` | 数据范围字典查询 / 新建 |
-| POST | `/api/v1/systems/role-data-scopes` | 兼容旧契约的角色数据范围绑定 |
 | GET | `/api/v1/logs` | 统一日志分页查询（普通操作 + 权限变更） |
 | GET | `/api/v1/logs/export` | 导出统一日志 CSV |
 
 ## 验证状态
 
-结构化后端 121 项测试通过，覆盖 CloneFactory、统一身份、JWT、账号、组织、角色继承/互斥、数据权限、权限树、日志、校验和幂等。OOP 后端 24 项测试通过，覆盖角色不变量、继承展开、授权有效期、权限解析、用例编排、本地认证、统一身份错误契约、JPA Adapter 和完整容器装配。
+结构化后端测试覆盖 CloneFactory、统一身份、JWT、账号、组织、角色继承/互斥、功能权限树、日志、校验和幂等。OOP 后端测试覆盖组织、账号、角色、互斥、权限解析、用例编排、本地认证、统一身份、OpenAPI、幂等、JPA Adapter、50 个功能权限端点覆盖和真实 HTTP 烟测。
 
-前端 20 项 Vitest 测试通过，`pnpm typecheck`、`pnpm build` 和 `pnpm lint` 均通过。
+前端 21 项 Vitest 测试通过，`pnpm typecheck`、`pnpm build` 和 `pnpm lint` 均通过。
 
-`contract-tests` 共 8 个共享黑盒场景；未指定 `contract.baseUrl` 时会明确跳过，不伪造通过。要确认两套实现等价，必须分别启动 8080、8081 并执行双后端契约脚本。
+`contract-tests` 共 15 个共享黑盒场景；未指定 `contract.baseUrl` 时会明确跳过，不伪造通过。要确认两套实现等价，必须分别启动 8080、8081 并执行双后端契约脚本。
 
-当前 OOP 尚未迁移组织管理、数据权限、角色互斥、系统/API 管理、完整统一身份查询和管理端审计查询，因此不能标记为全功能等价；迁移状态见 `contract-tests/README.md`。
+OOP 已注册与结构化后端相同的 50 个功能权限端点，已下线能力端点明确不存在。真实双后端契约仍需在 8080 和 8081 同时运行并连接各自数据库后执行，不能用自动跳过结果替代联调结论。
 
 `design/` 目录保留课程详细设计材料；功能范围以本 README、当前代码和
 [RBAC后端API使用手册.md](RBAC后端API使用手册.md) 为准。

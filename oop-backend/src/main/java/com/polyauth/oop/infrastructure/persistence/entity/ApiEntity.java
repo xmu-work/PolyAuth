@@ -2,17 +2,22 @@ package com.polyauth.oop.infrastructure.persistence.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
+import java.time.LocalDateTime;
+
 /**
- * 后端 API 目录只读数据库模型。
+ * 后端 API 目录数据库模型。
  */
 @Entity
 @Table(name = "iam_api")
 public class ApiEntity {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(name = "system_id", nullable = false)
@@ -23,6 +28,9 @@ public class ApiEntity {
 
     @Column(name = "api_code", nullable = false, length = 64)
     private String apiCode;
+
+    @Column(name = "api_name", nullable = false, length = 128)
+    private String apiName;
 
     @Column(name = "api_path", nullable = false, length = 255)
     private String apiPath;
@@ -35,6 +43,12 @@ public class ApiEntity {
 
     @Column(name = "is_deleted", nullable = false)
     private Integer isDeleted;
+
+    @Column(name = "created_at", nullable = false)
+    private LocalDateTime createdAt;
+
+    @Column(name = "updated_at", nullable = false)
+    private LocalDateTime updatedAt;
 
     public Long getId() {
         return id;
@@ -68,6 +82,14 @@ public class ApiEntity {
         this.apiCode = apiCode;
     }
 
+    public String getApiName() {
+        return apiName;
+    }
+
+    public void setApiName(String apiName) {
+        this.apiName = apiName;
+    }
+
     public String getApiPath() {
         return apiPath;
     }
@@ -98,5 +120,21 @@ public class ApiEntity {
 
     public void setIsDeleted(Integer isDeleted) {
         this.isDeleted = isDeleted;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
     }
 }

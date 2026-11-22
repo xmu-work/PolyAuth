@@ -14,5 +14,7 @@ public interface RoleGrantRepository {
 
     List<RoleGrant> findByUserId(Long userId);
 
+    List<RoleGrant> findByRoleId(Long roleId);
+
     RoleGrant save(RoleGrant grant);
 }

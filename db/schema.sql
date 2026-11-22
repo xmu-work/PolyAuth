@@ -72,7 +72,7 @@ CREATE TABLE IF NOT EXISTS iam_role (
     id          BIGINT       NOT NULL AUTO_INCREMENT,
     role_code   VARCHAR(64)  NOT NULL COMMENT '角色编码',
     role_name   VARCHAR(128) NOT NULL COMMENT '角色名称',
-    role_type   VARCHAR(16)  NOT NULL COMMENT 'FUNC=功能角色 / DATA=岗位型数据角色',
+    role_type   VARCHAR(16)  NOT NULL COMMENT 'FUNC=功能角色',
     parent_id   BIGINT       NULL     COMMENT '父角色（RBAC1 继承）',
     status      VARCHAR(16)  NOT NULL DEFAULT 'ACTIVE',
     description VARCHAR(500) NULL,
@@ -86,7 +86,7 @@ CREATE TABLE IF NOT EXISTS iam_role (
     UNIQUE KEY uk_role_code (role_code),
     KEY idx_role_parent (parent_id),
     CONSTRAINT fk_role_parent FOREIGN KEY (parent_id) REFERENCES iam_role (id),
-    CONSTRAINT chk_role_type CHECK (role_type IN ('FUNC', 'DATA')),
+    CONSTRAINT chk_role_type CHECK (role_type = 'FUNC'),
     CONSTRAINT chk_role_status CHECK (status IN ('ACTIVE', 'DISABLED')),
     CONSTRAINT chk_role_parent CHECK (parent_id IS NULL OR parent_id <> id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='角色';
@@ -209,62 +209,6 @@ CREATE TABLE IF NOT EXISTS iam_role_permission (
         'VIEW_EXPORT', 'VIEW_EDIT_APPROVE', 'VIEW_ADD_EDIT', 'VIEW_EDIT_EXPORT',
         'VIEW_SELF', 'VIEW_EDIT_SELF'))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='角色-前端权限关联';
-
--- ----------------------------------------------------------
--- 9. 数据范围字典
--- ----------------------------------------------------------
-CREATE TABLE IF NOT EXISTS iam_data_scope (
-    id          BIGINT       NOT NULL AUTO_INCREMENT,
-    scope_code  VARCHAR(64)  NOT NULL COMMENT '范围编码',
-    scope_name  VARCHAR(128) NOT NULL COMMENT '范围名称',
-    description VARCHAR(500) NULL,
-    sort_no     INT          NOT NULL DEFAULT 0,
-    status      VARCHAR(16)  NOT NULL DEFAULT 'ACTIVE',
-    is_deleted  TINYINT      NOT NULL DEFAULT 0,
-    created_at  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    PRIMARY KEY (id),
-    UNIQUE KEY uk_data_scope_code (scope_code),
-    CONSTRAINT chk_data_scope_status CHECK (status IN ('ACTIVE', 'DISABLED'))
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='数据范围字典';
-
--- ----------------------------------------------------------
--- 10. 角色-数据范围授权
--- ----------------------------------------------------------
-CREATE TABLE IF NOT EXISTS iam_role_data_scope (
-    id             BIGINT      NOT NULL AUTO_INCREMENT,
-    role_id        BIGINT      NOT NULL,
-    scope_type     VARCHAR(16) NOT NULL COMMENT 'ALL/BRANCH/DEPT/PROJECT/SELF',
-    org_id         BIGINT      NULL     COMMENT 'BRANCH/DEPT 必填；PROJECT 可选且应与项目节点一致',
-    project_id     BIGINT      NULL     COMMENT 'PROJECT 必填',
-    effective_time DATETIME    NULL,
-    expire_time    DATETIME    NULL     COMMENT 'NULL 表示长期',
-    status         VARCHAR(16) NOT NULL DEFAULT 'ACTIVE' COMMENT 'ACTIVE/REVOKED/EXPIRED',
-    created_by     BIGINT      NULL,
-    created_at     DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at     DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    version        BIGINT      NOT NULL DEFAULT 0,
-    scope_key      VARCHAR(80) GENERATED ALWAYS AS (
-        CONCAT(scope_type, ':', IFNULL(org_id, 0), ':', IFNULL(project_id, 0))
-    ) STORED,
-    PRIMARY KEY (id),
-    UNIQUE KEY uk_role_data_scope (role_id, scope_key),
-    KEY idx_role_data_scope_role_status (role_id, status),
-    KEY idx_role_data_scope_org (org_id),
-    KEY idx_role_data_scope_project (project_id),
-    CONSTRAINT fk_role_data_scope_role FOREIGN KEY (role_id) REFERENCES iam_role (id),
-    CONSTRAINT fk_role_data_scope_org FOREIGN KEY (org_id) REFERENCES iam_org (id),
-    CONSTRAINT chk_role_data_scope_type CHECK (scope_type IN ('ALL', 'BRANCH', 'DEPT', 'PROJECT', 'SELF')),
-    CONSTRAINT chk_role_data_scope_status CHECK (status IN ('ACTIVE', 'REVOKED', 'EXPIRED')),
-    CONSTRAINT chk_role_data_scope_period CHECK (
-        expire_time IS NULL OR effective_time IS NULL OR expire_time > effective_time
-    ),
-    CONSTRAINT chk_role_data_scope_target CHECK (
-        (scope_type IN ('ALL', 'SELF') AND org_id IS NULL AND project_id IS NULL)
-        OR (scope_type IN ('BRANCH', 'DEPT') AND org_id IS NOT NULL AND project_id IS NULL)
-        OR (scope_type = 'PROJECT' AND project_id IS NOT NULL)
-    )
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='角色-数据范围授权';
 
 -- ----------------------------------------------------------
 -- 11. 角色静态互斥

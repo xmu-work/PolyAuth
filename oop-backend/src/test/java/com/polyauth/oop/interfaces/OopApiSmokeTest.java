@@ -1,0 +1,242 @@
+package com.polyauth.oop.interfaces;
+
+import com.polyauth.oop.application.port.AccountCrypto;
+import com.polyauth.oop.infrastructure.persistence.entity.ApiEntity;
+import com.polyauth.oop.infrastructure.persistence.entity.OrganizationEntity;
+import com.polyauth.oop.infrastructure.persistence.entity.PermissionEntity;
+import com.polyauth.oop.infrastructure.persistence.entity.RoleEntity;
+import com.polyauth.oop.infrastructure.persistence.entity.RoleGrantEntity;
+import com.polyauth.oop.infrastructure.persistence.entity.RolePermissionEntity;
+import com.polyauth.oop.infrastructure.persistence.entity.SystemEntity;
+import com.polyauth.oop.infrastructure.persistence.entity.UserAccountEntity;
+import com.polyauth.oop.infrastructure.persistence.repository.ApiJpaRepository;
+import com.polyauth.oop.infrastructure.persistence.repository.OrganizationJpaRepository;
+import com.polyauth.oop.infrastructure.persistence.repository.PermissionJpaRepository;
+import com.polyauth.oop.infrastructure.persistence.repository.RoleGrantJpaRepository;
+import com.polyauth.oop.infrastructure.persistence.repository.RoleJpaRepository;
+import com.polyauth.oop.infrastructure.persistence.repository.RolePermissionJpaRepository;
+import com.polyauth.oop.infrastructure.persistence.repository.SystemJpaRepository;
+import com.polyauth.oop.infrastructure.persistence.repository.UserAccountJpaRepository;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+/**
+ * 验证真实 HTTP 登录、统一身份和受保护管理端 API 的完整装配。
+ */
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+        properties = {
+                "spring.datasource.type=com.zaxxer.hikari.HikariDataSource",
+                "spring.datasource.driver-class-name=org.h2.Driver",
+                "spring.datasource.url=jdbc:h2:mem:oop_smoke;MODE=MySQL;DB_CLOSE_DELAY=-1",
+                "spring.datasource.username=sa",
+                "spring.datasource.password=",
+                "spring.jpa.hibernate.ddl-auto=create-drop",
+                "spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.H2Dialect"
+        })
+class OopApiSmokeTest {
+
+    private static final String LOGIN_URL = "/auth/login";
+    private static final String CURRENT_USER_URL = "/auth/me";
+    private static final String ORGANIZATIONS_URL = "/organizations";
+
+    @Autowired
+    private TestRestTemplate rest;
+
+    @Autowired
+    private AccountCrypto crypto;
+
+    @Autowired
+    private SystemJpaRepository systems;
+
+    @Autowired
+    private OrganizationJpaRepository organizations;
+
+    @Autowired
+    private UserAccountJpaRepository users;
+
+    @Autowired
+    private PermissionJpaRepository permissions;
+
+    @Autowired
+    private ApiJpaRepository apis;
+
+    @Autowired
+    private RoleJpaRepository roles;
+
+    @Autowired
+    private RolePermissionJpaRepository rolePermissions;
+
+    @Autowired
+    private RoleGrantJpaRepository roleGrants;
+
+    private String token;
+
+    @BeforeEach
+    void seed() {
+        roleGrants.deleteAll();
+        rolePermissions.deleteAll();
+        apis.deleteAll();
+        permissions.deleteAll();
+        users.deleteAll();
+        organizations.deleteAll();
+        roles.deleteAll();
+        systems.deleteAll();
+        LocalDateTime now = LocalDateTime.now();
+        SystemEntity system = new SystemEntity();
+        system.setSystemCode("ADMIN");
+        system.setSystemName("权限后台");
+        system.setStatus("ACTIVE");
+        system.setIsDeleted(0);
+        system.setCreatedAt(now);
+        system.setUpdatedAt(now);
+        system.setVersion(0L);
+        system = systems.saveAndFlush(system);
+
+        OrganizationEntity organization = new OrganizationEntity();
+        organization.setAncestors("0");
+        organization.setOrgCode("HQ");
+        organization.setOrgName("总公司");
+        organization.setOrgType("HQ");
+        organization.setOrgLevel(1);
+        organization.setSortNo(1);
+        organization.setStatus("ACTIVE");
+        organization.setIsDeleted(0);
+        organization.setCreatedAt(now);
+        organization.setUpdatedAt(now);
+        organization.setVersion(0L);
+        organization = organizations.saveAndFlush(organization);
+
+        UserAccountEntity user = new UserAccountEntity();
+        user.setUserNo("admin");
+        user.setPasswordHash(crypto.hashPassword("Admin@123"));
+        user.setNameEnc(crypto.encrypt("管理员"));
+        user.setNameHash(crypto.hash("管理员"));
+        user.setOrgId(organization.getId());
+        user.setAccountStatus("NORMAL");
+        user.setIsDeleted(0);
+        user.setCreatedAt(now);
+        user.setUpdatedAt(now);
+        user.setVersion(0L);
+        user = users.saveAndFlush(user);
+
+        PermissionEntity permission = new PermissionEntity();
+        permission.setSystemId(system.getId());
+        permission.setPermissionCode("ORG_TREE");
+        permission.setPermissionName("组织树");
+        permission.setPermissionType("BUTTON");
+        permission.setAction("VIEW");
+        permission.setSortNo(1);
+        permission.setStatus("ACTIVE");
+        permission.setIsDeleted(0);
+        permission.setCreatedAt(now);
+        permission.setUpdatedAt(now);
+        permission = permissions.saveAndFlush(permission);
+
+        ApiEntity api = new ApiEntity();
+        api.setSystemId(system.getId());
+        api.setPermissionId(permission.getId());
+        api.setApiCode("GET_ORGANIZATIONS");
+        api.setApiName("查询组织树");
+        api.setApiPath("/organizations");
+        api.setHttpMethod("GET");
+        api.setStatus("ACTIVE");
+        api.setIsDeleted(0);
+        api.setCreatedAt(now);
+        api.setUpdatedAt(now);
+        apis.saveAndFlush(api);
+
+        RoleEntity role = new RoleEntity();
+        role.setRoleCode("SUPER_ADMIN");
+        role.setRoleName("超级管理员");
+        role.setRoleType("FUNC");
+        role.setStatus("ACTIVE");
+        role.setIsDeleted(0);
+        role.setCreatedAt(now);
+        role.setUpdatedAt(now);
+        role.setVersion(0L);
+        role = roles.saveAndFlush(role);
+
+        RolePermissionEntity rolePermission = new RolePermissionEntity();
+        rolePermission.setRoleId(role.getId());
+        rolePermission.setPermissionId(permission.getId());
+        rolePermission.setAllowedAction("VIEW");
+        rolePermission.setCreatedAt(now);
+        rolePermissions.saveAndFlush(rolePermission);
+
+        RoleGrantEntity grant = new RoleGrantEntity();
+        grant.setUserId(user.getId());
+        grant.setRoleId(role.getId());
+        grant.setEffectiveTime(now.minusMinutes(1));
+        grant.setStatus("ACTIVE");
+        grant.setCreatedAt(now);
+        grant.setUpdatedAt(now);
+        grant.setVersion(0L);
+        roleGrants.saveAndFlush(grant);
+
+        ResponseEntity<Map> login = rest.postForEntity(
+                LOGIN_URL,
+                Map.of("username", "admin", "password", "Admin@123",
+                        "systems", List.of("ADMIN")),
+                Map.class);
+        assertThat(login.getStatusCode().value()).isEqualTo(200);
+        token = String.valueOf(login.getBody().get("accessToken"));
+    }
+
+    @Test
+    @DisplayName("FR-38 真实 HTTP 登录后可查询统一身份")
+    void currentUserWorksThroughRealHttp() {
+        ResponseEntity<Map> response = rest.exchange(
+                CURRENT_USER_URL, HttpMethod.GET,
+                authorized(), Map.class);
+
+        assertThat(response.getStatusCode().value()).isEqualTo(200);
+        assertThat(response.getBody().get("subject")).isEqualTo("admin");
+        assertThat(String.valueOf(response.getBody().get("roles")))
+                .contains("admin");
+    }
+
+    @Test
+    @DisplayName("FR-37 已登记且有权限的组织 API 可调用")
+    void organizationApiPassesDefaultDenyGuard() {
+        ResponseEntity<Map> response = rest.exchange(
+                ORGANIZATIONS_URL, HttpMethod.GET,
+                authorized(), Map.class);
+
+        assertThat(response.getStatusCode().value()).isEqualTo(200);
+        assertThat(response.getBody().get("code")).isEqualTo(0);
+        assertThat((List<?>) response.getBody().get("data")).isNotEmpty();
+    }
+
+    @Test
+    @DisplayName("未登记的 HTTP 方法按默认拒绝返回 403")
+    void unregisteredHttpMethodIsDeniedByDefault() {
+        ResponseEntity<Map> response = rest.exchange(
+                ORGANIZATIONS_URL, HttpMethod.POST,
+                authorized(), Map.class);
+
+        assertThat(response.getStatusCode().value()).isEqualTo(403);
+        assertThat(response.getBody().get("code")).isEqualTo(2007);
+    }
+
+    private HttpEntity<Void> authorized() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(token);
+        headers.setAccept(List.of(MediaType.APPLICATION_JSON));
+        return new HttpEntity<>(headers);
+    }
+}

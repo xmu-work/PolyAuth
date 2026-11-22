@@ -60,6 +60,9 @@ public class AuditLogEntity {
     @Column(name = "request_id", length = 64)
     private String requestId;
 
+    @Column(name = "decision_id", length = 64)
+    private String decisionId;
+
     public Long getLogId() {
         return logId;
     }
@@ -170,5 +173,13 @@ public class AuditLogEntity {
 
     public void setRequestId(String requestId) {
         this.requestId = requestId;
+    }
+
+    public String getDecisionId() {
+        return decisionId;
+    }
+
+    public void setDecisionId(String decisionId) {
+        this.decisionId = decisionId;
     }
 }

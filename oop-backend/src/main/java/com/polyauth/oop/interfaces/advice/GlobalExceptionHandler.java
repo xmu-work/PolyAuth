@@ -54,8 +54,18 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(DomainRuleException.class)
     public ResponseEntity<?> handleDomain(DomainRuleException exception,
                                           HttpServletRequest request) {
-        int status = exception.errorCode() == DomainErrorCode.ROLE_INHERIT_CYCLE ? 409 : 400;
-        int code = exception.errorCode() == DomainErrorCode.ROLE_INHERIT_CYCLE ? 3002 : 1001;
+        int status = switch (exception.errorCode()) {
+            case ROLE_INHERIT_CYCLE, ORGANIZATION_INVALID_MOVE,
+                    USER_ALREADY_SEALED, ROLE_EXCLUSION_CONFLICT -> 409;
+            default -> 400;
+        };
+        int code = switch (exception.errorCode()) {
+            case ROLE_INHERIT_CYCLE -> 3002;
+            case ORGANIZATION_INVALID_MOVE -> 3003;
+            case USER_ALREADY_SEALED -> 3004;
+            case ROLE_EXCLUSION_CONFLICT -> 3011;
+            default -> 1001;
+        };
         if (isIdentityRequest(request)) {
             return ResponseEntity.status(status)
                     .body(new IdentityErrorResponse("BAD_REQUEST", exception.getMessage()));

@@ -7,9 +7,6 @@ import com.polyauth.structured.application.auth.AuthService;
 import com.polyauth.structured.application.auth.AuthenticatedSession;
 import com.polyauth.structured.application.auth.LoginResponse;
 import com.polyauth.structured.application.decision.DecisionService;
-import com.polyauth.structured.application.datascope.DataPermissionService;
-import com.polyauth.structured.application.datascope.DataScopeService;
-import com.polyauth.structured.application.datascope.ResourceDecision;
 import com.polyauth.structured.application.identity.IdentityProfile;
 import com.polyauth.structured.application.identity.IdentityDepartmentData;
 import com.polyauth.structured.application.identity.IdentityDepartmentUserData;
@@ -78,10 +75,6 @@ class ApiControllerTest {
     private OpenApiAuthenticator openApiAuthenticator;
     @MockitoBean
     private IdempotencyStore idempotencyStore;
-    @MockitoBean
-    private DataScopeService dataScopeService;
-    @MockitoBean
-    private DataPermissionService dataPermissionService;
     @MockitoBean
     private IdentityService identityService;
 
@@ -525,51 +518,30 @@ class ApiControllerTest {
     }
 
     @Test
-    void dataPermissionEndpointsAreNotExposed() throws Exception {
-        IamDataScope scope = new IamDataScope();
-        scope.setId(1L);
-        scope.setScopeCode("DEPT");
-        scope.setScopeName("部门");
-        when(dataScopeService.listDataScopes()).thenReturn(List.of(scope));
-        when(dataScopeService.createDataScope("DEPT_SCOPE", "部门范围", null, 1, 1L))
-                .thenReturn(scope);
-        IamRoleDataScope binding = new IamRoleDataScope();
-        binding.setId(8L);
-        binding.setRoleId(10L);
-        when(dataScopeService.bindRoleDataScope(eq(10L), eq("DEPT"), eq(2L), isNull(), isNull(), eq(1L)))
-                .thenReturn(binding);
-        when(dataScopeService.listRoleDataScopes(10L)).thenReturn(List.of(binding));
-        when(dataPermissionService.authorize(eq(1L), eq("ADMIN"), eq(30001L), eq(2L), isNull(), isNull()))
-                .thenReturn(ResourceDecision.builder()
-                        .functionAllowed(true).dataAllowed(true).allowed(true)
-                        .matchedScopeIds(List.of(8L)).build());
-        when(dataPermissionService.getEffectiveDataScopes(1L, "ADMIN"))
-                .thenReturn(List.of(com.polyauth.structured.application.datascope.EffectiveDataScope.builder()
-                        .bindingId(8L).roleId(10L).scopeType("DEPT").orgId(2L).build()));
+    @DisplayName("HTTP 方法不匹配返回 405 而非 500")
+    void wrongHttpMethodReturnsMethodNotAllowed() throws Exception {
+        mvc.perform(post("/systems/1").header("Authorization", AUTH))
+                .andExpect(status().isMethodNotAllowed())
+                .andExpect(jsonPath("$.code").value(1006));
+    }
 
+    @Test
+    @DisplayName("项目边界 数据权限端点不得暴露")
+    void dataPermissionEndpointsAreNotExposed() throws Exception {
         mvc.perform(get("/systems/data-scopes").header("Authorization", AUTH))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data[0].scopeCode").value("DEPT"));
-        mvc.perform(post("/systems/data-scopes").header("Authorization", AUTH)
-                        .param("scopeCode", "DEPT_SCOPE").param("scopeName", "部门范围")
-                        .param("sortNo", "1"))
-                .andExpect(status().isOk());
-        mvc.perform(post("/roles/10/data-scopes").header("Authorization", AUTH)
-                        .param("scopeType", "DEPT").param("orgId", "2"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.id").value(8));
+                .andExpect(status().is4xxClientError());
+        mvc.perform(post("/systems/data-scopes").header("Authorization", AUTH))
+                .andExpect(status().is4xxClientError());
+        mvc.perform(post("/roles/10/data-scopes").header("Authorization", AUTH))
+                .andExpect(status().is4xxClientError());
         mvc.perform(get("/roles/10/data-scopes").header("Authorization", AUTH))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.length()").value(1));
+                .andExpect(status().is4xxClientError());
         mvc.perform(post("/open/authorize/resource").header("Authorization", AUTH)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"userId\":1,\"systemCode\":\"ADMIN\",\"apiId\":30001,\"targetOrgId\":2}"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.allowed").value(true));
-        mvc.perform(get("/open/data-scopes").header("Authorization", AUTH)
-                        .param("userId", "1").param("systemCode", "ADMIN"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data[0].scopeType").value("DEPT"));
+                        .content("{\"userId\":1,\"systemCode\":\"ADMIN\",\"apiId\":30001}"))
+                .andExpect(status().is4xxClientError());
+        mvc.perform(get("/open/data-scopes").header("Authorization", AUTH))
+                .andExpect(status().is4xxClientError());
     }
 
     /**

@@ -21,12 +21,10 @@ export const AccountStatusLabel: Record<AccountStatusCode, string> = {
 /* 角色类型 RoleType */
 export const RoleType = {
   FUNC: 'FUNC',
-  DATA: 'DATA',
 } as const
 export type RoleTypeCode = (typeof RoleType)[keyof typeof RoleType]
 export const RoleTypeLabel: Record<RoleTypeCode, string> = {
   FUNC: '功能角色',
-  DATA: '岗位型数据角色',
 }
 
 /* 组织类型 OrgType（含层级映射，契约 8.3：orgType 与 orgLevel 联动，禁止手填） */
@@ -91,23 +89,6 @@ export type CommonStatusCode = (typeof CommonStatus)[keyof typeof CommonStatus]
 export const CommonStatusLabel: Record<CommonStatusCode, string> = {
   ACTIVE: '有效',
   DISABLED: '停用',
-}
-
-/** 数据范围类型：角色数据权限与开放 API 资源鉴权共用。 */
-export const DataScopeType = {
-  ALL: 'ALL',
-  BRANCH: 'BRANCH',
-  DEPT: 'DEPT',
-  PROJECT: 'PROJECT',
-  SELF: 'SELF',
-} as const
-export type DataScopeTypeCode = (typeof DataScopeType)[keyof typeof DataScopeType]
-export const DataScopeTypeLabel: Record<DataScopeTypeCode, string> = {
-  ALL: '全公司',
-  BRANCH: '本分公司',
-  DEPT: '本部门',
-  PROJECT: '本项目',
-  SELF: '本人',
 }
 
 /**

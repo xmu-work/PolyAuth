@@ -4,6 +4,7 @@ import com.polyauth.oop.application.command.LoginCommand;
 import com.polyauth.oop.application.exception.ApplicationErrorCode;
 import com.polyauth.oop.application.exception.UseCaseException;
 import com.polyauth.oop.application.port.AccessTokenIssuer;
+import com.polyauth.oop.application.port.AccountCrypto;
 import com.polyauth.oop.application.port.AuditTrail;
 import com.polyauth.oop.application.port.NameCipher;
 import com.polyauth.oop.application.port.PasswordVerifier;
@@ -53,6 +54,8 @@ class AuthenticationUseCaseTest {
     @Mock
     private AccessTokenIssuer tokenIssuer;
     @Mock
+    private AccountCrypto accountCrypto;
+    @Mock
     private AuditTrail auditTrail;
 
     private AuthenticationUseCase useCase;
@@ -60,7 +63,8 @@ class AuthenticationUseCaseTest {
     @BeforeEach
     void setUp() {
         useCase = new AuthenticationUseCase(userRepository, tokenRepository, passwordVerifier,
-                nameCipher, tokenSecretHasher, tokenIssuer, auditTrail, CLOCK);
+                nameCipher, tokenSecretHasher, tokenIssuer, accountCrypto,
+                auditTrail, CLOCK);
     }
 
     @Test

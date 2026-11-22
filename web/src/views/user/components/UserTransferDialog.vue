@@ -40,7 +40,7 @@ async function submit(): Promise<void> {
       orgId: form.orgId,
       post: form.post.trim() || undefined,
     })
-    ElMessage.success('调岗信息已更新，请复核该用户现有角色与数据范围')
+    ElMessage.success('调岗信息已更新，请复核该用户现有角色')
     visible.value = false
     emit('success', updated)
   } finally {
@@ -56,7 +56,7 @@ async function submit(): Promise<void> {
       type="info"
       :closable="false"
       show-icon
-      title="调岗不会自动删除已有角色；请在授权管理中复核并按需回收或新增数据范围。"
+      title="调岗不会自动删除已有角色；请在授权管理中复核并按需调整。"
     />
     <el-form label-position="top">
       <el-form-item label="员工">

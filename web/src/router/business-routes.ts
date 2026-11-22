@@ -1,5 +1,8 @@
 import type { RouteRecordRaw } from 'vue-router'
-import { ADMIN_MENU_PERMISSIONS } from '@/constants/permissions'
+import {
+  ADMIN_MENU_PERMISSIONS,
+  ADMIN_MENU_PERMISSION_CODES,
+} from '@/constants/permissions'
 
 export const BUSINESS_LAYOUT_ROUTE_NAME = 'AppLayout'
 
@@ -16,6 +19,7 @@ export const businessRouteChildren: RouteRecordRaw[] = [
       title: '首页',
       icon: 'HomeFilled',
       permissionId: ADMIN_MENU_PERMISSIONS.HOME,
+      permissionCode: ADMIN_MENU_PERMISSION_CODES.HOME,
     },
   },
   {
@@ -26,6 +30,7 @@ export const businessRouteChildren: RouteRecordRaw[] = [
       title: '组织管理',
       icon: 'OfficeBuilding',
       permissionId: ADMIN_MENU_PERMISSIONS.ORGANIZATION,
+      permissionCode: ADMIN_MENU_PERMISSION_CODES.ORGANIZATION,
     },
   },
   {
@@ -36,6 +41,7 @@ export const businessRouteChildren: RouteRecordRaw[] = [
       title: '用户管理',
       icon: 'User',
       permissionId: ADMIN_MENU_PERMISSIONS.USER,
+      permissionCode: ADMIN_MENU_PERMISSION_CODES.USER,
     },
   },
   {
@@ -46,6 +52,7 @@ export const businessRouteChildren: RouteRecordRaw[] = [
       title: '角色管理',
       icon: 'Avatar',
       permissionId: ADMIN_MENU_PERMISSIONS.ROLE,
+      permissionCode: ADMIN_MENU_PERMISSION_CODES.ROLE,
     },
   },
   {
@@ -56,6 +63,7 @@ export const businessRouteChildren: RouteRecordRaw[] = [
       title: '授权管理',
       icon: 'Key',
       permissionId: ADMIN_MENU_PERMISSIONS.GRANT,
+      permissionCode: ADMIN_MENU_PERMISSION_CODES.GRANT,
     },
   },
   {
@@ -66,16 +74,7 @@ export const businessRouteChildren: RouteRecordRaw[] = [
       title: '功能权限',
       icon: 'Grid',
       permissionId: ADMIN_MENU_PERMISSIONS.FUNCTION_PERMISSION,
-    },
-  },
-  {
-    path: 'data-scope',
-    name: 'DataScopePage',
-    component: () => import('@/views/dataScope/DataScopePage.vue'),
-    meta: {
-      title: '数据权限',
-      icon: 'DataAnalysis',
-      permissionId: ADMIN_MENU_PERMISSIONS.DATA_SCOPE,
+      permissionCode: ADMIN_MENU_PERMISSION_CODES.FUNCTION_PERMISSION,
     },
   },
   {
@@ -86,6 +85,7 @@ export const businessRouteChildren: RouteRecordRaw[] = [
       title: '日志审计',
       icon: 'Document',
       permissionId: ADMIN_MENU_PERMISSIONS.LOGS,
+      permissionCode: ADMIN_MENU_PERMISSION_CODES.LOGS,
     },
   },
 ]

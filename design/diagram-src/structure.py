@@ -38,13 +38,13 @@ for i, node in enumerate(txn):  # 数据耦合标注放在事务框上方
 
 # changeStatus 的下层模块
 c1 = b(110, 450, 220, "吊销全部令牌", "AuthService.revokeUserTokens", size=14)
-c2 = b(350, 450, 220, "回收全部角色", "GrantService.revokeAllRoles", size=14)
+c2 = b(350, 450, 220, "回收全部角色", "RoleService.revokeAllRoles", size=14)
 link(txn[1], c1, "userId↓")
 link(txn[1], c2, "userId↓", dx=30)
 
 # 登录（变换型小结构）
 s.text(600, 620, "② P1 登录认证", 17, "#13396b", weight="bold", bg=False)
-lg = b(390, 650, 420, "登录主控", "AuthController.login → AuthService.login", h=70)
+lg = b(390, 650, 420, "登录主控", "IdentityAuthController.login → AuthService.login", h=70)
 lc = [b(80, 820, 220, "核对密码", "CryptoComponent.verifyPassword", size=14),
       b(320, 820, 200, "校验账号状态", "validateAccountStatus", size=14),
       b(540, 820, 200, "签发令牌", "generateToken(JWT)", size=14),
@@ -57,7 +57,7 @@ for node, c in zip(lc, ["密码,哈希↓ 是否匹配↑", "状态↓ 异常↑
 s.text(1780, 92, "③ 变换分析：P3 鉴权决策（输入 → 变换 → 输出）", 17, "#13396b", weight="bold", bg=False)
 mt = b(1540, 120, 480, "鉴权主控", "AuthInterceptor.preHandle（每个请求）", h=70)
 inp = b(1240, 300, 250, "输入：令牌认证", "AuthService.authenticate", size=14)
-loc = b(1510, 300, 250, "变换：定位功能点", "FunctionPermissionService.findByApi", size=14)
+loc = b(1510, 300, 250, "变换：定位 API", "ApiService.findByRequest", size=14)
 dec = b(1780, 300, 250, "变换：功能权限判定", "DecisionService.hasPermission", size=14)
 out = b(2050, 300, 250, "输出：放行 / 401 / 403", "BusinessException → 全局异常处理", size=14)
 for node, c in [(inp, "令牌↓ userId↑"), (loc, "API模板,方法↓ 功能点↑"), (dec, "userId,系统,功能点↓ 是否允许↑"), (out, "判定结果↓")]:
@@ -66,20 +66,20 @@ for node, c in [(inp, "令牌↓ userId↑"), (loc, "API模板,方法↓ 功能�
 
 gf = b(1780, 470, 250, "计算功能点集合", "getUserFunctionPoints", size=14)
 link(dec, gf, "userId,系统↓ 功能点集合↑")
-steps = ["① 账号为正常状态", "② 有效的用户-角色绑定", "③ 过滤停用角色", "④ 取角色绑定的功能点", "⑤ 只保留本系统有效功能点"]
+steps = ["① 账号为正常状态", "② 有效期内的角色绑定", "③ 启用角色及父角色", "④ 取角色权限候选", "⑤ 过滤系统、操作与状态"]
 for i, st in enumerate(steps):
     node = b(1240 + i * 214, 640, 200, st, "", h=56, size=13.5)
     link(gf, node, "")
 
-s.text(1780, 760, "开放接口 OpenApiController 直接调用 hasPermission / checkPermissions / getUserFunctionPoints，复用同一判定逻辑（FR-38）", 13, "#33507a", bg=False)
+s.text(1780, 760, "开放接口 OpenApiController 直接调用 DecisionService.hasPermission / getUserPermissions，复用同一判定逻辑（FR-38）", 13, "#33507a", bg=False)
 
 # ---------- 底部：公共下层模块 ----------
 s.raw('<line x1="40" y1="960" x2="2360" y2="960" stroke="#bbb" stroke-dasharray="6,4"/>')
 s.text(1200, 990, "公共下层模块（被上面多数模块调用，为减少连线未逐一画出）", 15, "#5c4710", weight="bold", bg=False)
-b(120, 1010, 560, "数据访问：JPA Repository", "IamUser/Role/UserRole/RoleFunction/FunctionPoint/Module/System/Token", **INFRA)
+b(120, 1010, 560, "数据访问：JPA Repository", "IamUser/Role/UserRole/RolePermission/Permission/System/Token", **INFRA)
 b(700, 1010, 360, "加密脱敏：CryptoComponent", "AES-GCM 加解密 / PBKDF2 / SHA-256 / 脱敏", **INFRA)
 b(1140, 1010, 360, "统一异常与响应", "BusinessException / GlobalExceptionHandler / Result", **INFRA)
-b(1580, 1010, 360, "状态常量", "RoleService.ROLE_ACTIVE / GrantService.GRANT_ACTIVE", **INFRA)
+b(1580, 1010, 360, "状态常量", "IamRole / IamUserRole 状态字段", **INFRA)
 
 s.legend(1130, [("module", "模块"), ("infra", "公共下层模块"), ("text", "箭头表示调用；灰字为模块间传递的数据（↓ 传入，↑ 返回），耦合类型分析见正文")])
 s.save(sys.argv[1])

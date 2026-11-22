@@ -38,6 +38,13 @@ public class JpaRoleGrantRepositoryAdapter implements RoleGrantRepository {
     }
 
     @Override
+    public List<RoleGrant> findByRoleId(Long roleId) {
+        return repository.findByRoleIdOrderByIdAsc(roleId).stream()
+                .map(RoleGrantMapper::toDomain)
+                .toList();
+    }
+
+    @Override
     public RoleGrant save(RoleGrant grant) {
         return RoleGrantMapper.toDomain(repository.save(RoleGrantMapper.toEntity(grant)));
     }

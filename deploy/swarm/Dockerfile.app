@@ -6,6 +6,8 @@ FROM maven:3.9-eclipse-temurin-17 AS build
 WORKDIR /build
 COPY pom.xml .
 COPY structured-backend/pom.xml ./structured-backend/pom.xml
+COPY oop-backend/pom.xml ./oop-backend/pom.xml
+COPY contract-tests/pom.xml ./contract-tests/pom.xml
 COPY structured-backend/src ./structured-backend/src
 COPY lib-repo ./lib-repo
 RUN mvn -q -pl structured-backend -am -DskipTests package

@@ -1,6 +1,6 @@
-# PolyAuth 结构化后端栈（当前 4 台阶段用）
-# 只部署 mysql / redis / app，先把后端跑起来；前端 web 镜像就绪后改用 iam-stack.yml（含前端）。
-# 用法：在 manage 上，cd deploy/swarm && docker stack deploy -c iam-stack-backend.yml --with-registry-auth iam
+# PolyAuth 结构化后端诊断栈（8 台正式拓扑的只后端子集）
+# 只部署 mysql / redis / app；正式验收请使用同目录 iam-stack.yml（含 web 与 OOP）。
+# 用法：在任一 manager 上，cd deploy/swarm && docker stack deploy -c iam-stack-backend.yml --with-registry-auth iam
 # 镜像地址：SWR 组织名 ooad-mytx，region cn-north-4。
 
 version: "3.8"
@@ -12,6 +12,7 @@ networks:
 secrets:
   jwt_secret:           { external: true }
   crypto_aes_key:       { external: true }
+  hmac_key:             { external: true }
   db_app_password:      { external: true }
   mysql_root_password:  { external: true }
   redis_password:       { external: true }
@@ -41,7 +42,7 @@ services:
       - mysql_root_password
       - db_app_password
     volumes:
-      # 数据落在 course-node1 本地磁盘；配合 placement 约束钉死，换节点 = 丢数据
+      # 数据落在唯一 role=db 节点的本地磁盘；配合 placement 约束钉死，换节点 = 丢数据
       - /srv/iam/mysql:/var/lib/mysql
     stop_grace_period: 1m
     deploy:
@@ -109,14 +110,14 @@ services:
     secrets:
       - jwt_secret
       - crypto_aes_key
+      - hmac_key
       - db_app_password
       - redis_password
       - iam_default_password
     stop_grace_period: 30s
     deploy:
-      # 当前只有 1 台 app 节点（course-node2），2G 内存只放得下 1 个 JVM；
-      # 扩容到 8 台、有 3 台 role=app 节点后改成 3
-      replicas: 1
+      # 8 台拓扑固定三台 role=app；每台 2G 只运行一个结构化 JVM。
+      replicas: 3
       placement:
         constraints: [node.labels.role == app]
       resources:
@@ -136,8 +137,8 @@ services:
       timeout: 5s
       retries: 5
       start_period: 120s
-    # 前端没部署之前，如需从本机 Postman/浏览器直测后端 API，
-    # 取消下面注释把 8080 发布到 course-node2（记得防火墙只对自己的 IP 放行）：
+    # 前端没部署之前，如需从本机 Postman/浏览器直测结构化后端 API，
+    # 取消下面注释把 8080 发布到 role=app 节点（记得防火墙只对自己的 IP 放行）：
     # ports:
     #   - target: 8080
     #     published: 8080

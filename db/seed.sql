@@ -26,7 +26,6 @@ VALUES
 (10004, 1, NULL, 'MENU_ROLE',         '角色管理', 'MENU', '/role',         'VIEW', 4, 'ACTIVE', 0),
 (10005, 1, NULL, 'MENU_GRANT',        '授权管理', 'MENU', '/grant',        'VIEW', 5, 'ACTIVE', 0),
 (10006, 1, NULL, 'MENU_PERMISSION',   '功能权限', 'MENU', '/permission',   'VIEW', 6, 'ACTIVE', 0),
-(10007, 1, NULL, 'MENU_DATA_SCOPE',   '数据权限', 'MENU', '/data-scope',   'VIEW', 7, 'ACTIVE', 0),
 (10008, 1, NULL, 'MENU_LOG',          '日志审计', 'MENU', '/logs',         'VIEW', 8, 'ACTIVE', 0);
 
 -- 3. 按钮权限：角色直接授予这些前端权限，API 再挂到按钮权限下
@@ -66,11 +65,6 @@ VALUES
 INSERT INTO iam_permission
     (id, system_id, parent_id, permission_code, permission_name, permission_type, route_path, action, sort_no, status, is_deleted)
 VALUES
-(20030, 1, 10007, 'DATA_SCOPE_LIST',      '查询数据范围字典', 'BUTTON', NULL, 'VIEW', 1, 'ACTIVE', 0),
-(20031, 1, 10007, 'DATA_SCOPE_CREATE',    '创建数据范围字典', 'BUTTON', NULL, 'ALL',  2, 'ACTIVE', 0),
-(20032, 1, 10007, 'ROLE_DATA_SCOPE_LIST', '查询角色数据范围', 'BUTTON', NULL, 'VIEW', 3, 'ACTIVE', 0),
-(20033, 1, 10007, 'ROLE_DATA_SCOPE_BIND', '绑定角色数据范围', 'BUTTON', NULL, 'ALL',  4, 'ACTIVE', 0),
-(20034, 1, 10007, 'ROLE_DATA_SCOPE_REVOKE', '回收角色数据范围', 'BUTTON', NULL, 'ALL', 5, 'ACTIVE', 0),
 (20035, 1, 10004, 'ROLE_UPDATE',          '修改角色与继承',   'BUTTON', NULL, 'ALL',  4, 'ACTIVE', 0),
 (20036, 1, 10004, 'ROLE_EXCLUSION_MANAGE','管理角色互斥',     'BUTTON', NULL, 'ALL',  5, 'ACTIVE', 0),
 (20037, 1, 10002, 'ORG_UPDATE',           '修改和停用组织',   'BUTTON', NULL, 'ALL',  6, 'ACTIVE', 0),
@@ -122,18 +116,12 @@ VALUES
 INSERT INTO iam_api
     (id, system_id, permission_id, api_code, api_name, api_path, http_method, status, is_deleted)
 VALUES
-(30032, 1, 20030, 'DATA_SCOPE_LIST',      '查询数据范围字典', '/systems/data-scopes', 'GET', 'ACTIVE', 0),
-(30033, 1, 20031, 'DATA_SCOPE_CREATE',    '创建数据范围字典', '/systems/data-scopes', 'POST', 'ACTIVE', 0),
-(30034, 1, 20032, 'ROLE_DATA_SCOPE_LIST', '查询角色数据范围', '/roles/{roleId}/data-scopes', 'GET', 'ACTIVE', 0),
-(30035, 1, 20033, 'ROLE_DATA_SCOPE_BIND', '绑定角色数据范围', '/roles/{roleId}/data-scopes', 'POST', 'ACTIVE', 0),
-(30036, 1, 20034, 'ROLE_DATA_SCOPE_REVOKE', '回收角色数据范围', '/roles/{roleId}/data-scopes/{bindingId}', 'DELETE', 'ACTIVE', 0),
 (30037, 1, 20035, 'ROLE_UPDATE',          '修改角色与继承',   '/roles/{roleId}', 'PUT', 'ACTIVE', 0),
 (30038, 1, 20036, 'ROLE_EXCLUSION_LIST',  '查询角色互斥',     '/roles/{roleId}/exclusions', 'GET', 'ACTIVE', 0),
 (30039, 1, 20036, 'ROLE_EXCLUSION_BIND',  '新建角色互斥',     '/roles/{roleId}/exclusions', 'POST', 'ACTIVE', 0),
 (30040, 1, 20036, 'ROLE_EXCLUSION_UNBIND','删除角色互斥',     '/roles/{roleId}/exclusions/{excludedRoleId}', 'DELETE', 'ACTIVE', 0),
 (30041, 1, 20037, 'ORG_UPDATE',           '修改和停用组织',   '/organizations/{orgId}', 'PUT', 'ACTIVE', 0),
-(30042, 1, 20038, 'USER_TRANSFER',        '员工调岗',         '/users/{userId}/organization', 'PUT', 'ACTIVE', 0),
-(30043, 1, 20031, 'ROLE_DATA_SCOPE_LEGACY', '兼容角色数据范围入口', '/systems/role-data-scopes', 'POST', 'ACTIVE', 0);
+(30042, 1, 20038, 'USER_TRANSFER',        '员工调岗',         '/users/{userId}/organization', 'PUT', 'ACTIVE', 0);
 INSERT INTO iam_api
     (id, system_id, permission_id, api_code, api_name, api_path, http_method, status, is_deleted)
 VALUES
@@ -144,7 +132,7 @@ VALUES
 (30045, 1, 20039, 'USER_SENSITIVE_VIEW', '查看敏感信息明文',
  '/users/{userId}/sensitive', 'GET', 'ACTIVE', 0);
 
--- 5. RBAC1/RBAC3 基线功能角色与岗位型数据角色
+-- 5. RBAC1/RBAC3 基线功能角色
 INSERT INTO iam_role (id, role_code, role_name, role_type, status, description, is_deleted)
 VALUES
 (1, 'SUPER_ADMIN',      '超级管理员', 'FUNC', 'ACTIVE', '拥有管理后台全部前端权限', 0),
@@ -152,15 +140,6 @@ VALUES
 (3, 'DEPT_MANAGER',     '部门经理',   'FUNC', 'ACTIVE', '部门人员与权限管理角色基线', 0),
 (4, 'PROJECT_MANAGER',  '项目经理',   'FUNC', 'ACTIVE', '项目经理部管理角色基线', 0),
 (5, 'EMPLOYEE',         '普通员工',   'FUNC', 'ACTIVE', '普通业务操作角色基线', 0);
-
-INSERT INTO iam_role (id, role_code, role_name, role_type, status, description, is_deleted, parent_id)
-VALUES
-(6, 'DATA_SAFETY',      '安全员',     'DATA', 'ACTIVE', '岗位型数据角色基线', 5),
-(7, 'DATA_BUDGET',      '预算员',     'DATA', 'ACTIVE', '岗位型数据角色基线', 5),
-(8, 'DATA_QUALITY',     '质检员',     'DATA', 'ACTIVE', '岗位型数据角色基线', 5),
-(9, 'DATA_COST',        '造价员',     'DATA', 'ACTIVE', '岗位型数据角色基线', 5),
-(10, 'DATA_ACCOUNTANT', '会计',       'DATA', 'ACTIVE', '与出纳互斥', 5),
-(11, 'DATA_CASHIER',    '出纳',       'DATA', 'ACTIVE', '与会计互斥', 5);
 
 INSERT INTO iam_role (id, role_code, role_name, role_type, status, description, is_deleted)
 VALUES
@@ -174,27 +153,14 @@ SELECT 1, id, action FROM iam_permission WHERE system_id = 1 AND is_deleted = 0;
 INSERT INTO iam_role_permission (role_id, permission_id, allowed_action)
 VALUES (12, 40001, 'ALL');
 
--- 会计与出纳为静态互斥角色。
-INSERT INTO iam_role_exclusion (role_id, excluded_role_id, created_by)
-VALUES (10, 11, 1);
-
--- 7. 数据范围字典
-INSERT INTO iam_data_scope (id, scope_code, scope_name, description, sort_no, status, is_deleted)
-VALUES
-(1, 'ALL',     '全公司', '可访问接入系统内全部数据', 1, 'ACTIVE', 0),
-(2, 'BRANCH',  '本分公司', '覆盖授权分公司及其下级节点', 2, 'ACTIVE', 0),
-(3, 'DEPT',    '本部门', '覆盖授权部门及其下级项目节点', 3, 'ACTIVE', 0),
-(4, 'PROJECT', '本项目', '按项目 ID 精确过滤', 4, 'ACTIVE', 0),
-(5, 'SELF',    '本人', '仅目标用户等于当前用户', 5, 'ACTIVE', 0);
-
--- 8. 分层组织：总公司 → 信息中心
+-- 7. 分层组织：总公司 → 信息中心
 INSERT INTO iam_org
     (id, parent_id, ancestors, org_code, org_name, org_type, org_level, sort_no, status, is_deleted)
 VALUES
 (1, NULL, '0',   'HQ',      '总公司',   'HQ',   1, 0, 'ACTIVE', 0),
 (2, 1,    '0,1', 'HQ_INFO', '信息中心', 'DEPT', 3, 1, 'ACTIVE', 0);
 
--- 9. 管理员账号 admin / Admin@123
+-- 8. 管理员账号 admin / Admin@123
 INSERT INTO iam_user
     (id, user_no, password_hash, name_enc, name_hash, org_id, account_status, is_deleted)
 VALUES (1, 'admin',

@@ -90,25 +90,35 @@ class JpaAdapterTest {
     @Test
     void readsPermissionFactsWithSystemCode() {
         SystemEntity system = new SystemEntity();
-        system.setId(1L);
         system.setSystemCode("COURSE");
+        system.setSystemName("课程系统");
         system.setStatus("ACTIVE");
         system.setIsDeleted(0);
-        systemRepository.save(system);
+        system.setCreatedAt(LocalDateTime.now());
+        system.setUpdatedAt(LocalDateTime.now());
+        system.setVersion(0L);
+        system = systemRepository.saveAndFlush(system);
 
         PermissionEntity permission = new PermissionEntity();
-        permission.setId(100L);
-        permission.setSystemId(1L);
+        permission.setSystemId(system.getId());
+        permission.setParentId(null);
         permission.setPermissionCode("COURSE_VIEW");
+        permission.setPermissionName("课程查看");
+        permission.setPermissionType("MENU");
+        permission.setRoutePath("/course");
         permission.setAction("VIEW");
+        permission.setSortNo(1);
         permission.setStatus("ACTIVE");
         permission.setIsDeleted(0);
-        permissionRepository.save(permission);
+        permission.setCreatedAt(LocalDateTime.now());
+        permission.setUpdatedAt(LocalDateTime.now());
+        permission = permissionRepository.saveAndFlush(permission);
 
-        List<PermissionFact> facts = permissionCatalogRepository.findFacts(Set.of(100L));
+        List<PermissionFact> facts = permissionCatalogRepository.findFacts(
+                Set.of(permission.getId()));
 
         assertThat(facts).extracting(PermissionFact::systemCode)
                 .containsExactly("COURSE");
-        assertThat(permissionCatalogRepository.findFact(100L)).isPresent();
+        assertThat(permissionCatalogRepository.findFact(permission.getId())).isPresent();
     }
 }

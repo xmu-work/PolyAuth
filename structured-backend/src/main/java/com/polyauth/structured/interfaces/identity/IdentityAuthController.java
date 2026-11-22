@@ -70,8 +70,10 @@ public class IdentityAuthController {
      */
     @GetMapping("/me")
     public IdentityCurrentUserVO currentUser(
-            @RequestAttribute(AuthInterceptor.ATTR_USER_ID) Long userId,
-            @RequestAttribute(AuthInterceptor.ATTR_SYSTEM_CODE) String systemCode) {
+            @RequestAttribute(AuthInterceptor.ATTR_USER_ID)
+            Long userId,
+            @RequestAttribute(AuthInterceptor.ATTR_SYSTEM_CODE)
+            String systemCode) {
         return IdentityCurrentUserVO.from(identityService.getCurrentUser(userId, systemCode));
     }
 
@@ -80,9 +82,12 @@ public class IdentityAuthController {
      */
     @GetMapping("/permissions/{permission}")
     public PermissionCheckVO checkPermission(
-            @RequestAttribute(AuthInterceptor.ATTR_USER_ID) Long userId,
-            @RequestAttribute(AuthInterceptor.ATTR_SYSTEM_CODE) String systemCode,
-            @PathVariable String permission) {
+            @RequestAttribute(AuthInterceptor.ATTR_USER_ID)
+            Long userId,
+            @RequestAttribute(AuthInterceptor.ATTR_SYSTEM_CODE)
+            String systemCode,
+            @PathVariable
+            String permission) {
         return new PermissionCheckVO(
                 identityService.hasPermissionCode(userId, systemCode, permission));
     }
@@ -114,8 +119,10 @@ public class IdentityAuthController {
      */
     @GetMapping("/api-permissions/{operationId}")
     public ApiAuthorityCheckVO apiPermission(
-            @RequestAttribute(AuthInterceptor.ATTR_USER_ID) Long userId,
-            @RequestAttribute(AuthInterceptor.ATTR_SYSTEM_CODE) String systemCode,
+            @RequestAttribute(AuthInterceptor.ATTR_USER_ID)
+            Long userId,
+            @RequestAttribute(AuthInterceptor.ATTR_SYSTEM_CODE)
+            String systemCode,
             @PathVariable
             @Size(min = 1, max = 128)
             String operationId) {
@@ -150,8 +157,10 @@ public class IdentityAuthController {
      */
     @GetMapping("/users/{userId}")
     public IdentityUserVO user(
-            @RequestAttribute(AuthInterceptor.ATTR_USER_ID) Long operatorId,
-            @RequestAttribute(AuthInterceptor.ATTR_SYSTEM_CODE) String systemCode,
+            @RequestAttribute(AuthInterceptor.ATTR_USER_ID)
+            Long operatorId,
+            @RequestAttribute(AuthInterceptor.ATTR_SYSTEM_CODE)
+            String systemCode,
             @PathVariable
             @Size(min = 1, max = 64)
             String userId) {

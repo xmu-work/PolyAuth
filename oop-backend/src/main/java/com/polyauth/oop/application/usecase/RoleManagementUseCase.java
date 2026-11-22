@@ -19,6 +19,7 @@ import com.polyauth.oop.domain.repository.PermissionCatalogRepository;
 import com.polyauth.oop.domain.repository.RoleGrantRepository;
 import com.polyauth.oop.domain.repository.RolePermissionRepository;
 import com.polyauth.oop.domain.repository.RoleRepository;
+import com.polyauth.oop.domain.repository.RoleExclusionRepository;
 import com.polyauth.oop.domain.repository.UserAccountRepository;
 import com.polyauth.oop.domain.service.RoleHierarchy;
 
@@ -29,6 +30,8 @@ import java.util.List;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.HashSet;
 import java.util.function.Function;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -69,6 +72,8 @@ public class RoleManagementUseCase {
     private final RoleGrantRepository roleGrantRepository;
     private final RolePermissionRepository rolePermissionRepository;
     private final PermissionCatalogRepository permissionCatalogRepository;
+    private final RoleExclusionRepository roleExclusionRepository;
+    private final PermissionAccessUseCase permissionAccessUseCase;
     private final AuditTrail auditTrail;
     private final Clock clock;
 
@@ -80,6 +85,8 @@ public class RoleManagementUseCase {
                                  RoleGrantRepository roleGrantRepository,
                                  RolePermissionRepository rolePermissionRepository,
                                  PermissionCatalogRepository permissionCatalogRepository,
+                                 RoleExclusionRepository roleExclusionRepository,
+                                 PermissionAccessUseCase permissionAccessUseCase,
                                  AuditTrail auditTrail,
                                  Clock clock) {
         this.roleRepository = roleRepository;
@@ -87,6 +94,8 @@ public class RoleManagementUseCase {
         this.roleGrantRepository = roleGrantRepository;
         this.rolePermissionRepository = rolePermissionRepository;
         this.permissionCatalogRepository = permissionCatalogRepository;
+        this.roleExclusionRepository = roleExclusionRepository;
+        this.permissionAccessUseCase = permissionAccessUseCase;
         this.auditTrail = auditTrail;
         this.clock = clock;
     }
@@ -142,13 +151,16 @@ public class RoleManagementUseCase {
                         ApplicationErrorCode.RESOURCE_NOT_FOUND, "用户不存在"));
         if (!user.canAuthenticate()) {
             throw new UseCaseException(
-                    ApplicationErrorCode.PARAM_INVALID, "用户状态不允许授权");
+                    ApplicationErrorCode.TARGET_USER_ABNORMAL,
+                    "用户状态不允许授权");
         }
         Role role = requireRole(command.roleId());
         if (!role.isActive()) {
             throw new UseCaseException(
                     ApplicationErrorCode.PARAM_INVALID, "角色已停用");
         }
+        ensureNoExclusion(command.userId(), command.roleId());
+        checkGrantBoundary(command.grantBy(), command.roleId());
         Instant now = clock.instant();
         if (command.expireTime() != null && !command.expireTime().isAfter(now)) {
             throw new UseCaseException(
@@ -160,8 +172,13 @@ public class RoleManagementUseCase {
             throw new UseCaseException(
                     ApplicationErrorCode.RESOURCE_DUPLICATE, "重复授权");
         }
-        RoleGrant grant = RoleGrant.grant(command.userId(), command.roleId(), now,
-                command.expireTime(), command.grantBy(), command.reason(), now);
+        RoleGrant grant = existing
+                .map(item -> item.reactivate(now, command.expireTime(),
+                        command.grantBy(), command.reason(), now))
+                .orElseGet(() -> RoleGrant.grant(
+                        command.userId(), command.roleId(), now,
+                        command.expireTime(), command.grantBy(),
+                        command.reason(), now));
         RoleGrant saved = roleGrantRepository.save(grant);
         auditTrail.recordPermissionChange(command.grantBy(), ADMIN_SYSTEM_CODE,
                 "GRANT_ROLE", "user:" + command.userId() + "/role:" + command.roleId(),
@@ -204,6 +221,14 @@ public class RoleManagementUseCase {
      */
     public List<RoleGrant> userAssignments(Long userId) {
         return roleGrantRepository.findByUserId(userId);
+    }
+
+    /**
+     * 查询角色下的用户分配。
+     */
+    public List<RoleGrant> roleAssignments(Long roleId) {
+        requireRole(roleId);
+        return roleGrantRepository.findByRoleId(roleId);
     }
 
     /**
@@ -259,6 +284,101 @@ public class RoleManagementUseCase {
         return rolePermissionRepository.findByRoleId(roleId);
     }
 
+    /**
+     * 解除角色与前端权限绑定。
+     */
+    public void unbindPermissions(Long roleId, List<Long> permissionIds,
+                                  Long operatorId) {
+        requireRole(roleId);
+        if (permissionIds == null || permissionIds.isEmpty()
+                || permissionIds.size() > 200) {
+            throw new UseCaseException(
+                    ApplicationErrorCode.PARAM_INVALID,
+                    "权限列表不能为空且不能超过 200 项");
+        }
+        List<Long> before = rolePermissionRepository.findByRoleId(roleId).stream()
+                .map(RolePermissionGrant::permissionId).sorted().toList();
+        permissionIds.stream().distinct()
+                .forEach(permissionId -> rolePermissionRepository.unbind(
+                        roleId, permissionId));
+        List<Long> after = rolePermissionRepository.findByRoleId(roleId).stream()
+                .map(RolePermissionGrant::permissionId).sorted().toList();
+        auditTrail.recordPermissionChange(operatorId, ADMIN_SYSTEM_CODE,
+                "UNBIND_ROLE_PERMISSION", "role:" + roleId,
+                Map.of("roleId", roleId, "permissionIds", before),
+                Map.of("roleId", roleId, "permissionIds", after));
+    }
+
+    /**
+     * 查询角色互斥关系。
+     */
+    public List<Long> exclusions(Long roleId) {
+        requireRole(roleId);
+        return roleExclusionRepository.findByRole(roleId).stream()
+                .map(item -> item.peerOf(roleId))
+                .distinct()
+                .sorted()
+                .toList();
+    }
+
+    /**
+     * 新建角色互斥关系。
+     */
+    public void bindExclusion(Long roleId, Long excludedRoleId, Long operatorId) {
+        if (roleId.equals(excludedRoleId)) {
+            throw new UseCaseException(
+                    ApplicationErrorCode.PARAM_INVALID, "互斥角色不能相同");
+        }
+        requireRole(roleId);
+        requireRole(excludedRoleId);
+        if (roleExclusionRepository.findPair(roleId, excludedRoleId).isPresent()) {
+            throw new UseCaseException(
+                    ApplicationErrorCode.RESOURCE_DUPLICATE, "角色互斥关系已存在");
+        }
+        Set<Long> firstUsers = roleGrantRepository.findByRoleId(roleId).stream()
+                .filter(grant -> grant.status().name().equals("ACTIVE"))
+                .filter(grant -> grant.isEffective(clock.instant()))
+                .map(RoleGrant::userId)
+                .collect(java.util.stream.Collectors.toSet());
+        boolean conflict = roleGrantRepository.findByRoleId(excludedRoleId).stream()
+                .filter(grant -> grant.status().name().equals("ACTIVE"))
+                .filter(grant -> grant.isEffective(clock.instant()))
+                .anyMatch(grant -> firstUsers.contains(grant.userId()));
+        if (conflict) {
+            throw new UseCaseException(
+                    ApplicationErrorCode.ROLE_EXCLUSION_CONFLICT,
+                    "已有用户同时拥有这两个角色，请先回收冲突授权");
+        }
+        com.polyauth.oop.domain.model.RoleExclusion saved =
+                roleExclusionRepository.save(
+                        com.polyauth.oop.domain.model.RoleExclusion.create(
+                                roleId, excludedRoleId, operatorId, now()));
+        auditTrail.recordPermissionChange(operatorId, ADMIN_SYSTEM_CODE,
+                "BIND_ROLE_EXCLUSION",
+                "role:" + saved.roleId() + "/exclude:" + saved.excludedRoleId(),
+                null, Map.of("roleId", saved.roleId(),
+                        "excludedRoleId", saved.excludedRoleId()));
+    }
+
+    /**
+     * 删除角色互斥关系。
+     */
+    public void unbindExclusion(Long roleId, Long excludedRoleId,
+                                Long operatorId) {
+        com.polyauth.oop.domain.model.RoleExclusion exclusion =
+                roleExclusionRepository.findPair(roleId, excludedRoleId)
+                        .orElseThrow(() -> new UseCaseException(
+                                ApplicationErrorCode.RESOURCE_NOT_FOUND,
+                                "角色互斥关系不存在"));
+        roleExclusionRepository.delete(exclusion.id());
+        auditTrail.recordPermissionChange(operatorId, ADMIN_SYSTEM_CODE,
+                "UNBIND_ROLE_EXCLUSION",
+                "role:" + exclusion.roleId()
+                        + "/exclude:" + exclusion.excludedRoleId(),
+                Map.of("roleId", exclusion.roleId(),
+                        "excludedRoleId", exclusion.excludedRoleId()), null);
+    }
+
     private Role requireRole(Long roleId) {
         if (roleId == null) {
             throw new UseCaseException(ApplicationErrorCode.PARAM_INVALID, "角色 ID 不能为空");
@@ -266,6 +386,59 @@ public class RoleManagementUseCase {
         return roleRepository.findById(roleId)
                 .orElseThrow(() -> new UseCaseException(
                         ApplicationErrorCode.RESOURCE_NOT_FOUND, "角色不存在: " + roleId));
+    }
+
+    private void ensureNoExclusion(Long userId, Long roleId) {
+        Set<Long> activeRoleIds = roleGrantRepository.findByUserId(userId).stream()
+                .filter(grant -> grant.status().name().equals("ACTIVE"))
+                .filter(grant -> grant.isEffective(clock.instant()))
+                .map(RoleGrant::roleId)
+                .collect(java.util.stream.Collectors.toCollection(HashSet::new));
+        boolean conflict = roleExclusionRepository.findByRole(roleId).stream()
+                .map(item -> item.peerOf(roleId))
+                .anyMatch(activeRoleIds::contains);
+        if (conflict) {
+            throw new UseCaseException(
+                    ApplicationErrorCode.ROLE_EXCLUSION_CONFLICT,
+                    "角色与已授予角色互斥");
+        }
+    }
+
+    private void checkGrantBoundary(Long operatorId, Long roleId) {
+        Set<Long> rolePermissions = inheritedPermissionIds(roleId);
+        if (operatorId == null || rolePermissions.isEmpty()) {
+            return;
+        }
+        Set<Long> operatorPermissions =
+                permissionAccessUseCase.permissions(operatorId, ADMIN_SYSTEM_CODE);
+        if (!operatorPermissions.containsAll(rolePermissions)) {
+            throw new UseCaseException(
+                    ApplicationErrorCode.NO_FUNCTION_PERM,
+                    "不能授予超出自身权限的角色: " + roleId);
+        }
+    }
+
+    private Set<Long> inheritedPermissionIds(Long roleId) {
+        Set<Long> roleIds = new HashSet<>();
+        Set<Long> pending = new HashSet<>();
+        pending.add(roleId);
+        while (!pending.isEmpty()) {
+            Set<Long> next = new HashSet<>();
+            for (Role role : roleRepository.findAll()) {
+                if (!pending.contains(role.id()) || !role.isActive()) {
+                    continue;
+                }
+                if (roleIds.add(role.id()) && role.parentId() != null) {
+                    next.add(role.parentId());
+                }
+            }
+            pending = next;
+        }
+        Set<Long> permissions = new HashSet<>();
+        roleIds.forEach(id -> rolePermissionRepository.findByRoleId(id).stream()
+                .map(RolePermissionGrant::permissionId)
+                .forEach(permissions::add));
+        return permissions;
     }
 
     private void validateParent(Long parentId) {
@@ -286,7 +459,7 @@ public class RoleManagementUseCase {
             return RoleType.valueOf(requireText(value, "角色类型不能为空"));
         } catch (IllegalArgumentException exception) {
             throw new UseCaseException(
-                    ApplicationErrorCode.PARAM_INVALID, "角色类型必须为 FUNC 或 DATA");
+                    ApplicationErrorCode.PARAM_INVALID, "角色类型必须为 FUNC");
         }
     }
 

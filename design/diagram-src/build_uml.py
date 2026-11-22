@@ -125,22 +125,9 @@ def structured_decision_class() -> ClassDiagram:
     )
     d.add_box(
         "open", 1480, 110, 500, "OpenApiController",
-        ["- decisionService: DecisionService",
-         "- dataPermissionService: DataPermissionService"],
-        ["+ authorizeResource(...): Result<ResourceAuthorizationVO>",
-         "+ permissions(...): Result<Set<Long>>", "+ dataScopes(...): Result<List<...>>"],
+        ["- decisionService: DecisionService"],
+        ["+ permissions(...): Result<Set<Long>>"],
         "«controller»", "caller",
-    )
-    d.add_box(
-        "data_permission", 100, 620, 520, "DataPermissionService",
-        ["- decisionService: DecisionService", "- apiService: ApiService",
-         "- roleDataScopeRepository: IamRoleDataScopeRepository",
-         "- roleRepository: IamRoleRepository", "- orgRepository: IamOrgRepository",
-         "- userRoleRepository: IamUserRoleRepository"],
-        ["+ authorize(...): ResourceDecision",
-         "+ getEffectiveDataScopes(Long, String): List<...>",
-         "- matches(...): boolean"],
-        "«service»", "caller",
     )
     d.add_box(
         "role_service", 1690, 620, 520, "RoleService",
@@ -206,8 +193,6 @@ def structured_decision_class() -> ClassDiagram:
         [(1730, 301), (1730, 500), (1460, 500), (1460, 570)],
         "decisionService", (1600, 488), "open", "decision",
     )
-    d.association([(620, 740), (760, 740)], "decisionService",
-                  (690, 727), "data_permission", "decision")
     d.association([(1690, 750), (1460, 750)], "decisionService",
                   (1575, 737), "role_service", "decision")
     d.association(
@@ -574,7 +559,7 @@ def structured_management_auth_sequence() -> SequenceDiagram:
 
     s.fragment(
         "loop", "逐层展开父角色",
-        3180, 3590, 1030, 1165,
+        1880, 3710, 1010, 1180,
         [], [decision_act],
     )
     role_act = s.activation("role_repo", 1060, 1150)

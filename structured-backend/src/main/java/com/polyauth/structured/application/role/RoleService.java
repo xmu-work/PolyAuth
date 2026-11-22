@@ -435,8 +435,7 @@ public class RoleService {
 
     private boolean isFunctionRole(IamRole role) {
         return role.getIsDeleted() == 0
-                && (RoleType.FUNC.getCode().equals(role.getRoleType())
-                || RoleType.DATA.getCode().equals(role.getRoleType()));
+                && RoleType.FUNC.getCode().equals(role.getRoleType());
     }
 
     private Set<Long> currentPermissionIds(Long roleId) {

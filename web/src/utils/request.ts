@@ -118,7 +118,7 @@ function handleBusinessError(body: Result, silent = false, isLogin = false): Pro
       }
       return rejectWith(code, message)
     default:
-      // 1001/1002/1003/1005/2007/2008/3003/3004/3005/3007/3009/3010 等：toast 后端 message 原文（契约 9.2-7）
+      // 1001/1002/1003/1005/1006/2007/3003/3004/3005/3009/3010 等：toast 后端 message 原文（契约 9.2-7）
       // 需自定义展示的场景（表单 1001 回填、3003 还原拖拽）由页面局部 catch 处理
       if (!silent) {
         ElMessage.error(message)

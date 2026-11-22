@@ -2,9 +2,7 @@ package com.polyauth.structured.application.expiration;
 
 import com.polyauth.structured.application.auth.AuthService;
 import com.polyauth.structured.application.log.LogService;
-import com.polyauth.structured.infrastructure.persistence.entity.IamRoleDataScope;
 import com.polyauth.structured.infrastructure.persistence.entity.IamUserRole;
-import com.polyauth.structured.infrastructure.persistence.repository.IamRoleDataScopeRepository;
 import com.polyauth.structured.infrastructure.persistence.repository.IamUserRoleRepository;
 import com.polyauth.structured.interfaces.RequestIdFilter;
 import lombok.RequiredArgsConstructor;
@@ -24,13 +22,12 @@ import java.util.Map;
 public class GrantExpirationService {
 
     private final IamUserRoleRepository userRoleRepository;
-    private final IamRoleDataScopeRepository roleDataScopeRepository;
     private final LogService logService;
 
     /**
-     * 将已到期但状态仍为 ACTIVE 的用户角色和数据范围授权标记为 EXPIRED。
+     * 将已到期但状态仍为 ACTIVE 的用户角色授权标记为 EXPIRED。
      *
-     * @return 本次回收的用户角色数和数据范围数
+     * @return 本次回收的用户角色数
      */
     public ExpirationResult expireDueGrants() {
         LocalDateTime now = LocalDateTime.now();
@@ -48,21 +45,7 @@ public class GrantExpirationService {
             userRoleRepository.saveAll(userRoles);
         }
 
-        List<IamRoleDataScope> dataScopes = roleDataScopeRepository
-                .findByStatusAndExpireTimeBefore(IamRoleDataScope.STATUS_ACTIVE, now);
-        for (IamRoleDataScope scope : dataScopes) {
-            Map<String, Object> before = dataScopeSnapshot(scope);
-            scope.setStatus(IamRoleDataScope.STATUS_EXPIRED);
-            scope.setUpdatedAt(now);
-            logService.recordPermissionChange(null, AuthService.ADMIN_SYSTEM_CODE,
-                    "EXPIRE_ROLE_DATA_SCOPE",
-                    "role:" + scope.getRoleId() + "/data-scope:" + scope.getId(),
-                    before, dataScopeSnapshot(scope), null, RequestIdFilter.currentRequestId());
-        }
-        if (!dataScopes.isEmpty()) {
-            roleDataScopeRepository.saveAll(dataScopes);
-        }
-        return new ExpirationResult(userRoles.size(), dataScopes.size());
+        return new ExpirationResult(userRoles.size());
     }
 
     /**
@@ -78,18 +61,4 @@ public class GrantExpirationService {
         return snapshot;
     }
 
-    /**
-     * 构造数据范围授权到期快照。
-     */
-    private Map<String, Object> dataScopeSnapshot(IamRoleDataScope scope) {
-        Map<String, Object> snapshot = new LinkedHashMap<>();
-        snapshot.put("id", scope.getId());
-        snapshot.put("roleId", scope.getRoleId());
-        snapshot.put("scopeType", scope.getScopeType());
-        snapshot.put("orgId", scope.getOrgId());
-        snapshot.put("projectId", scope.getProjectId());
-        snapshot.put("status", scope.getStatus());
-        snapshot.put("expireTime", scope.getExpireTime());
-        return snapshot;
-    }
 }

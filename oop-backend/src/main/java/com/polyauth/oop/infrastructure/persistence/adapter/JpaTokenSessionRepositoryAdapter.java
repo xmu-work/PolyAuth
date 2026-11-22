@@ -6,6 +6,9 @@ import com.polyauth.oop.infrastructure.persistence.mapper.TokenSessionMapper;
 import com.polyauth.oop.infrastructure.persistence.repository.TokenJpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Optional;
 
 /**
@@ -31,5 +34,16 @@ public class JpaTokenSessionRepositoryAdapter implements TokenSessionRepository 
     @Override
     public void save(TokenSession session) {
         repository.save(TokenSessionMapper.toEntity(session));
+    }
+
+    @Override
+    public void revokeAllForUser(Long userId, Instant now) {
+        repository.findByUserIdAndStatus(userId, "ACTIVE").forEach(entity -> {
+            entity.setRevoked(1);
+            entity.setStatus("REVOKED");
+            entity.setRevokedAt(LocalDateTime.ofInstant(
+                    now, ZoneId.of("Asia/Shanghai")));
+            repository.save(entity);
+        });
     }
 }

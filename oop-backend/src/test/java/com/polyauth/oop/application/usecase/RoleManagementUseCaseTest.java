@@ -17,6 +17,8 @@ import com.polyauth.oop.domain.repository.RolePermissionRepository;
 import com.polyauth.oop.domain.repository.RoleRepository;
 import com.polyauth.oop.domain.repository.UserAccountRepository;
 import com.polyauth.oop.domain.repository.PermissionCatalogRepository;
+import com.polyauth.oop.domain.repository.RoleExclusionRepository;
+import com.polyauth.oop.domain.model.RoleExclusion;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -42,6 +44,7 @@ class RoleManagementUseCaseTest {
     private InMemoryRoleRepository roles;
     private InMemoryRoleGrantRepository grants;
     private InMemoryUserAccountRepository users;
+    private PermissionAccessUseCase permissionAccessUseCase;
     private RoleManagementUseCase useCase;
 
     @BeforeEach
@@ -49,9 +52,11 @@ class RoleManagementUseCaseTest {
         roles = new InMemoryRoleRepository();
         grants = new InMemoryRoleGrantRepository();
         users = new InMemoryUserAccountRepository();
+        permissionAccessUseCase = org.mockito.Mockito.mock(PermissionAccessUseCase.class);
         useCase = new RoleManagementUseCase(
                 roles, users, grants, new EmptyRolePermissionRepository(),
-                new EmptyPermissionCatalogRepository(), new NoOpAuditTrail(), CLOCK);
+                new EmptyPermissionCatalogRepository(), new EmptyRoleExclusionRepository(),
+                permissionAccessUseCase, new NoOpAuditTrail(), CLOCK);
     }
 
     @Test
@@ -167,6 +172,20 @@ class RoleManagementUseCaseTest {
             data.put(user.id(), user);
             return user;
         }
+
+        @Override
+        public com.polyauth.oop.domain.model.DomainPage<UserAccount> findPage(
+                int page, int pageSize, Long orgId, String accountStatus) {
+            return new com.polyauth.oop.domain.model.DomainPage<>(
+                    data.size(), page, pageSize, new ArrayList<>(data.values()));
+        }
+
+        @Override
+        public List<UserAccount> findByOrgId(Long orgId) {
+            return data.values().stream()
+                    .filter(user -> java.util.Objects.equals(user.orgId(), orgId))
+                    .toList();
+        }
     }
 
     private static final class InMemoryRoleGrantRepository implements RoleGrantRepository {
@@ -185,6 +204,11 @@ class RoleManagementUseCaseTest {
         @Override
         public List<RoleGrant> findByUserId(Long userId) {
             return data.stream().filter(grant -> grant.userId().equals(userId)).toList();
+        }
+
+        @Override
+        public List<RoleGrant> findByRoleId(Long roleId) {
+            return data.stream().filter(grant -> grant.roleId().equals(roleId)).toList();
         }
 
         @Override
@@ -237,6 +261,29 @@ class RoleManagementUseCaseTest {
         public List<com.polyauth.oop.domain.model.PermissionFact> findFacts(
                 java.util.Collection<Long> permissionIds) {
             return List.of();
+        }
+    }
+
+    private static final class EmptyRoleExclusionRepository
+            implements RoleExclusionRepository {
+
+        @Override
+        public Optional<RoleExclusion> findPair(Long firstRoleId, Long secondRoleId) {
+            return Optional.empty();
+        }
+
+        @Override
+        public List<RoleExclusion> findByRole(Long roleId) {
+            return List.of();
+        }
+
+        @Override
+        public RoleExclusion save(RoleExclusion exclusion) {
+            return exclusion;
+        }
+
+        @Override
+        public void delete(Long exclusionId) {
         }
     }
 

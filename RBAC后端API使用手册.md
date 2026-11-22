@@ -1,6 +1,6 @@
 # RBAC 后端 API 使用手册
 
-> 版本：2.0
+> 版本：2.1
 > 更新日期：2026-11-22
 > 适用范围：当前工作树的 `structured-backend` 与 `oop-backend`
 
@@ -13,24 +13,25 @@
 | 实现 | 默认地址 | 功能范围 |
 |---|---|---|
 | 结构化后端 | `http://localhost:8080/api/v1` | RBAC3 管理能力与完整统一身份接口 |
-| OOP 后端 | `http://localhost:8081/api/v1` | 本地认证和角色管理纵向切片 |
+| OOP 后端 | `http://localhost:8081/api/v1` | 与结构化后端相同的 50 个功能权限端点 |
 
 两套后端使用相同的上下文路径 `/api/v1`，完整请求地址需要再加表中的相对路径，
-例如 `/api/v1/users`。两套后端当前都不是全功能等价：
+例如 `/api/v1/users`。两套后端使用相同的外部 API 契约：
 
 | 能力 | 结构化后端 | OOP 后端 |
 |---|---|---|
 | 登录、登出、令牌校验 | 已实现 | 已实现 |
 | `operationId` API 权限判断 | 已实现 | 已实现 |
-| 当前用户、权限码、部门、统一身份用户查询 | 已实现 | 未迁移 |
-| 用户账号、组织、系统、权限树、API 目录 | 已实现 | 未迁移 |
+| 当前用户、权限码、部门、统一身份用户查询 | 已实现 | 已实现 |
+| 用户账号、组织、系统、权限树、API 目录 | 已实现 | 已实现 |
 | 角色创建、查询、修改 | 已实现 | 已实现 |
 | 用户角色授予、撤销、按用户查询 | 已实现 | 已实现 |
-| 角色权限绑定、查询、解绑 | 已实现 | 缺解绑与按角色查询分配 |
-| 角色互斥、数据范围、审计、日志导出 | 已实现 | 未迁移 |
-| OpenAPI 签名与资源联合鉴权 | 已实现 | 未迁移 |
+| 角色权限绑定、查询、解绑 | 已实现 | 已实现 |
+| 角色互斥、审计、日志导出 | 已实现 | 已实现 |
+| OpenAPI 签名与资源联合鉴权 | 已实现 | 已实现 |
 
-准确的双后端迁移状态以 [dual-backend-status.md](dual-backend-status.md) 为准。
+双后端端点覆盖由 OOP 的 `ApiParityContractTest` 校验；真实 MySQL 联调需分别启动
+8080 和 8081 后运行 `contract-tests`。
 
 ## 2. 统一身份外部契约
 
@@ -41,12 +42,12 @@
 |---|---|---|---|
 | POST | `/auth/login` | 账号密码登录 | 支持 |
 | POST | `/auth/logout` | 吊销当前令牌，成功返回 204 | 支持 |
-| GET | `/auth/me` | 当前用户、外部角色和前端权限码 | 未迁移 |
-| GET | `/auth/permissions/{permission}` | 校验单个前端权限码 | 未迁移 |
-| GET | `/auth/departments` | 部门分页 | 未迁移 |
+| GET | `/auth/me` | 当前用户、外部角色和前端权限码 | 支持 |
+| GET | `/auth/permissions/{permission}` | 校验单个前端权限码 | 支持 |
+| GET | `/auth/departments` | 部门分页 | 支持 |
 | GET | `/auth/api-permissions/{operationId}` | 按 API operationId 判断调用权限 | 支持 |
-| GET | `/auth/departments/{departmentId}/users` | 部门用户分页 | 未迁移 |
-| GET | `/auth/users/{userId}` | 按统一身份用户标识查询用户 | 未迁移 |
+| GET | `/auth/departments/{departmentId}/users` | 部门用户分页 | 支持 |
+| GET | `/auth/users/{userId}` | 按统一身份用户标识查询用户 | 支持 |
 
 这 8 个接口成功时直接返回业务对象，不使用管理端 `Result` 包装。失败时返回：
 
@@ -108,7 +109,6 @@ API 未登记、未映射权限或用户无权限均默认拒绝，返回 `403/2
 | PUT | `/roles/{roleId}` | `UpdateRoleDTO` |
 | POST | `/roles/{roleId}/permissions` | 权限主键裸数组 `[10001,10002]` |
 | DELETE | `/roles/{roleId}/permissions` | 权限主键裸数组 |
-| POST | `/open/authorize/resource` | 资源授权查询对象 |
 
 角色更新示例：
 
@@ -129,9 +129,6 @@ query/form 参数绑定 DTO。前端统一封装为 `postForm`、`putForm`、`de
 典型 DTO 表单入口：
 
 - `PUT /users/{userId}/organization`
-- `POST /roles/{roleId}/data-scopes`
-- `POST /systems/data-scopes`
-- `POST /systems/role-data-scopes`（兼容入口）
 - `PUT /organizations/{orgId}`
 
 ## 5. 结构化后端接口
@@ -227,22 +224,13 @@ VIEW_EDIT_APPROVE, VIEW_ADD_EDIT, VIEW_EDIT_EXPORT, VIEW_SELF, VIEW_EDIT_SELF
 
 `NONE` 不产生授权；绑定动作必须覆盖权限声明的动作。
 
-### 5.6 系统与数据范围
+### 5.6 系统
 
 | 方法 | 路径 | 说明 |
 |---|---|---|
 | POST | `/systems` | 登记接入系统 |
 | GET | `/systems` | 查询接入系统 |
 | GET | `/systems/{systemId}` | 系统详情 |
-| POST | `/systems/data-scopes` | 创建数据范围字典 |
-| GET | `/systems/data-scopes` | 查询数据范围字典 |
-| POST | `/systems/role-data-scopes` | 兼容旧契约的角色范围绑定 |
-| GET | `/roles/{roleId}/data-scopes` | 查询角色数据范围 |
-| POST | `/roles/{roleId}/data-scopes` | 授予角色数据范围 |
-| DELETE | `/roles/{roleId}/data-scopes/{bindingId}` | 回收角色数据范围 |
-
-数据范围类型为 `ALL/BRANCH/DEPT/PROJECT/SELF`。目标组织、项目与范围类型不一致时
-返回 `400/3012 DATA_SCOPE_INVALID`。
 
 ### 5.7 组织机构
 
@@ -262,10 +250,8 @@ VIEW_EDIT_APPROVE, VIEW_ADD_EDIT, VIEW_EDIT_EXPORT, VIEW_SELF, VIEW_EDIT_SELF
 | 方法 | 路径 | 说明 |
 |---|---|---|
 | GET | `/open/permissions` | 查询用户前端权限主键集合 |
-| GET | `/open/data-scopes` | 查询用户当前生效的数据范围 |
-| POST | `/open/authorize/resource` | 联合判定功能权限和目标数据范围 |
 
-普通用户令牌只能访问本人；应用签名模式可查询授权范围内的用户。
+普通用户令牌只能访问本人；应用签名模式可按功能权限查询用户权限集合。
 
 ### 5.9 日志
 
@@ -278,26 +264,19 @@ VIEW_EDIT_APPROVE, VIEW_ADD_EDIT, VIEW_EDIT_EXPORT, VIEW_SELF, VIEW_EDIT_SELF
 `action`、`success`、`startTime`、`endTime`。日志包含普通操作和权限变更，
 权限变更记录 `beforeSnapshot`、`afterSnapshot`。
 
-## 6. OOP 后端已实现接口
+## 6. OOP 后端接口覆盖
 
-| 方法 | 路径 | 说明 |
-|---|---|---|
-| POST | `/auth/login` | 登录 |
-| POST | `/auth/logout` | 登出 |
-| GET | `/auth/validate` | 令牌校验 |
-| GET | `/auth/api-permissions/{operationId}` | API 权限判断 |
-| POST | `/roles` | 创建角色 |
-| GET | `/roles` | 角色列表 |
-| GET | `/roles/{roleId}` | 角色详情 |
-| PUT | `/roles/{roleId}` | JSON 更新角色 |
-| POST | `/roles/{roleId}/assignments` | 授予用户角色 |
-| DELETE | `/roles/{roleId}/assignments/{userId}` | 撤销用户角色 |
-| GET | `/roles/assignments?userId=` | 查询用户角色 |
-| POST | `/roles/{roleId}/permissions` | 绑定前端权限 |
-| GET | `/roles/{roleId}/permissions` | 查询角色前端权限 |
+OOP 后端实现第 2、5 节列出的全部 50 个功能权限端点，路径、HTTP 方法、请求参数、
+响应结构和业务码与结构化后端一致。内部实现不同：
 
-OOP 未实现的 API 不会伪装成成功响应；其迁移范围和风险见
-[dual-backend-status.md](dual-backend-status.md) 与 [contract-tests/README.md](contract-tests/README.md)。
+- Controller 将 HTTP DTO 转为应用 Command，并只返回 VO 或外部契约 record。
+- `application/usecase` 负责事务和用例编排。
+- 领域对象维护账号、组织、角色、授权和权限节点不变量。
+- `domain/repository` 只使用领域对象和 JDK 容器。
+- JPA Entity、Mapper 和 Adapter 位于 `infrastructure/persistence`。
+
+端点集合由 `oop-backend` 的 `ApiParityContractTest` 静态校验；15 个共享 HTTP
+场景由 [contract-tests/README.md](contract-tests/README.md) 说明。
 
 ## 7. 错误码
 
@@ -308,6 +287,7 @@ OOP 未实现的 API 不会伪装成成功响应；其迁移范围和风险见
 | 1001 | PARAM_INVALID | 400 |
 | 1004 | IDEMPOTENCY_CONFLICT | 409 |
 | 1005 | RESOURCE_NOT_FOUND | 404 |
+| 1006 | METHOD_NOT_ALLOWED | 405 |
 | 2001 | UNAUTHENTICATED | 401 |
 | 2002 | TOKEN_INVALID | 401 |
 | 2003 | TOKEN_EXPIRED | 401 |
@@ -315,7 +295,6 @@ OOP 未实现的 API 不会伪装成成功响应；其迁移范围和风险见
 | 2005 | ACCOUNT_SEALED | 403 |
 | 2006 | ACCOUNT_DISABLED | 403 |
 | 2007 | NO_FUNCTION_PERM | 403 |
-| 2008 | OUT_OF_DATA_SCOPE | 403 |
 | 2009 | SIGNATURE_INVALID | 401 |
 | 2010 | REPLAY_DETECTED | 401 |
 | 2011 | APP_DISABLED | 403 |
@@ -327,7 +306,6 @@ OOP 未实现的 API 不会伪装成成功响应；其迁移范围和风险见
 | 3009 | RESOURCE_DUPLICATE | 409 |
 | 3010 | TARGET_USER_ABNORMAL | 409 |
 | 3011 | ROLE_EXCLUSION_CONFLICT | 409 |
-| 3012 | DATA_SCOPE_INVALID | 400 |
 | 5000 | INTERNAL_ERROR | 500 |
 | 5001 | SERVICE_UNAVAILABLE | 503 |
 

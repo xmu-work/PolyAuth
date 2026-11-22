@@ -2,6 +2,8 @@ package com.polyauth.oop.infrastructure.persistence.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
@@ -16,6 +18,7 @@ import java.time.LocalDateTime;
 public class UserAccountEntity {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(name = "user_no", nullable = false, length = 32)
@@ -27,8 +30,29 @@ public class UserAccountEntity {
     @Column(name = "name_enc", nullable = false, length = 512)
     private String nameEnc;
 
+    @Column(name = "name_hash", length = 64)
+    private String nameHash;
+
+    @Column(name = "phone_enc", length = 512)
+    private String phoneEnc;
+
+    @Column(name = "phone_hash", length = 64)
+    private String phoneHash;
+
+    @Column(name = "org_id", nullable = false)
+    private Long orgId;
+
+    @Column(name = "post", length = 64)
+    private String post;
+
     @Column(name = "account_status", nullable = false, length = 16)
     private String accountStatus;
+
+    @Column(name = "leave_time")
+    private LocalDateTime leaveTime;
+
+    @Column(name = "last_login_at")
+    private LocalDateTime lastLoginAt;
 
     @Column(name = "is_deleted", nullable = false)
     private Integer isDeleted;
@@ -42,6 +66,12 @@ public class UserAccountEntity {
     @Version
     @Column(name = "version", nullable = false)
     private Long version;
+
+    @Column(name = "created_by")
+    private Long createdBy;
+
+    @Column(name = "updated_by")
+    private Long updatedBy;
 
     public Long getId() {
         return id;
@@ -75,12 +105,68 @@ public class UserAccountEntity {
         this.nameEnc = nameEnc;
     }
 
+    public String getNameHash() {
+        return nameHash;
+    }
+
+    public void setNameHash(String nameHash) {
+        this.nameHash = nameHash;
+    }
+
+    public String getPhoneEnc() {
+        return phoneEnc;
+    }
+
+    public void setPhoneEnc(String phoneEnc) {
+        this.phoneEnc = phoneEnc;
+    }
+
+    public String getPhoneHash() {
+        return phoneHash;
+    }
+
+    public void setPhoneHash(String phoneHash) {
+        this.phoneHash = phoneHash;
+    }
+
+    public Long getOrgId() {
+        return orgId;
+    }
+
+    public void setOrgId(Long orgId) {
+        this.orgId = orgId;
+    }
+
+    public String getPost() {
+        return post;
+    }
+
+    public void setPost(String post) {
+        this.post = post;
+    }
+
     public String getAccountStatus() {
         return accountStatus;
     }
 
     public void setAccountStatus(String accountStatus) {
         this.accountStatus = accountStatus;
+    }
+
+    public LocalDateTime getLeaveTime() {
+        return leaveTime;
+    }
+
+    public void setLeaveTime(LocalDateTime leaveTime) {
+        this.leaveTime = leaveTime;
+    }
+
+    public LocalDateTime getLastLoginAt() {
+        return lastLoginAt;
+    }
+
+    public void setLastLoginAt(LocalDateTime lastLoginAt) {
+        this.lastLoginAt = lastLoginAt;
     }
 
     public Integer getIsDeleted() {
@@ -113,5 +199,21 @@ public class UserAccountEntity {
 
     public void setVersion(Long version) {
         this.version = version;
+    }
+
+    public Long getCreatedBy() {
+        return createdBy;
+    }
+
+    public void setCreatedBy(Long createdBy) {
+        this.createdBy = createdBy;
+    }
+
+    public Long getUpdatedBy() {
+        return updatedBy;
+    }
+
+    public void setUpdatedBy(Long updatedBy) {
+        this.updatedBy = updatedBy;
     }
 }

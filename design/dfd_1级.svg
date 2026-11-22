@@ -25,7 +25,7 @@
 <text x="440.0" y="1220.0" text-anchor="middle" font-size="13" font-weight="normal" fill="#33507a">组织树/角色/功能点登记</text>
 <rect x="1440" y="480" width="240" height="100" rx="18" fill="#e8f1fc" stroke="#1f4e8c" stroke-width="1.8"/>
 <text x="1560.0" y="526.0" text-anchor="middle" font-size="17" font-weight="bold" fill="#13396b">P3 鉴权决策(PDP)</text>
-<text x="1560.0" y="550.0" text-anchor="middle" font-size="13" font-weight="normal" fill="#33507a">功能∩数据∩状态</text>
+<text x="1560.0" y="550.0" text-anchor="middle" font-size="13" font-weight="normal" fill="#33507a">功能权限/账号状态</text>
 <rect x="1440" y="1010" width="240" height="100" rx="18" fill="#e8f1fc" stroke="#1f4e8c" stroke-width="1.8"/>
 <text x="1560.0" y="1056.0" text-anchor="middle" font-size="17" font-weight="bold" fill="#13396b">P5 变更通知</text>
 <text x="1560.0" y="1080.0" text-anchor="middle" font-size="13" font-weight="normal" fill="#33507a">缓存失效/推送/回调</text>
@@ -38,8 +38,6 @@
 <text x="1134.0" y="460" text-anchor="middle" font-size="13.5" font-weight="normal" fill="#5c4710">D1 账号库(姓名/电话加密)</text>
 <rect x="1000" y="700" width="250" height="48" fill="#fff7e0" stroke="#8a6d1d" stroke-width="1.6"/><line x1="1018" y1="700" x2="1018" y2="748" stroke="#8a6d1d" stroke-width="1.6"/>
 <text x="1134.0" y="730" text-anchor="middle" font-size="13.5" font-weight="normal" fill="#5c4710">D3 角色权限库</text>
-<rect x="1000" y="940" width="250" height="48" fill="#fff7e0" stroke="#8a6d1d" stroke-width="1.6"/><line x1="1018" y1="940" x2="1018" y2="988" stroke="#8a6d1d" stroke-width="1.6"/>
-<text x="1134.0" y="970" text-anchor="middle" font-size="13.5" font-weight="normal" fill="#5c4710">D4 数据权限库</text>
 <rect x="80" y="1330" width="220" height="48" fill="#fff7e0" stroke="#8a6d1d" stroke-width="1.6"/><line x1="98" y1="1330" x2="98" y2="1378" stroke="#8a6d1d" stroke-width="1.6"/>
 <text x="199.0" y="1360" text-anchor="middle" font-size="13.5" font-weight="normal" fill="#5c4710">D2 组织库(多级树)</text>
 <rect x="960" y="1436" width="240" height="48" fill="#fff7e0" stroke="#8a6d1d" stroke-width="1.6"/><line x1="978" y1="1436" x2="978" y2="1484" stroke="#8a6d1d" stroke-width="1.6"/>
@@ -82,9 +80,6 @@
 <path d="M1250,720 L1460,580" fill="none" stroke="#333" stroke-width="1.4" marker-end="url(#arr)"/>
 <rect x="1346" y="619" width="108" height="18" fill="#fff" opacity="0.9"/>
 <text x="1400" y="632" text-anchor="middle" font-size="13" font-weight="normal" fill="#b03030">用户角色/功能点</text>
-<path d="M1250,960 L1520,580" fill="none" stroke="#333" stroke-width="1.4" marker-end="url(#arr)"/>
-<rect x="1412" y="777" width="57" height="18" fill="#fff" opacity="0.9"/>
-<text x="1440" y="790" text-anchor="middle" font-size="13" font-weight="normal" fill="#b03030">数据范围</text>
 <path d="M1660,580 L1660,690 L1950,690 L1950,760" fill="none" stroke="#333" stroke-width="1.4" marker-end="url(#arr)"/>
 <rect x="1769" y="669" width="82" height="18" fill="#fff" opacity="0.9"/>
 <text x="1810" y="682" text-anchor="middle" font-size="13" font-weight="normal" fill="#b03030">读写决策缓存</text>
@@ -112,9 +107,6 @@
 <path d="M1000,742 L800,830" fill="none" stroke="#333" stroke-width="1.4" marker-end="url(#arr)"/>
 <rect x="872" y="792" width="95" height="18" fill="#fff" opacity="0.9"/>
 <text x="920" y="805" text-anchor="middle" font-size="13" font-weight="normal" fill="#b03030">角色/已有绑定</text>
-<path d="M800,850 L1000,960" fill="none" stroke="#333" stroke-width="1.4" marker-end="url(#arr)"/>
-<rect x="859" y="912" width="82" height="18" fill="#fff" opacity="0.9"/>
-<text x="900" y="925" text-anchor="middle" font-size="13" font-weight="normal" fill="#b03030">数据范围授权</text>
 <path d="M700,760 L700,680 L950,680 L950,330 L1300,330 L1300,214" fill="none" stroke="#333" stroke-width="1.4" marker-end="url(#arr)"/>
 <rect x="1092" y="309" width="57" height="18" fill="#fff" opacity="0.9"/>
 <text x="1120" y="322" text-anchor="middle" font-size="13" font-weight="normal" fill="#b03030">吊销令牌</text>

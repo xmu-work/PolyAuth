@@ -136,7 +136,7 @@ public class AccountService {
     /**
      * 调整用户组织归属与岗位。
      *
-     * <p>调岗保留已有角色与数据范围，管理员随后按复核结果逐项调整。
+     * <p>调岗保留已有角色，管理员随后按复核结果逐项调整。
      */
     @Transactional
     public IamUser transferUser(Long userId, Long orgId, String post, Long operatorId) {

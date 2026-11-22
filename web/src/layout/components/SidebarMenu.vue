@@ -14,6 +14,7 @@ import {
 import { visibleBusinessRoutes } from '@/router/business-routes'
 import { useAppStore } from '@/stores/app.store'
 import { usePermissionStore } from '@/stores/permission.store'
+import { authApi } from '@/api'
 
 const route = useRoute()
 const router = useRouter()
@@ -36,13 +37,26 @@ const menuItems = computed(() =>
     path: `/${String(item.path)}`,
     title: String(item.meta?.title ?? ''),
     icon: item.meta?.icon,
+    permissionCode: item.meta?.permissionCode,
   })),
 )
 
-function navigate(path: string): void {
+async function navigate(path: string, permissionCode?: string): Promise<void> {
   if (route.path !== path) {
-    void router.push(path)
+    if (permissionCode !== undefined) {
+      const allowed = await authApi.checkPermission(permissionCode)
+      if (!allowed) {
+        await router.push('/403')
+        return
+      }
+    }
+    await router.push(path)
   }
+}
+
+function selectMenu(path: string): void {
+  const permissionCode = menuItems.value.find((item) => item.path === path)?.permissionCode
+  void navigate(path, permissionCode).catch(() => undefined)
 }
 </script>
 
@@ -61,7 +75,7 @@ function navigate(path: string): void {
       :default-active="route.path"
       :collapse="appStore.sidebarCollapsed"
       :collapse-transition="false"
-      @select="navigate"
+      @select="selectMenu"
     >
       <el-menu-item v-for="item in menuItems" :key="item.path" :index="item.path">
         <el-icon v-if="item.icon">

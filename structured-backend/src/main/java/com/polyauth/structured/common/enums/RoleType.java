@@ -8,13 +8,12 @@ import java.util.Arrays;
  * 角色类型枚举。
  *
  * <p>对应数据库 iam_role.role_type 字段。
- * 支持功能角色与岗位型数据角色；两者共用角色继承和用户授予机制。
+ * 当前项目仅支持功能角色。
  */
 @Getter
 public enum RoleType {
 
-    FUNC("FUNC", "功能角色"),
-    DATA("DATA", "岗位型数据角色");
+    FUNC("FUNC", "功能角色");
 
     private final String code;
     private final String description;

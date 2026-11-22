@@ -21,7 +21,8 @@ public final class RoleGrantMapper {
                 DomainTime.toInstant(entity.getExpireTime()), entity.getGrantBy(),
                 entity.getGrantReason(), DomainTime.toInstant(entity.getCreatedAt()),
                 DomainTime.toInstant(entity.getUpdatedAt()),
-                DomainTime.toInstant(null), RoleGrantStatus.valueOf(entity.getStatus()),
+                DomainTime.toInstant(entity.getRevokedAt()),
+                RoleGrantStatus.valueOf(entity.getStatus()),
                 entity.getVersion());
     }
 
@@ -40,6 +41,7 @@ public final class RoleGrantMapper {
         entity.setStatus(grant.status().name());
         entity.setCreatedAt(DomainTime.toLocalDateTime(grant.createdAt()));
         entity.setUpdatedAt(DomainTime.toLocalDateTime(grant.updatedAt()));
+        entity.setRevokedAt(DomainTime.toLocalDateTime(grant.revokedAt()));
         entity.setVersion(grant.version());
         return entity;
     }

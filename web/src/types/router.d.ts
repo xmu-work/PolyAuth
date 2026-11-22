@@ -9,5 +9,6 @@ declare module 'vue-router' {
     icon?: string
     public?: boolean
     permissionId?: number
+    permissionCode?: string
   }
 }

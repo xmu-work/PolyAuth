@@ -33,6 +33,9 @@ public class RoleGrantEntity {
     @Column(name = "expire_time")
     private LocalDateTime expireTime;
 
+    @Column(name = "revoked_at")
+    private LocalDateTime revokedAt;
+
     @Column(name = "grant_by")
     private Long grantBy;
 
@@ -90,6 +93,14 @@ public class RoleGrantEntity {
 
     public void setExpireTime(LocalDateTime expireTime) {
         this.expireTime = expireTime;
+    }
+
+    public LocalDateTime getRevokedAt() {
+        return revokedAt;
+    }
+
+    public void setRevokedAt(LocalDateTime revokedAt) {
+        this.revokedAt = revokedAt;
     }
 
     public Long getGrantBy() {

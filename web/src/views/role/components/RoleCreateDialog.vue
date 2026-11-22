@@ -110,12 +110,6 @@ async function submit(): Promise<void> {
       <el-form-item label="角色名称" prop="roleName" :error="serverErrors.roleName">
         <el-input v-model="form.roleName" maxlength="50" placeholder="如 合同审计员" />
       </el-form-item>
-      <el-form-item label="角色类型">
-        <el-select v-model="form.roleType" style="width: 100%">
-          <el-option label="功能角色" :value="RoleType.FUNC" />
-          <el-option label="岗位型数据角色" :value="RoleType.DATA" />
-        </el-select>
-      </el-form-item>
       <el-form-item label="父角色（继承，选填）">
         <el-select v-model="form.parentId" clearable filterable style="width: 100%">
           <el-option

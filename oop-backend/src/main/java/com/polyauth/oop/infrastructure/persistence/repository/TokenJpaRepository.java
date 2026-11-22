@@ -3,6 +3,7 @@ package com.polyauth.oop.infrastructure.persistence.repository;
 import com.polyauth.oop.infrastructure.persistence.entity.TokenEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -11,4 +12,6 @@ import java.util.Optional;
 public interface TokenJpaRepository extends JpaRepository<TokenEntity, String> {
 
     Optional<TokenEntity> findByTokenHash(String tokenHash);
+
+    List<TokenEntity> findByUserIdAndStatus(Long userId, String status);
 }

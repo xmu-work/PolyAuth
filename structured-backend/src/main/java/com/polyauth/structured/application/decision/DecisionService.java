@@ -127,8 +127,7 @@ public class DecisionService {
             Set<Long> next = new HashSet<>();
             for (IamRole role : roles) {
                 if (role.getIsDeleted() != 0
-                        || (!RoleType.FUNC.getCode().equals(role.getRoleType())
-                        && !RoleType.DATA.getCode().equals(role.getRoleType()))
+                        || !RoleType.FUNC.getCode().equals(role.getRoleType())
                         || !IamRole.STATUS_ACTIVE.equals(role.getStatus())) {
                     continue;
                 }
