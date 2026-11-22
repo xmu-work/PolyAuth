@@ -23,6 +23,7 @@
 | 安全 | JWT、PBKDF2、AES-256-GCM、HMAC-SHA256 |
 | 数据源 | Druid |
 | 校验与工具 | Spring Validation、Lombok |
+| 对象映射 | CloneFactory 编译期注解处理器 |
 | 构建 | Maven |
 | 前端 | Vue 3、TypeScript、Vite、Pinia、Element Plus |
 
@@ -31,6 +32,7 @@
 ### 身份认证与账号
 
 - 账号密码登录、令牌签发、登出和令牌校验。
+- 已实现课程项目管理系统所需的 8 个统一身份鉴权接口，JWT 使用统一身份 `sub` 和目标系统 `aud`。
 - 自助修改密码。
 - 用户创建、详情、分页查询、状态变更与离职封存。
 - 普通用户视图中的姓名、电话默认脱敏；姓名和电话明文仅由独立功能点保护的接口返回，并自动审计。
@@ -51,7 +53,7 @@
 - 菜单和按钮共用 `iam_permission` 自关联树，`MENU/BUTTON` 区分节点类型。
 - 后端 `iam_api` 独立建模，通过 `permission_id` 映射到前端权限；一个权限可映射多个 API。
 - 角色与前端权限批量绑定、解绑和查询；系统、权限、角色和账号状态参与判定。
-- 单 API、批量 API 和前端权限集合查询。
+- 统一身份按 `operationId` 查询单个 API 的全局权限，管理后台仍可读取前端权限主键集合。
 - 全公司、本分公司、本部门、本项目、本人五类数据范围。
 - 功能权限与数据权限联合判定；角色继承链上的数据范围自动合并。
 - 数据范围临时授权、到期自动失效、回收与前后快照。
@@ -136,6 +138,9 @@ mysql -u root -p iam_platform < src/main/resources/db/seed.sql
 
 已部署 RBAC0/RBAC1 数据库升级时，先执行 `src/main/resources/db/rbac3_upgrade.sql`，再重启应用。
 
+已初始化数据库接入课程项目管理系统时，再执行 `src/main/resources/db/identity_course_upgrade.sql`。
+该脚本幂等登记 `course-project-management` 系统、`teacher / student / admin` 角色和 `TEC` 权限。
+
 初始化管理员为 `admin / Admin@123`。该密码仅用于本地初始化，部署前必须修改。
 
 MySQL 建议设置 `default-time-zone = '+08:00'`；`seed.sql` 已在会话级设置北京时间。
@@ -181,9 +186,10 @@ pnpm build
 ## 鉴权规则
 
 - `POST /auth/login` 为公开接口。
+- 统一身份契约见 [design/07_统一身份外部契约.md](design/07_统一身份外部契约.md)；该组 8 个接口直接返回业务对象和字符串错误码，不使用内部 `Result` 包装。
 - 管理端请求携带 `Authorization: Bearer <token>`。
 - 管理端请求必须先匹配已登记的 `iam_api`，再检查该 API 映射的前端权限；任一环节缺失都默认拒绝。
-- OpenAPI 可携带 `X-App-Id`、`X-Timestamp`、`X-Nonce`、`X-Signature` 进行接入方认证。
+- 数据权限开放接口可携带 `X-App-Id`、`X-Timestamp`、`X-Nonce`、`X-Signature` 进行接入方认证。
 - OpenAPI 普通用户令牌只能查询本人；接入方签名可查询授权范围内的用户。
 - `/open/authorize/resource` 同时接收功能 API 与目标组织、项目或用户上下文，功能权限和数据范围都通过才放行。
 
@@ -191,8 +197,14 @@ pnpm build
 
 | 方法 | 路径 | 说明 |
 | --- | --- | --- |
-| POST | `/api/v1/auth/login` | 登录 |
-| POST | `/api/v1/auth/logout` | 登出 |
+| POST | `/api/v1/auth/login` | 统一身份登录，签发带 `aud` 的 JWT |
+| POST | `/api/v1/auth/logout` | 吊销当前令牌，成功返回 204 |
+| GET | `/api/v1/auth/me` | 当前用户、角色和前端权限码 |
+| GET | `/api/v1/auth/permissions/{permission}` | 校验单个前端权限码 |
+| GET | `/api/v1/auth/departments` | 按层级分页查询统一身份部门 |
+| GET | `/api/v1/auth/api-permissions/{operationId}` | 按 operationId 校验 API 调用权限 |
+| GET | `/api/v1/auth/departments/{departmentId}/users` | 分页查询部门用户 |
+| GET | `/api/v1/auth/users/{userId}` | 按统一身份标识查询用户 |
 | GET | `/api/v1/auth/validate` | 校验令牌 |
 | PUT | `/api/v1/auth/password` | 自助修改密码 |
 | GET/POST | `/api/v1/users` | 用户分页查询 / 创建 |
@@ -223,9 +235,7 @@ pnpm build
 | GET | `/api/v1/permissions/{permissionId}/apis` | 查询权限下的 API |
 | GET/POST | `/api/v1/apis` | 后端 API 列表 / 登记 |
 | GET | `/api/v1/apis/{apiId}` | 后端 API 详情 |
-| GET | `/api/v1/open/authorize` | 按 `apiId` 做单点后端鉴权 |
-| POST | `/api/v1/open/authorize/batch` | 按 `apiIds` 批量后端鉴权 |
-| GET | `/api/v1/open/permissions` | 查询用户前端菜单/按钮权限集合 |
+| GET | `/api/v1/open/permissions` | 管理后台读取用户前端权限主键集合 |
 | GET | `/api/v1/open/data-scopes` | 查询用户当前生效的数据范围 |
 | POST | `/api/v1/open/authorize/resource` | 功能权限与数据权限联合判定 |
 | GET/POST | `/api/v1/systems/data-scopes` | 数据范围字典查询 / 新建 |
@@ -234,6 +244,6 @@ pnpm build
 
 ## 验证状态
 
-后端共 102 项测试全部通过，覆盖认证、账号、组织、角色继承/互斥/分配、数据权限联合决策、临时授权到期回收、权限树、API 映射、OpenAPI、统一日志、输入校验、并发冲突、请求追踪和幂等；前端通过 `pnpm typecheck`、`pnpm build` 和 `pnpm lint`。
+后端共 120 项测试全部通过，覆盖 CloneFactory 编译期映射、8 个统一身份契约、JWT `sub/aud`、账号、组织、角色继承/互斥/分配、数据权限联合决策、临时授权到期回收、权限树、API 映射、统一日志、输入校验、并发冲突、请求追踪和幂等；前端通过 `pnpm typecheck`、`pnpm build` 和 `pnpm lint`。
 
 `design/` 目录保留课程详细设计材料；功能范围以本 README 和当前代码为准。

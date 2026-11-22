@@ -1,10 +1,12 @@
 # RBAC 后端 API 使用手册
 
-> **模型 V3.0（2026-11-17）**：在 V2 基础上实现 RBAC1 角色继承与 RBAC3 角色互斥、五类数据范围、功能/数据联合判定、组织停用、员工调岗、分布式写锁、审计导出和日志只追加保护。数据范围路由统一为 `/roles/{roleId}/data-scopes`；旧 `/systems/role-data-scopes` 仅保留兼容。当前有效路由以 [README](README.md#api-概览) 为准。本文后续涉及“数据范围待实现”的段落属于历史说明。
+> **模型 V3.1（2026-11-22）**：实现课程项目管理系统接入所需的 8 个统一身份外部接口。登录改为直接返回顶层 `accessToken/tokenType/expiresIn`，登出返回 204；外部 API 鉴权改用 `/auth/api-permissions/{operationId}`，旧 `/open/authorize` 与批量入口已删除。精确契约以 [统一身份外部契约](design/07_统一身份外部契约.md) 为准。
 
-**版本：1.1 · 代码基准：8d78558 · 编写与检查日期：2026-10-26（北京时间）**
+**版本：1.2 · 编写与检查日期：2026-11-22（北京时间）**
 
-> 1.1 修订：组织机构 A24～A28 已实现，按实际行为重写；初始化接口功能点扩展为 20001～20022；`seed.sql` 新增两个组织节点并设置会话时区。其余接口内容沿用 1.0。
+> 1.2 修订：统一身份登录、登出、当前用户、权限码校验、部门、部门用户、用户查询和
+> `operationId` API 鉴权全部实现；删除旧对外 `apiId` 鉴权入口。本文中尚未逐段重写的
+> 历史内容如与新版契约冲突，以 `design/07_统一身份外部契约.md` 和当前代码为准。
 
 本手册用于实际构造请求、处理响应、对接前端或接入业务系统。它记录当前代码真正提供的行为，不将设计目标、模拟接口或尚未实现的方法写成可用能力。
 
@@ -51,10 +53,10 @@ BASE_URL='http://localhost:8080/api/v1'
 
 curl -sS -X POST "$BASE_URL/auth/login" \
   -H 'Content-Type: application/json' \
-  --data '{"username":"admin","password":"Admin@123"}'
+  --data '{"username":"admin","password":"Admin@123","systems":["ADMIN"]}'
 ```
 
-登录成功后，取 `data.accessToken` 设置到变量；不要把尖括号或整个 JSON 响应一起复制到令牌中。
+登录成功后，取顶层 `accessToken` 设置到变量；不要把尖括号或整个 JSON 响应一起复制到令牌中。
 
 ```bash
 ACCESS_TOKEN='替换为登录响应中的实际访问令牌'
@@ -138,7 +140,8 @@ FUNCTION_POINT_ID=5001
 }
 ```
 
-**字段命名为 camelCase。** 用户分页是 `pageSize`，请求标识字段是 `requestId`；不是旧文档或代码注释里的下划线形式。最外层的空值省略不会自动作用于嵌套对象，例如 `refreshToken:null`、`phoneMasked:null` 仍可能出现在 data 里。
+**字段命名为 camelCase。** 用户分页是 `pageSize`，请求标识字段是 `requestId`。
+统一身份 8 个外部接口不使用内部 `Result` 包装；管理端接口仍使用统一响应包。
 
 ### 2.3 数字、时间与空值
 
@@ -169,7 +172,8 @@ FUNCTION_POINT_ID=5001
 
 ### 3.1 Bearer 令牌
 
-除 `POST /auth/login` 外，34 个业务入口中的其余接口均经过认证，包括 `/auth/validate`、`/auth/logout` 和全部 `/open/*`。
+除 `POST /auth/login` 外，统一身份契约中的其余 7 个接口、`/auth/validate`、`/auth/password`
+以及全部 `/open/*` 均经过认证。
 
 ```text
 Authorization: Bearer <accessToken>
@@ -183,7 +187,8 @@ Authorization: Bearer <accessToken>
 
 ### 3.2 菜单权限与接口权限
 
-当前拦截器用**控制器路径模板 + 请求方法**查 `iam_function_point`，例如 `GET /users/{userId}`，再判断操作人在 ADMIN 系统中是否拥有这个功能点。
+当前拦截器用**控制器路径模板 + 请求方法**查 `iam_api`，例如 `GET /users/{userId}`，
+再判断操作人在 ADMIN 系统中是否拥有 API 映射的前端权限。
 
 - 有映射：无该功能点时返回 403/2007。
 - 没有映射：当前实现仅要求令牌有效，不执行对应的功能权限判定。此规则是现状，不是“该入口永远不需要权限”的承诺。
@@ -211,12 +216,12 @@ Authorization: Bearer <accessToken>
 
 ## 4. 完整接口索引
 
-以下路径均相对于 `$BASE_URL`。权限标识来自当前 `seed.sql`；“仅令牌”表示初始化数据未给该入口登记功能点，不表示代码强制其永远免功能权限。所有已实现接口正常成功均为 HTTP 200，不使用 201 或 204。
+以下路径均相对于 `$BASE_URL`。权限标识来自当前 `seed.sql`；“仅令牌”表示初始化数据未给该入口登记功能点，不表示代码强制其永远免功能权限。统一身份登出成功为 HTTP 204，其余成功通常为 HTTP 200。
 
 | 编号 | 方法与路径 | 用途 | 当前状态 | 初始化接口权限 |
 | --- | --- | --- | --- | --- |
-| [A01](#a01) | `POST /auth/login` | 账号密码登录 | 已实现 | 免令牌 |
-| [A02](#a02) | `POST /auth/logout` | 登出并吊销当前令牌 | 已实现 | 仅令牌 |
+| [A01](#a01) | `POST /auth/login` | 统一身份登录 | 已实现，直接响应对象 | 免令牌 |
+| [A02](#a02) | `POST /auth/logout` | 吊销当前令牌 | 已实现，HTTP 204 | 仅令牌 |
 | [A03](#a03) | `GET /auth/validate` | 校验当前令牌 | 已实现 | 仅令牌 |
 | [A04](#a04) | `POST /users` | 创建用户 | 已实现 | 20002 |
 | [A05](#a05) | `GET /users` | 分页查询用户 | 已实现 | 20001 |
@@ -235,14 +240,20 @@ Authorization: Bearer <accessToken>
 | [A18](#a18) | `POST /systems/role-functions` | 绑定角色功能点 | 已实现 | 20015 |
 | [A19](#a19) | `DELETE /systems/role-functions` | 解绑角色功能点 | 已实现 | 20016 |
 | [A20](#a20) | `GET /systems/role-functions/{roleId}` | 查询角色功能点绑定记录 | 已实现 | 20017 |
-| [A21](#a21) | `GET /open/authorize` | 判定单个功能点权限 | 已实现 | 仅令牌 |
-| [A22](#a22) | `POST /open/authorize/batch` | 批量判定功能点权限 | 已实现 | 仅令牌 |
+| [A21](#a21) | `GET /open/authorize` | 旧 apiId 鉴权入口 | 已删除 | — |
+| [A22](#a22) | `POST /open/authorize/batch` | 旧批量鉴权入口 | 已删除 | — |
 | [A23](#a23) | `GET /open/permissions` | 查询用户有效功能点主键集合 | 已实现 | 仅令牌 |
-| [A24](#a24) | `POST /orgs` | 创建组织节点 | 已实现 | 20019 |
-| [A25](#a25) | `GET /orgs` | 查询组织树 | 已实现 | 20018 |
-| [A26](#a26) | `GET /orgs/{orgId}` | 查询组织详情 | 已实现 | 20020 |
-| [A27](#a27) | `GET /orgs/{orgId}/children` | 查询组织子节点 | 已实现 | 20021 |
-| [A28](#a28) | `PUT /orgs/{orgId}/move` | 移动组织节点 | 已实现 | 20022 |
+| A35 | `GET /auth/me` | 当前用户、角色与前端权限码 | 已实现 | 仅令牌 |
+| A36 | `GET /auth/permissions/{permission}` | 校验单个前端权限码 | 已实现 | 仅令牌 |
+| A37 | `GET /auth/departments` | 统一身份部门分页 | 已实现 | 仅令牌 |
+| A38 | `GET /auth/api-permissions/{operationId}` | 按 operationId 判断 API 权限 | 已实现 | 仅令牌 |
+| A39 | `GET /auth/departments/{departmentId}/users` | 部门用户分页 | 已实现 | 仅令牌 |
+| A40 | `GET /auth/users/{userId}` | 统一身份用户查询 | 已实现 | 仅令牌 + TEC |
+| [A24](#a24) | `POST /organizations` | 创建组织节点 | 已实现 | 20019 |
+| [A25](#a25) | `GET /organizations` | 查询组织树 | 已实现 | 20018 |
+| [A26](#a26) | `GET /organizations/{orgId}` | 查询组织详情 | 已实现 | 20020 |
+| [A27](#a27) | `GET /organizations/{orgId}/children` | 查询组织子节点 | 已实现 | 20021 |
+| [A28](#a28) | `PUT /organizations/{orgId}/parent` | 移动组织节点 | 已实现 | 20022 |
 | [A29](#a29) | `POST /roles/{roleId}/exclusions` | 设置角色互斥 | 已实现 | 功能点 20036 |
 | [A30](#a30) | `GET /roles/{roleId}/exclusions` | 查询角色互斥记录 | 已实现 | 功能点 20036 |
 | [A31](#a31) | `POST /systems/data-scopes` | 创建数据范围字典 | 已实现 | 功能点 20031 |
@@ -268,45 +279,38 @@ Authorization: Bearer <accessToken>
 | --- | --- | --- | --- | --- | --- |
 | `username` | JSON | string | 是（业务校验） | — | 登录账号，对应 userNo；null、空串、纯空白均拒绝。 |
 | `password` | JSON | string | 是（业务校验） | — | 原始密码；null、空串、纯空白均拒绝。 |
-| `captchaId` | JSON | string | 否 | — | 已预留但当前不校验。 |
-| `captchaCode` | JSON | string | 否 | — | 已预留但当前不校验。 |
-| `clientIp` | JSON | string | 否 | — | 调用者提供的来源地址，写入令牌记录；不是控制器自动获取的真实来源地址，数据库长度 64。 |
+| `systems` | JSON | string[] | 是 | — | 目标系统列表，不可为空或重复；首个系统作为当前上下文，全部写入 JWT `aud`。 |
 
 **实际行为**
 
 - 请求体必须是 JSON 对象。登录接口免令牌，不必发送 Authorization。
-- 账号不存在、已删除或密码错误统一返回 2001；账号密码正确后才检查账号是否封存、停用或锁定。
+- 账号不存在、已删除或密码错误统一返回 HTTP 401 / `UNAUTHORIZED`。
 - 成功签发访问令牌、保存其摘要并更新 lastLoginAt；同一用户再次登录不会自动吊销旧令牌。
-- expiresIn 来自 jwt.access-token-expire，当前配置为 7200 秒；refreshToken 当前为 null，没有刷新端点。
+- JWT 的 `sub` 使用统一身份用户标识（当前为 `user_no`），`aud` 使用 `systems`。
+- expiresIn 来自 jwt.access-token-expire，当前配置为 7200 秒。
 
-**返回 data**：`LoginResponse`。
+**成功响应**：直接返回 `LoginResponse`，没有 `data` 包装。
 
-**失败与边界**：400/1002：账号或密码为空；401/2001：账号或密码错误；403/2005：账号封存；403/2006：停用或锁定；请求体缺失或无法解析通常 400/1001。
+**失败与边界**：400 / `BAD_REQUEST`；401 / `UNAUTHORIZED`；403 / `FORBIDDEN`。
 
 **请求示例**
 
 ```bash
 curl -sS -X POST "$BASE_URL/auth/login" \
   -H "Content-Type: application/json" \
-  --data '{"username":"admin","password":"Admin@123"}'
+  --data '{"username":"admin","password":"Admin@123","systems":["ADMIN"]}'
 ```
 
 **成功响应结构示例**
 
 ```json
 {
-  "code": 0,
-  "message": "success",
-  "data": {
-    "accessToken": "<服务端实际签发的访问令牌>",
-    "refreshToken": null,
-    "tokenType": "Bearer",
-    "expiresIn": 7200,
-    "userId": "1",
-    "displayName": "系统管理员",
-    "accountStatus": "NORMAL"
-  },
-  "timestamp": "2026-10-26T14:00:00.123456"
+  "accessToken": "<服务端实际签发的访问令牌>",
+  "tokenType": "Bearer",
+  "expiresIn": 7200,
+  "userId": "admin",
+  "displayName": "系统管理员",
+  "accountStatus": "NORMAL"
 }
 ```
 
@@ -324,11 +328,11 @@ curl -sS -X POST "$BASE_URL/auth/login" \
 
 - 只吊销请求头中的这枚令牌，不是吊销该用户全部令牌。
 - 服务层“未知令牌视为已登出”的逻辑不能绕过入口拦截；普通无效令牌、已吊销令牌在进入控制器前就失败。
-- 使用同一令牌第二次登出，通常返回 401/2004；成功首次登出返回 200/code=0，且省略 data。
+- 使用同一令牌第二次登出返回 401 / `UNAUTHORIZED`；成功首次登出返回 HTTP 204，无响应体。
 
-**返回 data**：`无 data`。
+**成功响应**：无响应体。
 
-**失败与边界**：通用认证错误 401/2001～2004；若此路径另行登记为 ADMIN 功能点，也受相应 403/2007 限制。
+**失败与边界**：未携带、无效、过期或已吊销令牌均返回 401 / `UNAUTHORIZED`。
 
 **请求示例**
 
@@ -951,98 +955,13 @@ curl -sS "$BASE_URL/systems/role-functions/$ROLE_ID" \
 
 <a id="a21"></a>
 
-#### A21 · 判定单个功能点权限
+### 已删除的旧对外鉴权入口
 
-**`GET /api/v1/open/authorize`** · **已实现**
+`GET /open/authorize` 与 `POST /open/authorize/batch` 已从代码删除。
+外部业务系统统一改用：
 
-认证：必需 Bearer 令牌；初始化未登记接口功能点。
-
-| 参数 | 位置 | 类型 | 必需 | 默认 | 说明 |
-| --- | --- | --- | --- | --- | --- |
-| `userId` | query | int64 | 是 | — | 待判定用户主键，与调用令牌所属用户是两个概念。 |
-| `systemCode` | query | string | 是 | — | 目标系统编码，如 ADMIN；不是系统数字主键。 |
-| `functionPointId` | query | int64 | 是 | — | 待判定功能点主键。 |
-
-**实际行为**
-
-- 返回 data=true 或 false；“无权限”是业务判定成功，不是 403。403/2007 只可能来自请求自身被入口权限拦截。
-- 目标用户不存在／非 NORMAL、无有效授权、系统编码不存在或功能点不属于该系统等情况，通常返回 false。
-- 当前只判定功能点，不接收数据对象、组织或项目条件；没有数据范围判定。
-- 完整判定过滤规则见“权限算法与调用边界”。
-
-**返回 data**：`boolean`。
-
-**失败与边界**：通用认证、参数错误；正常无权限为 200/code=0/data=false。
-
-**请求示例**
-
-```bash
-curl -sS -G -X GET "$BASE_URL/open/authorize" \
-  -H "Authorization: Bearer $ACCESS_TOKEN" \
-  --data-urlencode "userId=$TARGET_USER_ID" \
-  --data-urlencode "systemCode=DOC_APP_001" \
-  --data-urlencode "functionPointId=$FUNCTION_POINT_ID"
-```
-
-**成功响应结构示例**
-
-```json
-{
-  "code": 0,
-  "message": "success",
-  "data": true,
-  "timestamp": "2026-10-26T14:00:00.123456"
-}
-```
-
-<a id="a22"></a>
-
-#### A22 · 批量判定功能点权限
-
-**`POST /api/v1/open/authorize/batch`** · **已实现**
-
-认证：必需 Bearer 令牌；初始化未登记接口功能点。
-
-| 参数 | 位置 | 类型 | 必需 | 默认 | 说明 |
-| --- | --- | --- | --- | --- | --- |
-| `userId` | JSON | int64 | 业务必需；无字段注解校验 | — | 目标用户主键。 |
-| `systemCode` | JSON | string | 业务必需；无字段注解校验 | — | 目标系统编码。 |
-| `functionPointIds` | JSON | int64[] | 业务必需；无字段注解校验 | — | 待判定数组；允许 []，不要提交 null 或空元素。 |
-
-**实际行为**
-
-- 请求体是对象，不是裸数组；userId、systemCode、functionPointIds 都放 JSON。
-- 只计算一次用户权限集合，再逐个对比；重复功能点主键合并为同一个结果键。
-- data.results 是对象，序列化后主键成为字符串；不保证键顺序。空数组对应 results={}。
-- 请求体类没有字段级校验注解；缺字段或 null 不保证统一参数错误，部分路径会变为 5000，调用方应提交完整结构。
-
-**返回 data**：`PermissionCheckResult`。
-
-**失败与边界**：通用认证错误；缺失／不可解析请求体 400/1001；字段 null 等未覆盖输入可能 400/1001 或 500/5000；单项无权限仍为成功返回 false。
-
-**请求示例**
-
-```bash
-curl -sS -X POST "$BASE_URL/open/authorize/batch" \
-  -H "Authorization: Bearer $ACCESS_TOKEN" \
-  -H "Content-Type: application/json" \
-  --data "{\"userId\":$TARGET_USER_ID,\"systemCode\":\"DOC_APP_001\",\"functionPointIds\":[$FUNCTION_POINT_ID,999999]}"
-```
-
-**成功响应结构示例**
-
-```json
-{
-  "code": 0,
-  "message": "success",
-  "data": {
-    "results": {
-      "5001": true,
-      "999999": false
-    }
-  },
-  "timestamp": "2026-10-26T14:00:00.123456"
-}
+```text
+GET /api/v1/auth/api-permissions/{operationId}
 ```
 
 <a id="a23"></a>
@@ -1098,7 +1017,7 @@ curl -sS -G -X GET "$BASE_URL/open/permissions" \
 
 #### A24 · 创建组织节点
 
-**`POST /api/v1/orgs`** · **已实现**
+**`POST /api/v1/organizations`** · **已实现**
 
 认证：必需 Bearer 令牌；初始化接口功能点 `20019`。
 
@@ -1125,7 +1044,7 @@ curl -sS -G -X GET "$BASE_URL/open/permissions" \
 **请求示例**
 
 ```bash
-curl -sS -G -X POST "$BASE_URL/orgs" \
+curl -sS -G -X POST "$BASE_URL/organizations" \
   -H "Authorization: Bearer $ACCESS_TOKEN" \
   --data-urlencode "orgCode=DOC_BRANCH" \
   --data-urlencode "orgName=示例分公司" \
@@ -1138,7 +1057,7 @@ curl -sS -G -X POST "$BASE_URL/orgs" \
 
 #### A25 · 查询组织树
 
-**`GET /api/v1/orgs`** · **已实现**
+**`GET /api/v1/organizations`** · **已实现**
 
 认证：必需 Bearer 令牌；初始化接口功能点 `20018`。
 
@@ -1159,7 +1078,7 @@ curl -sS -G -X POST "$BASE_URL/orgs" \
 **请求示例**
 
 ```bash
-curl -sS "$BASE_URL/orgs" \
+curl -sS "$BASE_URL/organizations" \
   -H "Authorization: Bearer $ACCESS_TOKEN"
 ```
 
@@ -1167,7 +1086,7 @@ curl -sS "$BASE_URL/orgs" \
 
 #### A26 · 查询组织详情
 
-**`GET /api/v1/orgs/{orgId}`** · **已实现**
+**`GET /api/v1/organizations/{orgId}`** · **已实现**
 
 认证：必需 Bearer 令牌；初始化接口功能点 `20020`。
 
@@ -1186,7 +1105,7 @@ curl -sS "$BASE_URL/orgs" \
 **请求示例**
 
 ```bash
-curl -sS "$BASE_URL/orgs/1" \
+curl -sS "$BASE_URL/organizations/1" \
   -H "Authorization: Bearer $ACCESS_TOKEN"
 ```
 
@@ -1194,7 +1113,7 @@ curl -sS "$BASE_URL/orgs/1" \
 
 #### A27 · 查询组织子节点
 
-**`GET /api/v1/orgs/{orgId}/children`** · **已实现**
+**`GET /api/v1/organizations/{orgId}/children`** · **已实现**
 
 认证：必需 Bearer 令牌；初始化接口功能点 `20021`。
 
@@ -1213,7 +1132,7 @@ curl -sS "$BASE_URL/orgs/1" \
 **请求示例**
 
 ```bash
-curl -sS "$BASE_URL/orgs/1/children" \
+curl -sS "$BASE_URL/organizations/1/children" \
   -H "Authorization: Bearer $ACCESS_TOKEN"
 ```
 
@@ -1221,7 +1140,7 @@ curl -sS "$BASE_URL/orgs/1/children" \
 
 #### A28 · 移动组织节点
 
-**`PUT /api/v1/orgs/{orgId}/move`** · **已实现**
+**`PUT /api/v1/organizations/{orgId}/parent`** · **已实现**
 
 认证：必需 Bearer 令牌；初始化接口功能点 `20022`。
 
@@ -1243,7 +1162,7 @@ curl -sS "$BASE_URL/orgs/1/children" \
 **请求示例**
 
 ```bash
-curl -sS -G -X PUT "$BASE_URL/orgs/$ORG_ID/move" \
+curl -sS -G -X PUT "$BASE_URL/organizations/$ORG_ID/parent" \
   -H "Authorization: Bearer $ACCESS_TOKEN" \
   --data-urlencode "newParentId=1"
 ```
@@ -1447,7 +1366,7 @@ curl -sS -G -X GET "$BASE_URL/logs" \
 
 - 本章列出全部已实现接口使用的数据字段，以及未实现接口的声明类型。它们是当前代码字段，不按旧设计文档重命名。
 - `int64` 是 Java Long 序列化的 JSON 数字；`int32` 是 Integer/int；`string` 是文本；本地日期时间使用带 `T` 的字符串。
-- `Result` 的非空字段过滤只作用于最外层；下列普通数据对象没有统一省略 null 的注解。不要把 `phoneMasked:null`、`refreshToken:null` 等字段当作“不可能出现”。
+- `Result` 的非空字段过滤只作用于最外层；统一身份成功响应直接返回对象，没有 `Result` 包装。
 - 数据库非空约束不等于 HTTP 输入验证，也不等于新建实体的所有返回字段已由服务显式填充。下列“说明”只在代码确实写入时说明默认值。
 
 ### 6.2 LoginResponse
@@ -1457,10 +1376,9 @@ curl -sS -G -X GET "$BASE_URL/logs" \
 | 字段 | JSON 类型 | 说明 |
 | --- | --- | --- |
 | `accessToken` | string | 访问令牌，后续通过 Authorization 请求头使用。 |
-| `refreshToken` | string | 当前未生成，正常为 null；没有可用刷新端点。 |
 | `tokenType` | string | 当前固定 Bearer。 |
 | `expiresIn` | int64 | 访问令牌有效期，单位秒；当前配置 7200。 |
-| `userId` | string | 字符串用户主键，例如 "1"，不同于其他接口常见的数字主键。 |
+| `userId` | string | 管理后台兼容字段，当前为本地用户主键字符串。 |
 | `displayName` | string | 解密后的完整姓名，当前没有姓名脱敏。 |
 | `accountStatus` | string | 成功登录时为 NORMAL。 |
 
@@ -1691,7 +1609,6 @@ A24～A28 的返回类型。实体没有 `children` 字段。
 | IamRole[] / IamSystem[] / IamUserRole[] / IamRolePermission[] | data 是对象数组。通常无数据为 []，不是 null；没有分页包装或顺序保证。 |
 | boolean | data 是 true/false，不是字符串 "true"。拒绝业务目标与入口 403 是两个不同结果。 |
 | int64[] | data 是去重数字数组；集合的输出顺序不保证。 |
-| PermissionCheckResult | data={"results":{"5001":true,"5002":false}}；键是字符串，值是 boolean；空输入数组为 results={}。 |
 | 无 data | 成功外层 code=0，省略 data 字段；响应仍有 JSON 内容且 HTTP 为 200。 |
 | PageResult<IamLog> | 统一日志分页结果，字段包含 logType 与权限变更前后快照。 |
 
@@ -1842,21 +1759,15 @@ call_api POST /roles/grants -G \
   --data-urlencode "roleId=$ROLE_ID" \
   --data-urlencode 'grantReason=手册联调'
 
-# 预期统一成功响应的 data=true。
-call_api GET /open/authorize -G \
-  --data-urlencode "userId=$TARGET_USER_ID" \
-  --data-urlencode "systemCode=$DOC_SYSTEM_CODE" \
-  --data-urlencode "functionPointId=$FUNCTION_POINT_ID" | assert_decision true
+# 统一身份 API 权限判断直接返回 {operationId, allowed}。
+call_api GET /auth/api-permissions/listAdminCourses | assert_decision true
 
 call_api DELETE /roles/grants -G \
   --data-urlencode "userId=$TARGET_USER_ID" \
   --data-urlencode "roleId=$ROLE_ID"
 
-# 回收后 data=false，HTTP 仍是 200、code 仍是 0。
-call_api GET /open/authorize -G \
-  --data-urlencode "userId=$TARGET_USER_ID" \
-  --data-urlencode "systemCode=$DOC_SYSTEM_CODE" \
-  --data-urlencode "functionPointId=$FUNCTION_POINT_ID" | assert_decision false
+# 回收后 allowed=false，HTTP 仍是 200。
+call_api GET /auth/api-permissions/listAdminCourses | assert_decision false
 
 # 吊销的是管理员当前访问令牌；演示账号和其他资源仍保留。
 call_api POST /auth/logout
@@ -1934,7 +1845,7 @@ unset ACCESS_TOKEN ADMIN_PASSWORD LOGIN_BODY
 | 方法、路径、参数位置和返回声明 | `interfaces/admin/{Auth,User,Role,System,Org,Audit}Controller.java`、`interfaces/openapi/OpenApiController.java` |
 | 认证顺序、令牌格式、路径映射 | `interfaces/AuthInterceptor.java`、`interfaces/WebConfig.java`、`application/auth/AuthService.java` |
 | 用户、角色、授权和功能点规则 | `application/account/AccountService.java`、`role/RoleService.java`、`grant/GrantService.java`、`permission/FunctionPermissionService.java` |
-| 权限过滤和集合返回 | `application/decision/DecisionService.java`、`PermissionCheckResult.java` |
+| 权限过滤和集合返回 | `application/decision/DecisionService.java`、`IdentityService.java` |
 | 响应字段和空值规则 | `common/result/Result.java`、`PageResult.java`、`application/auth/LoginResponse.java`、`application/account/UserView.java`、各返回实体 |
 | 全部错误与状态映射 | `common/enums/ErrorCode.java`、`common/exception/GlobalExceptionHandler.java` |
 | 字段存储长度、唯一约束和初始权限 | `src/main/resources/db/schema.sql`、`seed.sql` |

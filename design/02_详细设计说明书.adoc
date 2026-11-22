@@ -75,7 +75,7 @@
 |===
 | 目标 | 对应需求 | 当前状态
 
-| 统一身份与统一鉴权：一套平台承载 10000 名员工的统一账号，向 18 套业务系统提供认证与统一授权 | FR-01、FR-31～FR-35、NFR-06 | 部分实现（统一账号、登录、令牌、鉴权接口已实现；SSO 跳转为扩展）
+| 统一身份与统一鉴权：一套平台承载 10000 名员工的统一账号，向 18 套业务系统提供认证与统一授权 | FR-01、FR-31～FR-35、NFR-06 | 课程系统所需 8 个统一身份接口已实现；浏览器 SSO 跳转为扩展
 
 | 功能权限可判定、前后端同源：系统→模块→功能点→操作四级结构，前端权限查询与后端鉴权使用同一判定逻辑 | FR-17～FR-19、FR-36～FR-39 | 已实现
 
@@ -155,7 +155,7 @@ com.iam.platform
 |===
 | 组件 | 职责 | 对应需求 | 当前状态
 
-| 统一认证服务 | 登录认证、SSO 跳转、令牌签发/续期/吊销 | FR-31、FR-32、FR-34 | 部分实现（在单体应用内）
+| 统一认证服务 | 登录认证、统一身份契约、令牌签发/校验/吊销 | FR-31、FR-32、FR-34 | 8 个外部接口已实现；浏览器跳转和续期为扩展
 
 | 授权决策服务（PDP） | 令牌校验、权限查询、功能∩数据∩状态联合决策；无状态、可水平扩展 | FR-24、FR-33、FR-37 | 部分实现（在单体应用内）
 
@@ -367,7 +367,7 @@ P3 是典型的*变换型*数据流：
 |===
 | 编号 | 模块 | 职责 | 依赖 | 实现 / 状态
 
-| M01 | 统一认证 | 登录认证、令牌签发/校验/吊销；（扩展）SSO 跳转、续期、防重放 | M11 | `AuthService`、`AuthInterceptor`；部分实现
+| M01 | 统一认证 | 登录认证、令牌签发/校验/吊销、8 个统一身份接口；（扩展）浏览器跳转、续期 | M11 | `AuthService`、`IdentityAuthController`、`IdentityService`；已实现外部契约
 
 | M02 | 用户与账号管理 | 账号建立、状态管理（正常/停用/封存/锁定）、账号查询；（扩展）批量导入 | M01（吊销令牌）、M07（回收角色）、M11 | `AccountService`；已实现
 
@@ -381,7 +381,7 @@ P3 是典型的*变换型*数据流：
 
 | M07 | 授权管理 | 用户-角色授予/撤销/全部回收；（扩展）申请-审批-执行 | M04（角色状态） | `GrantService`；已实现
 
-| M08 | 鉴权决策 | 计算用户在某系统的功能点集合、单点/批量判定；（RBAC3）数据范围判定、决策缓存 | 无（只读数据） | `DecisionService`；部分实现
+| M08 | 鉴权决策 | 计算用户在某系统的前端权限集合、按 operationId 判定 API 权限、数据范围联合判定 | 无（只读数据） | `DecisionService`、`IdentityService`、`DataPermissionService`；已实现
 
 | M09 | 统一日志 | 普通操作与权限变更统一写入 `iam_log`，权限变更保存前后快照 | 无 | `LogService`
 
@@ -389,7 +389,7 @@ P3 是典型的*变换型*数据流：
 
 | M11 | 加密脱敏组件 | 字段加解密、密码哈希、检索哈希、展示脱敏 | 无 | `CryptoComponent`；已实现
 
-| M12 | 业务系统接入 | 系统登记（编码、回调地址、密钥）、第 19 套系统扩展接入 | M05 | 系统登记并入 `FunctionPermissionService.registerSystem`；部分实现
+| M12 | 业务系统接入 | 系统登记（编码、回调地址、密钥）、第 19 套系统扩展接入 | M05 | `SystemService`；已实现基础登记
 |===
 
 说明：V1.0 中"M02 依赖 M08（授权）"为笔误，授权模块是 M07，已改正。
@@ -844,11 +844,11 @@ RBAC0 实现第 ①②③ 步；③′ 与 ④ 在 RBAC3 阶段加入，届时�
 
 | FR-31、FR-32 登录与令牌 | M01 | `AuthService.login / logout / validateToken` | `POST /auth/login`、`POST /auth/logout`、`GET /auth/validate` | `iam_user`、`iam_token`
 
-| FR-33、FR-39 鉴权与权限查询 | M08 | `DecisionService` | `GET /open/authorize`、`POST /open/authorize/batch`、`GET /open/permissions` | 只读
+| FR-33、FR-39 鉴权与权限查询 | M08 | `DecisionService`、`IdentityService` | `GET /auth/me`、`GET /auth/permissions/{permission}`、`GET /auth/api-permissions/{operationId}` | 只读
 
 | FR-37 后端 API 鉴权 | M01、M08 | `AuthInterceptor` | 全部接口（登录除外） | `iam_token`、`iam_function_point` 等
 
-| FR-08、FR-09 组织树 | M03 | `OrganizationService` | `GET /orgs`、`GET /orgs/{orgId}`、`GET /orgs/{orgId}/children`、`POST /orgs`、`PUT /orgs/{orgId}/move` | `iam_org`
+| FR-08、FR-09 组织树 | M03 | `OrganizationService` | `GET /organizations`、`GET /organizations/{orgId}`、`GET /organizations/{orgId}/children`、`POST /organizations`、`PUT /organizations/{orgId}/parent` | `iam_org`
 
 | FR-48、FR-49 加密与脱敏 | M11、M02 | `CryptoComponent`、`AccountService.toView` | 用户相关接口 | `iam_user`
 |===

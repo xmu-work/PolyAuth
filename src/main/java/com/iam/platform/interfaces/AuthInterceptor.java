@@ -2,6 +2,7 @@ package com.iam.platform.interfaces;
 
 import com.iam.platform.application.api.ApiService;
 import com.iam.platform.application.auth.AuthService;
+import com.iam.platform.application.auth.AuthenticatedSession;
 import com.iam.platform.application.decision.DecisionService;
 import com.iam.platform.application.log.LogService;
 import com.iam.platform.common.enums.ErrorCode;
@@ -35,6 +36,8 @@ public class AuthInterceptor implements HandlerInterceptor {
 
     /** 请求属性：当前登录用户 ID */
     public static final String ATTR_USER_ID = "iam.userId";
+    /** 请求属性：JWT 目标业务系统编码。 */
+    public static final String ATTR_SYSTEM_CODE = "iam.systemCode";
     /** 请求属性：当前用户名快照，仅用于审计。 */
     public static final String ATTR_USERNAME = "iam.username";
     /** 请求属性：是否已写入审计，避免 preHandle 失败与 afterCompletion 重复。 */
@@ -44,9 +47,6 @@ public class AuthInterceptor implements HandlerInterceptor {
             "(?i)(^|&)(password|passwd|pwd|token|accessToken|refreshToken|authorization|secret|"
                     + "oldPassword|newPassword|realName|name|phone|mobile|email|idCard)"
                     + "=([^&]*)");
-
-    /** 仅需登录、无需功能点登记的接口（登出、令牌校验、自助改密） */
-    private static final Set<String> LOGIN_ONLY_PATTERNS = Set.of("/auth/logout", "/auth/validate", "/auth/password");
 
     /** 开放 API 前缀：见 {@code OpenApiAuthInterceptor}，在此不做管理端功能点校验 */
     private static final String OPEN_API_PREFIX = "/open/";
@@ -66,9 +66,11 @@ public class AuthInterceptor implements HandlerInterceptor {
         }
 
         try {
-            Long userId = authService.authenticate(bearerToken(request.getHeader("Authorization")));
-            request.setAttribute(ATTR_USER_ID, userId);
-            request.setAttribute(ATTR_USERNAME, authService.getUserNo(userId));
+            String token = bearerToken(request.getHeader("Authorization"));
+            AuthenticatedSession session = authService.authenticateSession(token);
+            request.setAttribute(ATTR_USER_ID, session.userId());
+            request.setAttribute(ATTR_USERNAME, authService.getUserNo(session.userId()));
+            request.setAttribute(ATTR_SYSTEM_CODE, session.systemCode());
 
             String path = relativePath(request);
             if (isLoginOnly(path) || isInfra(path)) {
@@ -80,7 +82,8 @@ public class AuthInterceptor implements HandlerInterceptor {
                     .orElseThrow(() -> new BusinessException(ErrorCode.NO_FUNCTION_PERM,
                             "接口未登记为 API，默认拒绝: " + request.getMethod() + " " + path));
             if (api.getPermissionId() == null
-                    || !decisionService.hasPermission(userId, AuthService.ADMIN_SYSTEM_CODE, api.getPermissionId())) {
+                    || !decisionService.hasPermission(
+                            session.userId(), AuthService.ADMIN_SYSTEM_CODE, api.getPermissionId())) {
                 throw new BusinessException(ErrorCode.NO_FUNCTION_PERM, "无功能权限: " + api.getApiName());
             }
             return true;
@@ -110,7 +113,7 @@ public class AuthInterceptor implements HandlerInterceptor {
     }
 
     private boolean isLoginOnly(String path) {
-        return path.startsWith(OPEN_API_PREFIX) || LOGIN_ONLY_PATTERNS.contains(path);
+        return path.startsWith(OPEN_API_PREFIX) || path.startsWith("/auth/");
     }
 
     private boolean isInfra(String path) {
@@ -128,8 +131,10 @@ public class AuthInterceptor implements HandlerInterceptor {
         request.setAttribute(ATTR_AUDITED, true);
         Long userId = (Long) request.getAttribute(ATTR_USER_ID);
         String username = (String) request.getAttribute(ATTR_USERNAME);
+        String systemCode = (String) request.getAttribute(ATTR_SYSTEM_CODE);
         boolean success = exception == null && response.getStatus() < 400;
-        logService.record(userId, username, AuthService.ADMIN_SYSTEM_CODE,
+        logService.record(userId, username,
+                systemCode == null ? AuthService.ADMIN_SYSTEM_CODE : systemCode,
                 request.getMethod() + " " + path,
                 path,
                 sanitizeQuery(request.getQueryString()),

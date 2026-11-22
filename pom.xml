@@ -102,6 +102,14 @@
             <optional>true</optional>
         </dependency>
 
+        <!-- CloneFactory 编译期注解处理器；JAR 已按本项目 Java 17 基线生成。 -->
+        <dependency>
+            <groupId>cn.edu.xmu</groupId>
+            <artifactId>clonefactory</artifactId>
+            <version>0.0.2</version>
+            <scope>provided</scope>
+        </dependency>
+
         <!-- Jackson -->
         <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>
@@ -137,7 +145,18 @@
                             <groupId>org.projectlombok</groupId>
                             <artifactId>lombok</artifactId>
                         </path>
+                        <path>
+                            <groupId>cn.edu.xmu</groupId>
+                            <artifactId>clonefactory</artifactId>
+                            <version>0.0.2</version>
+                        </path>
+                        <path>
+                            <groupId>com.squareup</groupId>
+                            <artifactId>javapoet</artifactId>
+                            <version>1.13.0</version>
+                        </path>
                     </annotationProcessorPaths>
+                    <parameters>true</parameters>
                 </configuration>
             </plugin>
             <!-- Jacoco 覆盖率：mvn test 后报告在 target/site/jacoco/index.html -->
@@ -176,6 +195,11 @@
     </build>
 
     <repositories>
+        <repository>
+            <id>project-local</id>
+            <name>Project local artifacts</name>
+            <url>file://${project.basedir}/lib-repo</url>
+        </repository>
         <repository>
             <id>huaweicloud</id>
             <name>huawei maven mirror</name>

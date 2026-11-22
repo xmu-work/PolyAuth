@@ -1,5 +1,7 @@
 package com.iam.platform.interfaces.admin.vo;
 
+import cn.edu.xmu.clonefactory.CopyFrom;
+import cn.edu.xmu.clonefactory.util.CloneFactory;
 import com.iam.platform.infrastructure.persistence.entity.IamPermission;
 import lombok.Data;
 
@@ -9,6 +11,7 @@ import java.time.LocalDateTime;
  * 前端菜单/按钮权限 API 响应视图。
  */
 @Data
+@CopyFrom(IamPermission.class)
 public class PermissionVO {
 
     private Long id;
@@ -30,19 +33,6 @@ public class PermissionVO {
      */
     public static PermissionVO from(IamPermission permission) {
         PermissionVO vo = new PermissionVO();
-        vo.setId(permission.getId());
-        vo.setSystemId(permission.getSystemId());
-        vo.setParentId(permission.getParentId());
-        vo.setPermissionCode(permission.getPermissionCode());
-        vo.setPermissionName(permission.getPermissionName());
-        vo.setPermissionType(permission.getPermissionType());
-        vo.setRoutePath(permission.getRoutePath());
-        vo.setAction(permission.getAction());
-        vo.setSortNo(permission.getSortNo());
-        vo.setStatus(permission.getStatus());
-        vo.setIsDeleted(permission.getIsDeleted());
-        vo.setCreatedAt(permission.getCreatedAt());
-        vo.setUpdatedAt(permission.getUpdatedAt());
-        return vo;
+        return CloneFactory.copy(vo, permission);
     }
 }

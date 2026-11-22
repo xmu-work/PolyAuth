@@ -1,6 +1,7 @@
 package com.iam.platform.interfaces;
 
 import com.iam.platform.application.auth.AuthService;
+import com.iam.platform.application.auth.AuthenticatedSession;
 import com.iam.platform.application.openapi.OpenApiAuthenticator;
 import com.iam.platform.interfaces.openapi.OpenApiAuth;
 import jakarta.servlet.http.HttpServletRequest;
@@ -36,8 +37,10 @@ public class OpenApiAuthInterceptor implements HandlerInterceptor {
 
         String appId = request.getHeader(HEADER_APP_ID);
         if (appId == null || appId.isBlank()) {
-            Long userId = authService.authenticate(bearerToken(request.getHeader("Authorization")));
-            request.setAttribute(AuthInterceptor.ATTR_USER_ID, userId);
+            AuthenticatedSession session =
+                    authService.authenticateSession(bearerToken(request.getHeader("Authorization")));
+            request.setAttribute(AuthInterceptor.ATTR_USER_ID, session.userId());
+            request.setAttribute(AuthInterceptor.ATTR_SYSTEM_CODE, session.systemCode());
             request.setAttribute(OpenApiAuth.ATTR_MODE, OpenApiAuth.MODE_SELF);
             return true;
         }

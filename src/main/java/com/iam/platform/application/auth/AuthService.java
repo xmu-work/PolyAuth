@@ -24,6 +24,8 @@ import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.Date;
+import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -56,9 +58,6 @@ public class AuthService {
     @Value("${jwt.access-token-expire:7200}")
     private long accessTokenExpire;
 
-    @Value("${jwt.refresh-token-expire:604800}")
-    private long refreshTokenExpire;
-
     @Value("${jwt.issuer:iam-platform}")
     private String issuer;
 
@@ -75,6 +74,12 @@ public class AuthService {
                     || request.getPassword() == null || request.getPassword().isBlank()) {
                 throw new BusinessException(ErrorCode.PARAM_MISSING, "账号和密码不能为空");
             }
+            if (request.getSystems() == null || request.getSystems().isEmpty()) {
+                throw new BusinessException(ErrorCode.PARAM_MISSING, "登录目标系统不能为空");
+            }
+            if (request.getSystems().stream().distinct().count() != request.getSystems().size()) {
+                throw new BusinessException(ErrorCode.PARAM_INVALID, "登录目标系统不能重复");
+            }
 
             IamUser user = userRepository.findByUserNo(request.getUsername())
                     .filter(u -> u.getIsDeleted() == 0)
@@ -83,8 +88,10 @@ public class AuthService {
 
             validateAccountStatus(user.getAccountStatus());
 
-            String accessToken = generateToken(user.getId(), user.getUserNo(), accessTokenExpire);
-            saveToken(user.getId(), accessToken, request.getClientIp());
+            String systemCode = request.getSystems().get(0);
+            String accessToken = generateToken(user.getUserNo(),
+                    request.getSystems(), accessTokenExpire);
+            saveToken(user.getId(), accessToken, request.getClientIp(), systemCode);
             user.setLastLoginAt(LocalDateTime.now());
             userRepository.save(user);
 
@@ -95,12 +102,15 @@ public class AuthService {
             response.setUserId(String.valueOf(user.getId()));
             response.setDisplayName(cryptoComponent.decrypt(user.getNameEnc()));
             response.setAccountStatus(user.getAccountStatus());
-            logService.record(user.getId(), user.getUserNo(), ADMIN_SYSTEM_CODE, "LOGIN",
+            logService.record(user.getId(), user.getUserNo(), systemCode, "LOGIN",
                     user.getUserNo(), null, request.getClientIp(), true, null,
                     RequestIdFilter.currentRequestId());
             return response;
         } catch (BusinessException exception) {
-            logService.record(null, request.getUsername(), ADMIN_SYSTEM_CODE, "LOGIN",
+            String systemCode = request.getSystems() == null || request.getSystems().isEmpty()
+                    ? ADMIN_SYSTEM_CODE
+                    : request.getSystems().get(0);
+            logService.record(null, request.getUsername(), systemCode, "LOGIN",
                     request.getUsername(), null, request.getClientIp(), false,
                     String.valueOf(exception.getCode()), RequestIdFilter.currentRequestId());
             throw exception;
@@ -148,22 +158,28 @@ public class AuthService {
      * @throws BusinessException TOKEN_INVALID / TOKEN_EXPIRED / TOKEN_REVOKED
      */
     public Long authenticate(String token) {
-        Claims claims;
-        try {
-            claims = Jwts.parser().verifyWith(signingKey()).requireIssuer(issuer).build()
-                    .parseSignedClaims(token).getPayload();
-        } catch (ExpiredJwtException e) {
-            throw new BusinessException(ErrorCode.TOKEN_EXPIRED);
-        } catch (JwtException | IllegalArgumentException e) {
-            throw new BusinessException(ErrorCode.TOKEN_INVALID);
-        }
+        return authenticateSession(token).userId();
+    }
 
+    /**
+     * 一次完成令牌解析与数据库有效性校验，并返回本地用户和目标系统。
+     */
+    public AuthenticatedSession authenticateSession(String token) {
+        Claims claims = parseClaims(token);
         IamToken record = tokenRepository.findByTokenHash(cryptoComponent.hash(token))
                 .orElseThrow(() -> new BusinessException(ErrorCode.TOKEN_INVALID));
         if (record.getRevoked() == 1) {
             throw new BusinessException(ErrorCode.TOKEN_REVOKED);
         }
-        return Long.valueOf(claims.getSubject());
+        String systemCode = record.getSystemCode();
+        if (systemCode == null || systemCode.isBlank()) {
+            Set<String> audiences = claims.getAudience();
+            if (audiences == null || audiences.isEmpty()) {
+                throw new BusinessException(ErrorCode.TOKEN_INVALID, "令牌缺少目标系统");
+            }
+            systemCode = audiences.iterator().next();
+        }
+        return new AuthenticatedSession(record.getUserId(), systemCode);
     }
 
     /**
@@ -216,12 +232,16 @@ public class AuthService {
         }
     }
 
-    private String generateToken(Long userId, String userNo, long expireSeconds) {
+    /**
+     * 根据登录目标系统签发 JWT。{@code sub} 使用统一身份用户标识，{@code aud} 使用目标系统编码。
+     */
+    private String generateToken(String userNo, List<String> systems, long expireSeconds) {
         long now = System.currentTimeMillis();
         return Jwts.builder()
                 .id(UUID.randomUUID().toString())
-                .subject(String.valueOf(userId))
+                .subject(userNo)
                 .claim("userNo", userNo)
+                .claim("aud", systems)
                 .issuer(issuer)
                 .issuedAt(new Date(now))
                 .expiration(new Date(now + expireSeconds * 1000))
@@ -229,12 +249,12 @@ public class AuthService {
                 .compact();
     }
 
-    private void saveToken(Long userId, String accessToken, String clientIp) {
+    private void saveToken(Long userId, String accessToken, String clientIp, String systemCode) {
         LocalDateTime now = LocalDateTime.now();
         IamToken token = new IamToken();
         token.setTokenId(UUID.randomUUID().toString());
         token.setUserId(userId);
-        token.setSystemCode(ADMIN_SYSTEM_CODE);
+        token.setSystemCode(systemCode);
         token.setTokenHash(cryptoComponent.hash(accessToken));
         token.setIssuedAt(now);
         token.setExpireAt(now.plusSeconds(accessTokenExpire));
@@ -254,5 +274,16 @@ public class AuthService {
 
     private SecretKey signingKey() {
         return Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
+    }
+
+    private Claims parseClaims(String token) {
+        try {
+            return Jwts.parser().verifyWith(signingKey()).requireIssuer(issuer).build()
+                    .parseSignedClaims(token).getPayload();
+        } catch (ExpiredJwtException exception) {
+            throw new BusinessException(ErrorCode.TOKEN_EXPIRED);
+        } catch (JwtException | IllegalArgumentException exception) {
+            throw new BusinessException(ErrorCode.TOKEN_INVALID);
+        }
     }
 }

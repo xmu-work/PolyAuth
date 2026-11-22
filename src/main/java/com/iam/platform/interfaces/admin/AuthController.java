@@ -1,14 +1,10 @@
 package com.iam.platform.interfaces.admin;
 
 import com.iam.platform.application.auth.AuthService;
-import com.iam.platform.application.auth.LoginRequest;
-import com.iam.platform.application.auth.LoginResponse;
 import com.iam.platform.common.result.Result;
 import com.iam.platform.interfaces.AuthInterceptor;
-import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -23,30 +19,6 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final AuthService authService;
-
-    /**
-     * 账号密码登录。
-     */
-    @PostMapping("/login")
-    public Result<LoginResponse> login(
-            @Valid
-            @RequestBody
-            LoginRequest request,
-            HttpServletRequest servletRequest) {
-        request.setClientIp(servletRequest.getRemoteAddr());
-        return Result.success(authService.login(request));
-    }
-
-    /**
-     * 登出。
-     */
-    @PostMapping("/logout")
-    public Result<Void> logout(
-            @RequestHeader("Authorization")
-            String authorization) {
-        authService.logout(AuthInterceptor.bearerToken(authorization));
-        return Result.success();
-    }
 
     /**
      * 自助修改密码。

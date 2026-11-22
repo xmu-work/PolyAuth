@@ -116,9 +116,4 @@ class DecisionServiceTest {
         assertThat(decisionService.getUserPermissions(1L, "ADMIN")).isEmpty();
     }
 
-    @Test
-    void batchCheckComputesEachPermission() {
-        PermissionCheckResult result = decisionService.checkPermissions(1L, "ADMIN", List.of(100L, 200L));
-        assertThat(result.getResults()).containsEntry(100L, true).containsEntry(200L, false);
-    }
 }

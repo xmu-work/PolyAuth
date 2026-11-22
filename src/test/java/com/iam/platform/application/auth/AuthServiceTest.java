@@ -9,7 +9,11 @@ import com.iam.platform.infrastructure.persistence.entity.IamToken;
 import com.iam.platform.infrastructure.persistence.entity.IamUser;
 import com.iam.platform.infrastructure.persistence.repository.IamTokenRepository;
 import com.iam.platform.infrastructure.persistence.repository.IamUserRepository;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -19,6 +23,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
 import java.util.Optional;
+import java.nio.charset.StandardCharsets;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -50,6 +55,7 @@ class AuthServiceTest {
         LoginRequest request = new LoginRequest();
         request.setUsername(username);
         request.setPassword(password);
+        request.setSystems(List.of(AuthService.ADMIN_SYSTEM_CODE));
         return request;
     }
 
@@ -90,6 +96,39 @@ class AuthServiceTest {
                 .satisfies(e -> assertThat(code(e)).isEqualTo(ErrorCode.PARAM_MISSING.getCode()));
         assertThatThrownBy(() -> authService.login(request("u", null)))
                 .satisfies(e -> assertThat(code(e)).isEqualTo(ErrorCode.PARAM_MISSING.getCode()));
+    }
+
+    @Test
+    @DisplayName("FR-31 登录目标系统不能重复")
+    void loginRejectsDuplicateSystems() {
+        LoginRequest duplicateSystems = request("u7", "pwd");
+        duplicateSystems.setSystems(List.of("course-project-management", "course-project-management"));
+
+        assertThatThrownBy(() -> authService.login(duplicateSystems))
+                .satisfies(e -> assertThat(code(e)).isEqualTo(ErrorCode.PARAM_INVALID.getCode()));
+    }
+
+    @Test
+    @DisplayName("FR-31 JWT 使用统一身份 subject 并携带目标系统 audience")
+    void loginTokenCarriesExternalSubjectAndAudience() {
+        IamUser user = TestFixtures.user(7L, "NORMAL", crypto, "pwd");
+        when(userRepository.findByUserNo("u7")).thenReturn(Optional.of(user));
+        LoginRequest request = request("u7", "pwd");
+        request.setSystems(List.of("course-project-management"));
+
+        LoginResponse response = authService.login(request);
+        Claims claims = Jwts.parser()
+                .verifyWith(Keys.hmacShaKeyFor(
+                        "test-secret-key-at-least-256-bits-long-0123456789"
+                                .getBytes(StandardCharsets.UTF_8)))
+                .requireIssuer("iam-platform")
+                .build()
+                .parseSignedClaims(response.getAccessToken())
+                .getPayload();
+
+        assertThat(claims.getSubject()).isEqualTo("u7");
+        assertThat(claims.getAudience()).containsExactly("course-project-management");
+        verify(tokenRepository).save(any(IamToken.class));
     }
 
     @Test

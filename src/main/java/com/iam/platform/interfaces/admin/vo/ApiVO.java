@@ -1,5 +1,7 @@
 package com.iam.platform.interfaces.admin.vo;
 
+import cn.edu.xmu.clonefactory.CopyFrom;
+import cn.edu.xmu.clonefactory.util.CloneFactory;
 import com.iam.platform.infrastructure.persistence.entity.IamApi;
 import lombok.Data;
 
@@ -9,6 +11,7 @@ import java.time.LocalDateTime;
  * 后端 API 目录响应视图。
  */
 @Data
+@CopyFrom(IamApi.class)
 public class ApiVO {
 
     private Long id;
@@ -28,17 +31,6 @@ public class ApiVO {
      */
     public static ApiVO from(IamApi api) {
         ApiVO vo = new ApiVO();
-        vo.setId(api.getId());
-        vo.setSystemId(api.getSystemId());
-        vo.setPermissionId(api.getPermissionId());
-        vo.setApiCode(api.getApiCode());
-        vo.setApiName(api.getApiName());
-        vo.setApiPath(api.getApiPath());
-        vo.setHttpMethod(api.getHttpMethod());
-        vo.setStatus(api.getStatus());
-        vo.setIsDeleted(api.getIsDeleted());
-        vo.setCreatedAt(api.getCreatedAt());
-        vo.setUpdatedAt(api.getUpdatedAt());
-        return vo;
+        return CloneFactory.copy(vo, api);
     }
 }
