@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -25,6 +26,10 @@ import java.util.stream.Collectors;
  */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    private static final Set<String> IDENTITY_PATH_PREFIXES = Set.of(
+            "/auth/login", "/auth/logout", "/auth/me", "/auth/permissions/",
+            "/auth/departments", "/auth/api-permissions/", "/auth/users/");
 
     /**
      * 转换应用用例异常。
@@ -36,7 +41,8 @@ public class GlobalExceptionHandler {
         if (isIdentityRequest(request)) {
             return ResponseEntity.status(code.httpStatus())
                     .body(new IdentityErrorResponse(
-                            identityCode(code), identityMessage(code, exception.getMessage())));
+                            identityCode(code, request),
+                            identityMessage(code, exception.getMessage())));
         }
         return ResponseEntity.status(code.httpStatus())
                 .body(ApiResult.fail(code.code(), exception.getMessage()));
@@ -174,10 +180,30 @@ public class GlobalExceptionHandler {
 
     private boolean isIdentityRequest(HttpServletRequest request) {
         String uri = request.getRequestURI();
-        return uri != null && uri.contains("/auth/");
+        if (uri == null) {
+            return false;
+        }
+        int identityIndex = uri.indexOf("/auth/");
+        if (identityIndex < 0) {
+            return false;
+        }
+        String path = uri.substring(identityIndex);
+        return IDENTITY_PATH_PREFIXES.stream().anyMatch(path::startsWith);
     }
 
-    private String identityCode(ApplicationErrorCode code) {
+    private String identityCode(ApplicationErrorCode code, HttpServletRequest request) {
+        if (code == ApplicationErrorCode.RESOURCE_NOT_FOUND) {
+            String path = identityPath(request);
+            if (path.startsWith("/auth/api-permissions/")) {
+                return "API_OPERATION_NOT_FOUND";
+            }
+            if (path.startsWith("/auth/departments")) {
+                return "IDENTITY_DEPARTMENT_NOT_FOUND";
+            }
+            if (path.startsWith("/auth/users/")) {
+                return "IDENTITY_USER_NOT_FOUND";
+            }
+        }
         return switch (code) {
             case UNAUTHENTICATED, TOKEN_INVALID, TOKEN_EXPIRED, TOKEN_REVOKED -> "UNAUTHORIZED";
             case ACCOUNT_SEALED, ACCOUNT_DISABLED, NO_FUNCTION_PERM -> "FORBIDDEN";
@@ -185,6 +211,12 @@ public class GlobalExceptionHandler {
             case PARAM_INVALID -> "BAD_REQUEST";
             default -> "INTERNAL_ERROR";
         };
+    }
+
+    private String identityPath(HttpServletRequest request) {
+        String uri = request.getRequestURI();
+        int identityIndex = uri == null ? -1 : uri.indexOf("/auth/");
+        return identityIndex < 0 ? "" : uri.substring(identityIndex);
     }
 
     private String identityMessage(ApplicationErrorCode code, String fallback) {

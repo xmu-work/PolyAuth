@@ -117,6 +117,26 @@ class DualBackendContractTest {
         assertThat(client.json(response).path("code").asInt()).isEqualTo(1001);
     }
 
+    @Test
+    @DisplayName("FR-34 令牌校验未认证时使用管理端数字错误码")
+    void validateWithoutTokenUsesManagementErrorEnvelope() throws Exception {
+        ContractHttpClient.Response response = client.get("/auth/validate", null);
+
+        assertThat(response.status()).isEqualTo(401);
+        assertThat(client.json(response).path("code").asInt()).isEqualTo(2001);
+    }
+
+    @Test
+    @DisplayName("FR-33 不存在的 operationId 使用统一身份稳定错误码")
+    void missingOperationUsesStableIdentityErrorCode() throws Exception {
+        ContractHttpClient.Response response =
+                client.get("/auth/api-permissions/missingOperation", token);
+
+        assertThat(response.status()).isEqualTo(404);
+        assertThat(client.json(response).path("code").asText())
+                .isEqualTo("API_OPERATION_NOT_FOUND");
+    }
+
     private static Map<String, String> roleForm(String code, String name) {
         Map<String, String> form = new LinkedHashMap<>();
         form.put("roleCode", code);

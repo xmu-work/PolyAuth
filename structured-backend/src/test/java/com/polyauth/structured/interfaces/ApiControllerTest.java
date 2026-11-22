@@ -385,6 +385,31 @@ class ApiControllerTest {
     }
 
     @Test
+    @DisplayName("FR-13 角色更新使用 JSON 请求体")
+    void roleUpdateUsesJsonRequestBody() throws Exception {
+        IamRole role = new IamRole();
+        role.setId(2L);
+        when(roleService.updateRole(2L, "新任角色", "更新说明", "ACTIVE", 3L, 1L))
+                .thenReturn(role);
+
+        mvc.perform(put("/roles/2")
+                        .header("Authorization", AUTH)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "roleName": "新任角色",
+                                  "description": "更新说明",
+                                  "status": "ACTIVE",
+                                  "parentId": 3
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.id").value(2));
+
+        verify(roleService).updateRole(2L, "新任角色", "更新说明", "ACTIVE", 3L, 1L);
+    }
+
+    @Test
     void systemPermissionAndApiEndpoints() throws Exception {
         when(systemService.registerSystem("OA", "办公", null)).thenReturn(new IamSystem());
         when(systemService.listSystems()).thenReturn(List.of());
@@ -570,7 +595,14 @@ class ApiControllerTest {
                         .param("roleType", "FUNC").param("parentId", "2"))
                 .andExpect(status().isOk());
         mvc.perform(put("/roles/3").header("Authorization", AUTH)
-                        .param("roleName", "部门经理").param("status", "ACTIVE").param("parentId", "2"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "roleName": "部门经理",
+                                  "status": "ACTIVE",
+                                  "parentId": 2
+                                }
+                                """))
                 .andExpect(status().isOk());
         mvc.perform(get("/roles/3/exclusions").header("Authorization", AUTH))
                 .andExpect(status().isOk())

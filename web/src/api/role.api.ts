@@ -1,4 +1,4 @@
-import { deleteForm, get, postForm, putForm } from '@/utils/request'
+import { deleteForm, get, postForm, putJson } from '@/utils/request'
 import type {
   GrantPayload,
   Role,
@@ -21,7 +21,7 @@ export function createRole(payload: RoleCreatePayload): Promise<Role> {
 
 /** 修改角色名称、描述、状态和父角色。 */
 export function updateRole(roleId: number, payload: RoleUpdatePayload): Promise<Role> {
-  return putForm<Role>(`/roles/${roleId}`, payload)
+  return putJson<Role>(`/roles/${roleId}`, payload)
 }
 
 /** 查询角色互斥关系中的对端角色 ID。 */

@@ -13,7 +13,7 @@
 
 | 文档版本 | V2.0
 
-| 修订说明 | V2.0（2026-10-26）：整理为《详细设计说明书》并补充结构图。V2.1（2026-11-06）：RBAC 核心重构为多系统、前端权限树、后端 API、角色、用户、分层组织六个实体；权限与 API 分离，角色授权统一归入 `RoleService`。本文保留的旧“模块/功能点/GrantService/互斥”叙述以当前代码、《数据库设计说明书》V2.0 和《API 设计说明书》当前路由表为准
+| 修订说明 | V3.0（2026-11-22）：以当前双后端代码为事实源，更新模块、接口、数据表、角色继承/互斥、数据范围、审计和错误处理描述。API 详细契约以《API 设计说明书》V4.0 和《RBAC 后端 API 使用手册》2.0 为准
 
 | 编制单位 | 信息中心 / 系统架构组
 
@@ -37,7 +37,7 @@
 文档同时描述两层内容：
 
 * *目标设计*：完整的统一权限平台（SSO、数据权限、审计、变更推送等），对应需求文档中的全部需求；
-* *当前实现*：第一次检查已实现的 RBAC0 后端。第 6 章只写已实现模块，内容与 `src/main/java/com/iam/platform` 下的代码一致。
+* *当前实现*：结构化后端已覆盖 RBAC3，OOP 后端完成认证与角色纵向切片。第 6 章只写已实现模块，内容以 `structured-backend/src/main/java/com/polyauth/structured` 和 `oop-backend/src/main/java/com/polyauth/oop` 当前代码为准。
 
 实现状态的标注与《需求规格说明书》1.4.2 相同：*已实现*、*部分实现*、*RBAC1 阶段*、*RBAC3 阶段*、*扩展*。
 
@@ -128,8 +128,9 @@ com.polyauth.structured
 │   ├── auth          M01 统一认证：AuthService
 │   ├── account       M02 账号管理：AccountService、UserView
 │   ├── role          M04 角色管理：RoleService
-│   ├── permission    M05 功能权限：FunctionPermissionService（M06 DataPermissionService 待实现）
-│   ├── grant         M07 授权管理：GrantService
+│   ├── permission    M05 前端权限树：PermissionService；独立 API 目录：ApiService
+│   ├── datascope     M06 数据范围与联合判定：DataScopeService、DataPermissionService
+│   └── role          M07 角色、继承、互斥、用户角色与角色权限：RoleService
 │   ├── decision      M08 鉴权决策：DecisionService
 │   ├── organization  M03 组织机构：OrganizationService
 │   └── log           M09 统一日志
@@ -204,7 +205,7 @@ com.polyauth.structured
 
 | D2 | 组织库 | `iam_org`
 
-| D3 | 角色权限库 | `iam_role`、`iam_user_role`、`iam_system`、`iam_module`、`iam_function_point`、`iam_role_function`
+| D3 | 角色权限库 | `iam_role`、`iam_user_role`、`iam_system`、`iam_permission`、`iam_api`、`iam_role_permission`、`iam_role_exclusion`、`iam_role_data_scope`
 
 | D4 | 数据权限库 | `iam_data_scope`、`iam_role_data_scope`
 
@@ -266,9 +267,9 @@ P2 分解为 5 个子加工，每个子加工对应一个 Service 方法：
 
 | P2.2 变更账号状态/封存 | 读当前状态 → 写新状态 → 非正常状态吊销 D5 中全部令牌 → 封存时回收 D3 中全部用户角色 | `AccountService.changeStatus`
 
-| P2.3 授予/撤销用户角色 | 读 D1 账号状态、D3 角色状态与已有绑定 → 写 D3 用户-角色绑定 | `GrantService.grantRole / revokeRole`
+| P2.3 授予/撤销用户角色 | 读 D1 账号状态、D3 角色状态与已有绑定 → 写 D3 用户-角色绑定 | `RoleService.grantRole / revokeRole`
 
-| P2.4 绑定/解绑角色功能点 | 读 D3 角色与功能点 → 写 D3 角色-功能点绑定 | `FunctionPermissionService.bindRoleFunctions / unbindRoleFunctions`
+| P2.4 绑定/解绑角色前端权限 | 读 D3 角色与前端权限 → 写 D3 角色-权限绑定 | `RoleService.bindRolePermissions / unbindRolePermissions`
 
 | P2.5 数据范围授权 | 写 D4 角色-数据范围授权 | RBAC3 阶段（`DataPermissionService`）
 |===
@@ -375,11 +376,11 @@ P3 是典型的*变换型*数据流：
 
 | M04 | 角色管理 | 角色定义；继承（RBAC1）；互斥（RBAC3） | 无 | `RoleService`；部分实现
 
-| M05 | 功能权限管理 | 系统→模块→功能点四级登记、API 映射、角色-功能点绑定/解绑 | M04（角色状态） | `FunctionPermissionService`；已实现
+| M05 | 功能权限管理 | 系统、前端权限树、独立 API 目录及 API 权限映射 | M04（角色状态） | `SystemService`、`PermissionService`、`ApiService`；已实现
 
 | M06 | 数据权限管理 | 数据范围授权、岗位默认范围、临时授权、本人/本项目判定 | M03、M04 | `DataPermissionService`；RBAC3 阶段
 
-| M07 | 授权管理 | 用户-角色授予/撤销/全部回收；（扩展）申请-审批-执行 | M04（角色状态） | `GrantService`；已实现
+| M07 | 授权管理 | 用户-角色授予/撤销/全部回收、角色权限绑定、继承和互斥 | M04（角色状态） | `RoleService`；已实现
 
 | M08 | 鉴权决策 | 计算用户在某系统的前端权限集合、按 operationId 判定 API 权限、数据范围联合判定 | 无（只读数据） | `DecisionService`、`IdentityService`、`DataPermissionService`；已实现
 
@@ -414,7 +415,7 @@ P3 是典型的*变换型*数据流：
 
 | D7 | 加密脱敏是否独立？ | 独立组件（M11） | 被账号、登录、日志导出多处复用；密钥管理需要独立边界。作为本地组件而非服务，避免每次脱敏走网络
 
-| D8 | 接入登记是否并入功能权限？ | RBAC0 合并，扩展阶段拆分 | RBAC0 只需登记系统编码和名称，直接放在 `FunctionPermissionService.registerSystem`；接入密钥、回调地址、适配层（第 19 套系统）实现时再拆为 M12
+| D8 | 接入登记是否并入功能权限？ | 已拆分 | 系统登记由 `SystemService` 负责，前端权限由 `PermissionService` 负责，后端 API 目录由 `ApiService` 负责
 
 | D9 | 令牌是否并入账号表？ | 拆分存储（`iam_token`） | 令牌有独立生命周期（签发、吊销），读写频次远高于账号；令牌只存哈希
 
@@ -427,7 +428,7 @@ P3 是典型的*变换型*数据流：
 |===
 | 评审建议 | 处理 | 说明
 
-| M07 只对外暴露 `grant()` / `revoke()` 窄接口，内部封装校验与落库 | 已采用 | `GrantService.grantRole / revokeRole`，调用方不需要知道校验顺序
+| M07 只对外暴露 `grant()` / `revoke()` 窄接口，内部封装校验与落库 | 已采用 | `RoleService.grantRole / revokeRole`，调用方不需要知道校验顺序
 
 | M08 判定逻辑集中、前后端复用 | 已采用 | 拦截器、开放接口都调用 `DecisionService`
 
@@ -468,9 +469,9 @@ image::模块结构图_RBAC0.png[RBAC0 模块结构图,width=100%]
 
 | M04 `RoleService` | 通信内聚 | 围绕"角色"数据；互斥相关方法尚未实现
 
-| M05 `FunctionPermissionService` | 通信内聚（偏逻辑） | 系统、模块、功能点登记和角色-功能点绑定操作的是同一棵"功能权限树"，但系统登记属于接入（D8），将来拆出
+| M05 `PermissionService`、`ApiService` | 功能内聚 | 前端权限树与后端 API 目录独立建模，并通过 `permission_id` 映射
 
-| M07 `GrantService` | 功能内聚 | 只负责用户-角色绑定的授予与回收
+| M07 `RoleService` | 功能内聚 | 负责角色生命周期、用户角色、角色权限、继承和互斥
 
 | M08 `DecisionService` | 功能内聚 | 只做一件事：计算并判定功能权限；`getUserFunctionPoints` 内部五步为顺序内聚
 
@@ -487,19 +488,19 @@ image::模块结构图_RBAC0.png[RBAC0 模块结构图,width=100%]
 
 | `AccountService` → `AuthService.revokeUserTokens(userId)` | 数据耦合 | 只传用户 ID
 
-| `AccountService` → `GrantService.revokeAllRoles(userId)` | 数据耦合 | 只传用户 ID
+| `AccountService` → `RoleService.revokeAllRoles(userId)` | 数据耦合 | 只传用户 ID
 
 | `AuthInterceptor` → `AuthService.authenticate(token)` | 数据耦合 | 传令牌字符串、返回用户 ID
 
 | `AuthInterceptor` → `DecisionService.hasPermission(userId, systemCode, functionPointId)` | 数据耦合 | 只传三个简单值、返回布尔
 
-| `AuthInterceptor` → `FunctionPermissionService.findByApi` | 标记耦合 | 返回整个功能点实体，拦截器只用其中的 ID 和名称
+| `AuthInterceptor` → `ApiService.findByRequest` | 标记耦合 | 返回 API 实体，拦截器读取权限 ID 和名称
 
 | Controller → 前端（返回 `IamRole`、`IamUserRole`、`IamSystem` 等实体） | 标记耦合 | 实体直出，表结构变化会影响接口；账号已改为 `UserView`，其余待改
 
-| 各 Service 共用 Repository 与数据库表 | 公共耦合（数据库） | 例如 `GrantService` 与 `DecisionService` 都读写 `iam_user_role`；靠表结构与状态常量约定一致
+| 各 Service 共用 Repository 与数据库表 | 公共耦合（数据库） | 例如 `RoleService` 与 `DecisionService` 都读写 `iam_user_role`；靠表结构与状态常量约定一致
 
-| `GrantService`、`FunctionPermissionService`、`DecisionService` 引用 `RoleService.ROLE_ACTIVE`、`GrantService.GRANT_ACTIVE` | 数据耦合（常量） | 状态码集中定义在一处，避免各自写死字符串
+| `RoleService`、`DecisionService` 等使用实体状态常量 | 数据耦合（常量） | 状态码集中定义，避免各自写死字符串
 |===
 
 结论：Service 之间的调用都是数据耦合，没有控制耦合（不传 `isXxx` 这类控制标志）。主要问题是实体直出带来的标记耦合，以及多个 Service 共用同一张表带来的公共耦合，见第 8 章。
@@ -593,7 +594,7 @@ image::模块结构图_RBAC0.png[RBAC0 模块结构图,width=100%]
 
 === 6.3 M04 角色管理（RoleService）
 
-*职责*：角色定义与查询。角色继承（`parent_id`）在 RBAC1 阶段实现，角色互斥在 RBAC3 阶段实现，对应方法目前为待实现。
+*职责*：角色定义、查询、修改、继承、互斥，以及用户角色和角色前端权限分配。继承使用 `parent_id`，互斥使用 `iam_role_exclusion`。
 
 [cols="2,2,2,1"]
 |===
@@ -608,9 +609,9 @@ image::模块结构图_RBAC0.png[RBAC0 模块结构图,width=100%]
 
 *处理流程：createRole*：校验角色类型合法（否则 400）→ 编码查重（`RESOURCE_DUPLICATE`）→ 状态置 `ACTIVE` 写入 D3（`iam_role`）。
 
-=== 6.4 M05 功能权限管理（FunctionPermissionService）
+=== 6.4 M05 前端权限与 API 目录（PermissionService、ApiService）
 
-*职责*：登记系统、模块、功能点（含 API 映射）；角色与功能点的绑定、解绑与查询；按 API 查找功能点供拦截器使用。
+*职责*：登记系统、前端菜单/按钮权限树和独立后端 API；维护 API 到前端权限的映射；按路径和方法查找 API 供拦截器默认拒绝判定。
 
 [cols="2,2,2,1"]
 |===
@@ -635,9 +636,9 @@ image::模块结构图_RBAC0.png[RBAC0 模块结构图,width=100%]
 
 *处理流程：registerFunctionPoint*：校验模块存在（`RESOURCE_NOT_FOUND`）→ 校验操作取值为 12 种之一（400）→ HTTP 方法转大写，API 模板 + 方法已登记 → `RESOURCE_DUPLICATE` → 写入 D3。`apiPath` 必须写 Controller 的映射模板（如 `/users/{userId}`），拦截器按模板精确匹配。
 
-*处理流程：bindRoleFunctions*：校验角色存在且为 `ACTIVE` → 校验操作取值 → 读出该角色已绑定的功能点 → 逐个校验功能点存在，已绑定的跳过（不报错，保证重复提交幂等）→ 写入 D3（`iam_role_function`）。
+*处理流程：bindRolePermissions*：校验角色存在且为 `ACTIVE` → 校验操作取值 → 校验前端权限存在 → 已绑定的跳过 → 写入 D3（`iam_role_permission`）并记录权限变更快照。
 
-=== 6.5 M07 授权管理（GrantService）
+=== 6.5 M07 授权管理（RoleService）
 
 *职责*：用户-角色的授予、撤销、全部回收与查询。这是 RBAC0"用户—角色"关系的唯一写入口。
 
@@ -693,7 +694,7 @@ image::模块结构图_RBAC0.png[RBAC0 模块结构图,width=100%]
 
 判定语义：`允许 = 令牌有效 ∧ 账号正常 ∧ 功能点 ∈ 集合`。RBAC0 不校验 `allowed_action`（操作取值），也不做数据范围判定，二者在 RBAC3 阶段加入（见 7.2）。
 
-*数据访问*：只读 D1、D3（`iam_user`、`iam_user_role`、`iam_role`、`iam_role_function`、`iam_function_point`、`iam_module`、`iam_system`）。
+*数据访问*：只读 D1、D3（`iam_user`、`iam_user_role`、`iam_role`、`iam_role_permission`、`iam_permission`、`iam_api`、`iam_system`）。
 
 === 6.7 M11 加密脱敏组件（CryptoComponent）
 
@@ -789,7 +790,7 @@ RBAC0 实现第 ①②③ 步；③′ 与 ④ 在 RBAC3 阶段加入，届时�
 
 === 8.2 存在的问题
 
-. *同一业务规则散落多处*："账号为正常状态"在 `AuthService.validateAccountStatus`、`GrantService.grantRole`、`DecisionService` 第 ① 步各写一次；规则一变（例如增加"冻结"状态），要同时改三个地方——这正是课件所说的"变更放大"。
+. *同一业务规则散落多处*："账号为正常状态"在 `AuthService.validateAccountStatus`、`RoleService.grantRole`、`DecisionService` 中的判定分别出现；规则变化时需要同步审查多个调用点，这是当前结构化实现仍需收敛的变更放大风险。
 . *数据与处理分离*：实体类只有字段，"角色是否有效""绑定是否在有效期内"这类判断写在各个 Service 里，没有统一的归属。
 . *鉴权一次查 5～6 次库*：`DecisionService` 依赖 7 个 Repository，每次判定实时查询；并发高时会成为瓶颈（NFR-07），需要 RBAC3 阶段的缓存。
 . *未登记的 API 只校验登录*：拦截器对没有登记为功能点的接口放行（fail-open），依赖管理员把管理端接口全部登记；`seed.sql` 已登记全部已实现的管理端接口。
@@ -888,19 +889,19 @@ image::顺序图_面向对象后端_权限查询.png[面向对象后端权限查
 
 | FR-12 角色定义 | M04 | `RoleService.createRole / getRole / listRoles` | `POST /roles`、`GET /roles`、`GET /roles/{roleId}` | `iam_role`
 
-| FR-17～FR-19 功能点与 API 映射 | M05 | `registerSystem / registerModule / registerFunctionPoint` | `POST /systems`、`/systems/modules`、`/systems/function-points` | `iam_system`、`iam_module`、`iam_function_point`
+| FR-17～FR-19 权限与 API 映射 | M05 | `SystemService`、`PermissionService`、`ApiService` | `POST /systems`、`POST /permissions`、`POST /apis`、`POST /permissions/{permissionId}/apis/{apiId}` | `iam_system`、`iam_permission`、`iam_api`
 
-| FR-27 授权 | M05、M07 | `bindRoleFunctions`、`grantRole` | `POST /systems/role-functions`、`POST /roles/grants` | `iam_role_function`、`iam_user_role`
+| FR-27 授权 | M05、M07 | `RoleService.bindRolePermissions`、`RoleService.grantRole` | `POST /roles/{roleId}/permissions`、`POST /roles/{roleId}/assignments` | `iam_role_permission`、`iam_user_role`
 
-| FR-28 回收 | M05、M07 | `unbindRoleFunctions`、`revokeRole` | `DELETE /systems/role-functions`、`DELETE /roles/grants` | 同上
+| FR-28 回收 | M05、M07 | `RoleService.unbindRolePermissions`、`RoleService.revokeRole` | `DELETE /roles/{roleId}/permissions`、`DELETE /roles/{roleId}/assignments/{userId}` | 同上
 
 | FR-31、FR-32 登录与令牌 | M01 | `AuthService.login / logout / validateToken` | `POST /auth/login`、`POST /auth/logout`、`GET /auth/validate` | `iam_user`、`iam_token`
 
 | FR-33、FR-39 鉴权与权限查询 | M08 | `DecisionService`、`IdentityService` | `GET /auth/me`、`GET /auth/permissions/{permission}`、`GET /auth/api-permissions/{operationId}` | 只读
 
-| FR-37 后端 API 鉴权 | M01、M08 | `AuthInterceptor` | 全部接口（登录除外） | `iam_token`、`iam_function_point` 等
+| FR-37 后端 API 鉴权 | M01、M08 | `AuthInterceptor` | 全部管理接口（登录除外） | `iam_token`、`iam_api`、`iam_permission` 等
 
-| FR-08、FR-09 组织树 | M03 | `OrganizationService` | `GET /organizations`、`GET /organizations/{orgId}`、`GET /organizations/{orgId}/children`、`POST /organizations`、`PUT /organizations/{orgId}/parent` | `iam_org`
+| FR-08、FR-09 组织树 | M03 | `OrganizationService` | `GET/POST /organizations`、`GET /organizations/{orgId}`、`GET /organizations/{orgId}/children`、`PUT /organizations/{orgId}/parent`、`PUT /organizations/{orgId}` | `iam_org`
 
 | FR-48、FR-49 加密与脱敏 | M11、M02 | `CryptoComponent`、`AccountService.toView` | 用户相关接口 | `iam_user`
 |===

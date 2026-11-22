@@ -220,6 +220,11 @@ export function putForm<T>(url: string, params?: object): Promise<T> {
   return request.put(url, null, { params }) as Promise<T>
 }
 
+/** PUT + JSON Body（如角色更新） */
+export function putJson<T>(url: string, data?: unknown, params?: object): Promise<T> {
+  return request.put(url, data ?? null, { params }) as Promise<T>
+}
+
 /** DELETE + query 参数 */
 export function deleteForm<T>(url: string, params?: object): Promise<T> {
   return request.delete(url, { params }) as Promise<T>

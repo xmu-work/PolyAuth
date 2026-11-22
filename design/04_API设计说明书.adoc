@@ -8,459 +8,327 @@
 | 项目 | 内容
 
 | 文档名称 | 统一应用软件权限管理系统 API 设计说明书
-
-| 项目全称 | 统一应用软件权限管理系统（RBAC 统一身份与权限平台）
-
-| 文档版本 | V3.1
-
-| 修订说明 | V1.0（2026-10-20）：按目标系统设计的接口。V2.0（2026-10-26）：按后端实际代码重写。V3.1（2026-11-22）：实现课程项目管理系统所需的 8 个统一身份外部接口；登录响应改为直接对象，登出返回 204；删除旧 `/open/authorize` 与批量判定入口，改由 `/auth/api-permissions/{operationId}` 承担。完整外部契约见 `07_统一身份外部契约.md`。
-
-| 上游依据 | 《需求规格说明书》V1.1、《详细设计说明书》V2.0、《数据库设计说明书》V1.2
-
-| 定位 | 《详细设计说明书》的接口部分，第 6 章各模块对外接口的 HTTP 形式
-
-| 适用阶段 | 详细设计（第一次检查：RBAC0）
-
-| 密级 | 内部
+| 文档版本 | V4.0
+| 修订日期 | 2026-11-22
+| 修订说明 | 按当前双后端 Controller、DTO/VO、认证拦截器、统一身份契约和实际功能状态重写；删除已不存在的旧资源路径与过期的“待实现”描述。
+| 上游依据 | 《需求规格说明书》、`design/07_统一身份外部契约.md`、当前源码与测试
+| 实际调用手册 | `RBAC后端API使用手册.md`
 |===
 
-== 1 设计约定
+== 1 适用范围
 
-=== 1.1 基础约定
+本设计同时描述：
+
+. 结构化后端的完整 RBAC3 管理 API。
+. OOP 后端当前已迁移的角色与认证 API。
+. 课程项目管理系统使用的 8 个统一身份外部 API。
+
+两套后端共享路径、HTTP 状态码、业务码和必要响应字段，但当前功能覆盖不同。
+“已实现”只表示结构化后端能力时，必须在接口状态中明确写出。
+
+== 2 基础约定
 
 [cols="1,3"]
 |===
 | 项 | 约定
 
-| Base URL | `/api/v1`（`server.servlet.context-path`）。下文路径均省略该前缀，例如 `POST /auth/login` 的完整地址为 `/api/v1/auth/login`
-
-| 数据格式 | 响应统一 `application/json; charset=utf-8`；统一身份 8 个外部接口直接返回业务对象和字符串错误码，其余管理接口使用 `Result`
-
-| 字段命名 | 小驼峰（camelCase），与后端 Java 字段一致：`userId`、`roleCode`、`pageSize`
-
-| 参数形式 | 除特别标注外，参数均为 *query / 表单参数*（`@RequestParam`）；标注"请求体"的为 JSON（`@RequestBody`）
-
-| ID 类型 | 管理端主键为 `Long`；统一身份对外 `subject/userId` 使用字符串
-
-| 时间格式 | ISO 8601 本地时间，不带时区：`2026-10-24T16:13:19`（时区为 Asia/Shanghai）。请求中的时间参数（如 `expireTime`）使用同一格式
-
-| 枚举取值 | 大写编码：账号状态 `NORMAL / DISABLED / SEALED / LOCKED`；角色类型 `FUNC / DATA`；操作取值 `NONE / VIEW / ALL / VIEW_EDIT …`（12 种，见《数据库设计说明书》3.8）
-
-| 分页 | 请求参数 `page`（从 1 开始，默认 1）、`size`（默认 20）；响应为 `PageResult`（1.3 节）
+| Base URL | `/api/v1`
+| 结构化端口 | `8080`
+| OOP 端口 | `8081`
+| 字段命名 | camelCase
+| 管理端响应 | `Result { code, message, data?, requestId?, timestamp }`
+| 分页响应 | `PageResult { total, page, pageSize, list }`
+| 分页请求 | `page` 从 1 开始；`size` 默认 20，最大 100
+| 时间 | ISO 8601 本地时间，例如 `2026-11-22T20:00:00`
+| 主键 | `Long` JSON 数字
+| 统一身份用户标识 | `iam_user.user_no` 字符串
 |===
 
-=== 1.2 认证与鉴权
+统一身份 8 个接口不使用管理端 `Result` 包装。成功直接返回业务对象，失败返回
+`{code: string, message: string}`。
 
-* 除 `POST /auth/login` 外，所有接口必须携带请求头 `Authorization: Bearer {accessToken}`。
-* 统一身份 8 个接口只要求登录态，不参与 `iam_api` 管理端功能点校验；API 全局权限通过
-  `GET /auth/api-permissions/{operationId}` 单独判断。
-* 每个请求由拦截器依次执行：
-. *认证*：校验令牌签名、签发方、有效期，并确认令牌未被吊销。失败返回 401（2001～2004）。
-. *鉴权*：管理端请求必须匹配 `iam_api(api_path, http_method)`，再通过其 `permission_id` 检查用户角色是否拥有对应前端权限。API 未登记、未映射权限或权限未授予均返回 403（2007）。
-* 初始化数据 `seed.sql` 已把第 3 章全部已实现的管理端接口登记为功能点，并授予超级管理员角色 `SUPER_ADMIN`；默认管理员 `admin / Admin@123`。
+== 3 认证与授权
 
-=== 1.3 统一响应包
+=== 3.1 管理端
 
-除统一身份 8 个外部接口外，管理接口返回 `Result`。统一身份接口的成功响应直接返回业务对象，
-错误响应为 `{"code":"UNAUTHORIZED","message":"请先登录"}` 这类字符串业务码结构。
+管理端请求携带：
+
+[source,text]
+----
+Authorization: Bearer <accessToken>
+----
+
+认证成功后，结构化后端执行以下默认拒绝流程：
+
+. 以 Controller 路径模板和 HTTP 方法查询 `iam_api`。
+. 检查 API 是否映射到前端权限。
+. 检查当前用户在 `ADMIN` 系统是否具有该权限。
+. 未登记、未映射或无权限均返回 HTTP 403，业务码 2007。
+
+`/auth/*` 接口只要求认证，不参与管理端 `iam_api` 功能权限映射。统一身份查询自身仍需
+满足业务权限，例如 `/auth/users/{userId}` 要求目标系统 `TEC` 权限。
+
+=== 3.2 OpenAPI
+
+`/open/**` 支持：
+
+* 普通用户 Bearer 令牌：只允许访问当前用户本人。
+* 接入方签名：请求头 `X-App-Id`、`X-Timestamp`、`X-Nonce`、`X-Signature`。
+
+签名时间偏差、nonce 防重放和接入系统状态错误分别使用 2009、2010、2011。
+
+=== 3.3 写请求保护
+
+* `X-Request-Id` 由请求过滤器校验或生成，并回写响应头与 `Result.requestId`。
+* `Idempotency-Key` 对 POST、PUT、DELETE、PATCH 生效。
+* 同一调用者、同一键、同一请求重放首次成功响应。
+* 同一键用于不同请求返回 HTTP 409 / 1004。
+
+== 4 请求格式
+
+=== 4.1 JSON Body
+
+[cols="1,2,1"]
+|===
+| 方法 | 路径 | 请求体
+
+| POST | `/auth/login` | 登录对象
+| PUT | `/roles/{roleId}` | `UpdateRoleDTO`
+| POST | `/roles/{roleId}/permissions` | 权限主键裸数组
+| DELETE | `/roles/{roleId}/permissions` | 权限主键裸数组
+| POST | `/open/authorize/resource` | 资源授权查询对象
+|===
+
+角色更新固定使用 JSON：
 
 [source,json]
 ----
 {
-  "code": 0,
-  "message": "success",
-  "data": {},
-  "timestamp": "2026-10-24T16:13:19.170295"
+  "roleName": "课程管理员",
+  "description": "更新说明",
+  "status": "ACTIVE",
+  "parentId": 3
 }
 ----
 
-[cols="1,1,3"]
-|===
-| 字段 | 类型 | 说明
+=== 4.2 Query/Form
 
-| code | int | 业务码，0 表示成功，其余见 1.4 节
+其余写接口使用 `@RequestParam`，或由 Spring 从 query/form 参数绑定 DTO。前端使用
+`postForm`、`putForm`、`deleteForm`。不得把 DTO 表单入口统一发送成 JSON 对象。
 
-| message | string | 人类可读信息
-
-| data | object / array | 业务数据；为空时整个字段省略（只对 `Result` 本层生效，`data` 内部对象的空字段仍输出为 `null`）
-
-| timestamp | string | 服务端时间
-|===
-
-分页接口的 `data` 为 `PageResult`：
-
-[source,json]
-----
-{ "total": 1, "page": 1, "pageSize": 20, "list": [] }
-----
-
-=== 1.4 错误码
-
-HTTP 状态码随业务码变化，见下表（与 `common/enums/ErrorCode.java` 一致）。"RBAC0 使用"列标出当前已实现接口会返回的错误码。
-
-[cols="1,2,1,3,1"]
-|===
-| 业务码 | 名称 | HTTP | 说明 | RBAC0 使用
-
-| 0 | SUCCESS | 200 | 成功 | 是
-
-| 1001 | PARAM_INVALID | 400 | 参数校验失败：缺少必填参数、类型错误、枚举取值非法、业务参数不合法 | 是
-
-| 1002 | PARAM_MISSING | 400 | 必填参数缺失（登录账号或密码为空） | 是
-
-| 1003 | PARAM_FORMAT_ERROR | 400 | 格式错误 | 否
-
-| 1004 | IDEMPOTENCY_CONFLICT | 409 | 幂等键冲突 | 否
-
-| 1005 | RESOURCE_NOT_FOUND | 404 | 资源不存在（用户、角色、模块、功能点、绑定、未知路径） | 是
-
-| 2001 | UNAUTHENTICATED | 401 | 未登录 / 未携带令牌 / 账号或密码错误 | 是
-
-| 2002 | TOKEN_INVALID | 401 | 令牌无效（签名或格式错误、令牌库中不存在） | 是
-
-| 2003 | TOKEN_EXPIRED | 401 | 令牌过期 | 是
-
-| 2004 | TOKEN_REVOKED | 401 | 令牌已吊销（已登出、账号被停用或封存） | 是
-
-| 2005 | ACCOUNT_SEALED | 403 | 账号已封存（离职） | 是
-
-| 2006 | ACCOUNT_DISABLED | 403 | 当前登录账号停用或锁定（只在登录时返回） | 是
-
-| 2007 | NO_FUNCTION_PERM | 403 | 无功能权限 | 是
-
-| 2008 | OUT_OF_DATA_SCOPE | 403 | 越数据范围 | RBAC3
-
-| 2009～2011 | SIGNATURE_INVALID / REPLAY_DETECTED / APP_DISABLED | 401 / 401 / 403 | 对外签名、防重放、接入停用 | 扩展
-
-
-| 3002 | ROLE_INHERIT_CYCLE | 409 | 角色继承成环 | RBAC1
-
-| 3003 | ORG_MOVE_INVALID | 409 | 组织节点移动非法（成环或跨级） | 是
-
-| 3004 | USER_ALREADY_SEALED | 409 | 用户已封存，不能再变更状态 | 是
-
-| 3005 | GRANT_DUPLICATE | 409 | 重复授权 | 是
-
-| 3006～3008 | APPROVAL_REQUIRED / DATA_SCOPE_EXPIRED / LOCK_ACQUIRE_FAILED | 409 | 审批流、临时授权过期、分布式锁 | 扩展 / RBAC3
-
-| 3009 | RESOURCE_DUPLICATE | 409 | 资源已存在（账号、角色编码、系统编码、API 已登记） | 是
-
-| 3010 | TARGET_USER_ABNORMAL | 409 | 操作对象（被授权的用户）非正常状态，不能授权 | 是
-
-| 4001 | RATE_LIMITED | 429 | 触发限流 | 扩展
-
-| 5000 | INTERNAL_ERROR | 500 | 服务器内部错误 | 是
-
-| 5001～5002 | SERVICE_UNAVAILABLE / DEGRADED | 503 / 200 | 依赖不可用 / 决策降级 | 扩展
-|===
-
-2005、2006 只表示*当前登录账号*被封存或停用，前端收到后会强制登出；操作对象（如被授权的用户）状态异常一律用 3010，不会影响操作人的会话。
-
-错误响应示例（未登记权限的用户调用 `GET /users`）：
-
-[source,json]
-----
-{ "code": 2007, "message": "无功能权限: 查询用户列表", "timestamp": "2026-10-24T16:13:19.496944" }
-----
-
-== 2 接口总览
-
-[cols="1,3,1,1"]
-|===
-| 方法 | 路径 | 说明 | 状态
-
-| POST | `/auth/login` | 统一身份登录，返回顶层 `accessToken/tokenType/expiresIn` | 已实现
-| POST | `/auth/logout` | 吊销令牌，返回 204 | 已实现
-| GET | `/auth/me` | 当前用户、角色与前端权限码 | 已实现
-| GET | `/auth/permissions/{permission}` | 校验单个前端权限码 | 已实现
-| GET | `/auth/departments` | 按层级分页查询部门 | 已实现
-| GET | `/auth/api-permissions/{operationId}` | 按 operationId 校验 API 权限 | 已实现
-| GET | `/auth/departments/{departmentId}/users` | 部门用户分页 | 已实现
-| GET | `/auth/users/{userId}` | 统一身份用户查询 | 已实现
-| GET | `/auth/validate` | 令牌校验 | 已实现
-| POST | `/users` | 创建用户 | 已实现
-| GET | `/users` | 用户列表（分页） | 已实现
-| GET | `/users/{userId}` | 用户详情 | 已实现
-| PUT | `/users/{userId}/status` | 变更账号状态 / 封存 | 已实现
-| POST | `/roles` | 新建角色 | 已实现
-| GET | `/roles` | 角色列表 | 已实现
-| GET | `/roles/{roleId}` | 角色详情 | 已实现
-| POST | `/roles/{roleId}/assignments` | 将角色分配给用户 | 已实现
-| DELETE | `/roles/{roleId}/assignments/{userId}` | 撤销用户角色 | 已实现
-| GET | `/roles/{roleId}/assignments` | 查询角色下的用户分配 | 已实现
-| GET | `/roles/assignments` | 按用户查询角色分配 | 已实现
-| POST / DELETE / GET | `/roles/{roleId}/permissions` | 角色前端权限授予 / 解除 / 查询 | 已实现
-| POST | `/systems` | 登记接入系统 | 已实现
-| GET | `/systems` | 系统列表 | 已实现
-| GET / POST | `/permissions` | 查询 / 登记前端菜单与按钮权限树 | 已实现
-| POST / DELETE | `/permissions/{permissionId}/apis/{apiId}` | 绑定 / 解除 API 到前端权限 | 已实现
-| GET | `/permissions/{permissionId}/apis` | 查询前端权限下的 API | 已实现
-| GET / POST | `/apis` | 后端 API 列表 / 登记 | 已实现
-| GET | `/apis/{apiId}` | 后端 API 详情 | 已实现
-| GET | `/open/permissions` | 查询用户在某系统的前端权限集合 | 已实现
-| GET/POST | `/systems/data-scopes` | 查询 / 创建数据范围 | 已实现
-| DELETE | `/roles/{roleId}/data-scopes/{bindingId}` | 回收角色数据范围 | 已实现
-| POST / GET / PUT | `/organizations`、`/organizations/{orgId}`、`/organizations/{orgId}/children`、`/organizations/{orgId}/parent` | 分层组织（新建、树、详情、下级、移动） | 已实现
-| GET | `/logs` | 统一日志查询（普通操作 + 权限变更） | 已实现
-|===
-
-旧 `/open/authorize` 和 `/open/authorize/batch` 已删除，外部 API 鉴权唯一入口为
-`GET /auth/api-permissions/{operationId}`。
-
-== 3 管理端接口（已实现）
-
-=== 3.1 认证（M01）
-
-==== POST /auth/login
-
-请求体（JSON）：
-
-[cols="1,1,1,3"]
-|===
-| 字段 | 类型 | 必填 | 说明
-
-| username | string | 是 | 账号（`user_no`）
-| password | string | 是 | 密码
-| systems | string array | 是 | 登录目标系统，不可为空或重复
-| clientIp | string | 否 | 客户端 IP，写入令牌记录
-|===
-
-成功响应直接返回：
-
-[cols="1,1,3"]
-|===
-| 字段 | 类型 | 说明
-
-| accessToken | string | 访问令牌（JWT，有效期 2 小时）
-| tokenType | string | 固定 `Bearer`
-| expiresIn | long | 有效期（秒），默认 7200
-| userId | string | 用户 ID
-| displayName | string | 姓名（解密后）
-| accountStatus | string | 账号状态
-|===
-
-错误响应使用字符串业务码：`BAD_REQUEST`（参数缺失或重复系统）、`UNAUTHORIZED`
-（账号或密码错误，不区分账号是否存在）、`FORBIDDEN`（封存、停用或锁定）。
-
-==== POST /auth/logout
-
-请求头携带要吊销的令牌。成功返回 HTTP 204 且无响应体；再次使用该令牌返回
-`401 / UNAUTHORIZED`。
-
-==== GET /auth/validate
-
-请求头携带令牌，`data` 为 `true` / `false`。令牌无效时由拦截器直接返回 401，不会到达本接口。
-
-=== 3.2 用户账号（M02）
-
-用户接口返回 `UserView`（不含密码哈希与密文）：
-
-[cols="1,1,3"]
-|===
-| 字段 | 类型 | 说明
-
-| id | long | 用户 ID
-| userNo | string | 账号
-| realName | string | 姓名（解密后）
-| phoneMasked | string | 脱敏电话，如 `138****5678`；未填电话时为 `null`
-| orgId | long | 所属组织 ID
-| post | string | 岗位
-| accountStatus | string | 账号状态
-| leaveTime / lastLoginAt | string | 离职时间 / 最近登录时间
-| isDeleted | int | 0 / 1
-| createdAt / updatedAt | string | 创建 / 修改时间
-|===
-
-[cols="1,2,3,2"]
-|===
-| 接口 | 参数 | 说明 | 错误
-
-| `POST /users` | `userNo`、`realName`、`orgId`；可选 `password`、`phone`、`post` | 创建账号，返回 `UserView`。未传 `password` 时使用初始密码（配置项 `iam.default-password`） | 3009 账号已存在；1001 缺参数
-
-| `GET /users` | 可选 `page`、`size`、`orgId`、`accountStatus` | 分页查询未删除的账号，返回 `PageResult<UserView>` | —
-
-| `GET /users/{userId}` | — | 账号详情 | 1005
-
-| `PUT /users/{userId}/status` | `targetStatus`；可选 `reason` | 变更状态。非 `NORMAL` 时吊销该用户全部令牌；`SEALED` 时同时回收全部角色并记录离职时间 | 1001 状态取值非法；1005；3004 已封存
-|===
-
-=== 3.3 角色与授权（M04 / M07）
-
-[cols="1,2,3,2"]
-|===
-| 接口 | 参数 | 说明 | 错误
-
-| `POST /roles` | `roleCode`、`roleName`、`roleType`（FUNC/DATA）；可选 `description` | 新建角色，状态为 `ACTIVE`，返回角色 | 3009 编码已存在；1001 类型非法
-
-| `GET /roles` | — | 未删除的角色列表 | —
-
-| `GET /roles/{roleId}` | — | 角色详情 | 1005
-
-| `POST /roles/{roleId}/assignments` | `userId`；可选 `expireTime`、`grantReason` | 把角色分配给用户，返回绑定记录（`status = ACTIVE`）。撤销后再次授予会复用原记录 | 1005 用户或角色不存在；3010 用户非正常状态；1001 角色已停用或失效时间早于当前；3005 重复授权
-
-| `DELETE /roles/{roleId}/assignments/{userId}` | — | 撤销用户角色，绑定置为 `REVOKED`，下一次请求起失去对应权限 | 1005 未授予该角色
-
-| `GET /roles/{roleId}/assignments` / `GET /roles/assignments?userId=` | — | 查询角色下的用户分配 / 查询用户的全部角色绑定 | —
-
-| `POST /roles/{roleId}/permissions` | query：`allowedAction`；请求体：权限 ID 数组 | 给角色授予前端菜单/按钮权限 | 1005 角色或权限不存在；1001 操作取值非法
-
-| `DELETE /roles/{roleId}/permissions` | 请求体：权限 ID 数组 | 解除角色前端权限，未绑定的忽略 | —
-
-| `GET /roles/{roleId}/permissions` | — | 查询角色已绑定的前端权限 | —
-|===
-
-=== 3.4 多系统、前端权限与后端 API
-
-[cols="1,2,3,2"]
-|===
-| 接口 | 参数 | 说明 | 错误
-
-| `POST /systems` | `systemCode`、`systemName`；可选 `description` | 登记接入系统 | 3009 编码已存在
-
-| `GET /systems` | — | 未删除的系统列表 | —
-
-| `GET /systems/{systemId}` | — | 系统详情 | 1005
-
-| `POST /permissions` | `systemId`、`permissionCode`、`permissionName`、`permissionType`（MENU/BUTTON）、`action`；可选 `parentId`、`routePath`、`sortNo` | 登记前端权限树节点；菜单和按钮共用一张自关联树 | 1005 系统/父权限不存在；1001 类型或操作非法；3009 编码已存在
-
-| `GET /permissions?systemId=` | — | 查询某系统的菜单/按钮权限树节点 | —
-
-| `POST /apis` | `systemId`、`apiCode`、`apiName`、`apiPath`、`httpMethod` | 独立登记后端 API，HTTP 方法转大写 | 1005 系统不存在；3009 编码或请求映射重复
-
-| `GET /apis?systemId=` / `GET /apis/{apiId}` | — | 查询某系统的 API / API 详情 | 1005
-
-| `POST /permissions/{permissionId}/apis/{apiId}` | — | 把 API 挂到前端权限；同一权限可关联多个 API | 1005 权限/API 不存在；1001 不属于同一系统
-
-| `DELETE /permissions/{permissionId}/apis/{apiId}` | — | 解除映射；未映射 API 运行期默认拒绝 | 1005
-
-| `GET /permissions/{permissionId}/apis` | — | 查询权限关联的全部 API | 1005
-|===
-
-=== 3.5 组织机构（M03）
-
-[cols="1,2,3,2"]
-|===
-| 接口 | 参数 | 说明 | 错误
-
-| `GET /organizations` | 可选 `rootId` | 不传：返回顶层组织（下级用 children 接口逐层加载）；传：返回该节点及全部下级的扁平列表 | 1005 rootId 不存在
-
-| `GET /organizations/{orgId}` | — | 组织详情 | 1005
-
-| `GET /organizations/{orgId}/children` | — | 直接下级，按排序号排列 | 1005 上级不存在
-
-| `POST /organizations` | `orgCode`、`orgName`、`orgType`（HQ/BRANCH/DEPT/PROJECT）、`orgLevel`（1～4，须与类型对应）；可选 `parentId`、`sortNo` | 新建组织，自动计算祖先路径 `ancestors` | 1001 类型非法 / 层级与类型不符 / 上级层级不高于本节点；1005 上级不存在；3009 编码已存在
-
-| `PUT /organizations/{orgId}/parent` | `newParentId` | 调整父组织，同步更新全部下级的祖先路径 | 1005；3003 移动到自身或下级（成环）、新上级层级不高于本节点（跨级）
-|===
-
-组织的修改、停用、删除与人数统计尚未提供接口（RBAC3 阶段）。
-
-== 4 统一身份外部接口（已实现）
-
-课程项目管理系统接入所需的 8 个接口、精确参数、成功响应和字符串错误码统一记录在
-`design/07_统一身份外部契约.md`。旧的 `/open/authorize` 与
-`/open/authorize/batch` 已删除，外部 API 全局权限统一使用
-`GET /auth/api-permissions/{operationId}`。
-
-`GET /open/permissions` 仅保留给管理后台读取数字权限主键集合，不再作为外部业务系统契约。
-
-说明：当前任何已登录用户都可以查询其他用户的权限（这三个接口未登记为功能点）。对外开放给业务系统前，应改为应用级签名认证（6.1 节）或只允许查询本人。
-
-== 5 已定义、待实现的接口（RBAC3）
-
-以下接口的 Controller 已定义签名，Service 为"待实现"，调用返回 500：
+== 5 统一身份外部 API
 
 [cols="1,3,1"]
 |===
-| 接口 | 参数 | 需求
+| 方法 | 路径 | OOP 状态
 
-| `POST /systems/data-scopes` | `scopeCode`、`scopeName`；可选 `description`、`sortNo` | FR-22
-| `GET /systems/data-scopes` | — | FR-22
-| `POST /systems/role-data-scopes` | `roleId`、`scopeType`；可选 `orgId`、`projectId`、`createdBy` | FR-22、FR-23
+| POST | `/auth/login` | 已实现
+| POST | `/auth/logout` | 已实现
+| GET | `/auth/me` | 未迁移
+| GET | `/auth/permissions/{permission}` | 未迁移
+| GET | `/auth/departments` | 未迁移
+| GET | `/auth/api-permissions/{operationId}` | 已实现
+| GET | `/auth/departments/{departmentId}/users` | 未迁移
+| GET | `/auth/users/{userId}` | 未迁移
 |===
 
-统一日志 `GET /logs` 已实现，返回 `PageResult<IamLog>`，字段以《数据库设计说明书》第 5 节为准。
+登录响应中的 `userId` 为本地数据库主键字符串，是管理后台兼容字段。统一身份用户标识使用
+JWT `sub` 或 `/auth/me.subject`，值为 `user_no`。`/auth/users/{userId}` 使用 `user_no`。
 
-== 6 规划接口（扩展，尚未实现）
+`operationId` 对应目标系统内的 `iam_api.api_code`：
 
-V1.0 中设计、当前代码尚未实现的能力，保留设计要点作为后续实现依据：
+* API 不存在：HTTP 404 / `API_OPERATION_NOT_FOUND`。
+* API 存在但未映射权限或无权限：HTTP 200 / `allowed=false`。
 
-=== 6.1 认证扩展
+== 6 管理端 API
 
-* `POST /auth/refresh`：刷新令牌换取新的访问令牌（FR-34 续期）。
-* `GET /auth/profile`：当前用户信息、角色列表与权限版本号。
-* SSO：`GET /sso/authorize`（携带 `systemCode`、`redirectUri`、`state`，302 回跳一次性授权码）、`POST /sso/token`（授权码换令牌）（FR-31）。
-* 对外应用认证：业务系统以 `X-App-Key`、`X-Timestamp`、`X-Nonce`、`X-Signature` 签名调用 `/open/*`，时间偏差超过 300 秒或 nonce 重复即拒绝（NFR-04）。实现时需在 `iam_system` 增加应用密钥字段。
+=== 6.1 认证
 
-=== 6.2 管理与通知扩展
+[cols="1,2,3"]
+|===
+| 方法 | 路径 | 说明
 
-* 授权申请—审批—执行流程（FR-30）。
-* 批量导入账号、权限矩阵查询与导出、统一日志导出（FR-06、FR-21、FR-46）。
-* 权限变更回调：平台向业务系统 `callback_url` 推送 `{eventId, eventType, affectedUserIds, affectedSystemCodes, occurredAt}`，消费方按 `eventId` 幂等（FR-43）。
-* 请求追踪 `X-Request-Id` 回传、写接口幂等键 `Idempotency-Key`。
+| POST | `/auth/login` | 登录并签发 JWT
+| POST | `/auth/logout` | 吊销当前令牌，返回 204
+| GET | `/auth/validate` | 管理端令牌校验，返回 `Result<Boolean>`
+| PUT | `/auth/password` | 修改当前用户密码
+|===
 
-=== 6.3 安全与限流
+`/auth/validate` 不是统一身份 8 接口之一，其成功和失败响应仍使用管理端数字业务码。
 
-* 限流：按用户、IP、调用方系统三个维度，超限返回 429（4001）。
-* 防越权：功能权限防垂直越权（已实现）；数据范围防水平越权，"本人"类权限在服务端用当前登录用户回填过滤条件，不信任前端传入的用户 ID（RBAC3）。
-* 日志：普通写接口及失败操作写入 `iam_log`；权限变更同时写入结构化前后快照，统一通过 `/logs` 查询。
+=== 6.2 用户
 
-== 7 典型调用示例
+[cols="1,2,3"]
+|===
+| 方法 | 路径 | 说明
 
-以下示例为在 MySQL 8.0 上导入 `schema.sql`、`seed.sql` 后的真实响应（时间戳略）。
+| POST | `/users` | 创建用户
+| GET | `/users` | 分页查询用户
+| GET | `/users/{userId}` | 用户详情
+| GET | `/users/{userId}/sensitive` | 查看受保护的姓名和电话明文
+| PUT | `/users/{userId}/status` | 变更账号状态
+| PUT | `/users/{userId}/organization` | 调整组织和岗位
+|===
 
-=== 7.1 登录
+=== 6.3 角色
 
-[source,bash]
-----
-curl -X POST http://localhost:8080/api/v1/auth/login \
-  -H 'Content-Type: application/json' \
-  -d '{"username":"admin","password":"Admin@123","systems":["ADMIN"]}'
-----
+[cols="1,2,3"]
+|===
+| 方法 | 路径 | 说明
 
-[source,json]
-----
-{
-  "accessToken": "eyJhbGciOiJIUzM4NCJ9...",
-  "tokenType": "Bearer",
-  "expiresIn": 7200,
-  "userId": "1",
-  "displayName": "系统管理员",
-  "accountStatus": "NORMAL"
-}
-----
+| POST | `/roles` | 创建角色
+| GET | `/roles` | 角色列表
+| GET | `/roles/{roleId}` | 角色详情
+| PUT | `/roles/{roleId}` | 修改名称、描述、状态和父角色
+| GET | `/roles/{roleId}/exclusions` | 查询互斥角色
+| POST | `/roles/{roleId}/exclusions` | 新建互斥
+| DELETE | `/roles/{roleId}/exclusions/{excludedRoleId}` | 删除互斥
+|===
 
-=== 7.2 创建用户并授予角色
+角色继承由 `parentId` 表示。自引用或循环继承返回 409 / 3002。
 
-[source,bash]
-----
-curl -X POST http://localhost:8080/api/v1/users -H "Authorization: Bearer $TOKEN" \
-  --data-urlencode userNo=zhang --data-urlencode password=Zhang@123 \
-  --data-urlencode realName=张三 --data-urlencode phone=13812345678 --data-urlencode orgId=1
+=== 6.4 用户角色分配
 
-curl -X POST http://localhost:8080/api/v1/roles/2/assignments -H "Authorization: Bearer $TOKEN" \
-  -d userId=2
-----
+[cols="1,2,3"]
+|===
+| 方法 | 路径 | 说明
 
-[source,json]
-----
-{
-  "code": 0,
-  "message": "success",
-  "data": {
-    "id": 2, "userId": 2, "roleId": 2,
-    "effectiveTime": "2026-10-24T16:13:19.325099", "expireTime": null,
-    "status": "ACTIVE"
-  }
-}
-----
+| POST | `/roles/{roleId}/assignments` | 授予角色
+| DELETE | `/roles/{roleId}/assignments/{userId}` | 撤销角色
+| GET | `/roles/{roleId}/assignments` | 查询角色下的用户
+| GET | `/roles/assignments` | 按 `userId` 查询用户角色
+|===
 
-=== 7.3 鉴权生效过程
+授予角色支持可选 `expireTime` 和 `grantReason`。操作人由令牌上下文取得，客户端不能通过
+请求参数指定授权人。
 
-. 角色 2 尚未获得按钮权限时，用户 zhang 调用 `GET /users` → 403。
-. 管理员调用 `POST /roles/2/permissions?allowedAction=VIEW`，请求体 `[20001]`；API 30001（`GET /users`）已映射到权限 20001。
-. zhang 再次调用 `GET /users` → 200；调用 `POST /users` 仍为 403（未绑定 20002）。
-. `GET /open/permissions?userId=2&systemCode=ADMIN` → `[20001]`。
-. 管理员把 zhang 封存（`PUT /users/2/status`，`targetStatus=SEALED`）→ zhang 的令牌立即失效，再请求返回 `{"code": 2004, "message": "令牌已吊销"}`。
+=== 6.5 前端权限与 API 目录
 
-文档结束。
+[cols="1,2,3"]
+|===
+| 方法 | 路径 | 说明
+
+| POST | `/roles/{roleId}/permissions` | JSON 数组授予角色权限
+| DELETE | `/roles/{roleId}/permissions` | JSON 数组解除角色权限
+| GET | `/roles/{roleId}/permissions` | 查询角色权限
+| POST | `/permissions` | 登记菜单或按钮
+| GET | `/permissions` | 按 `systemId` 查询权限树节点
+| POST | `/permissions/{permissionId}/apis/{apiId}` | API 映射权限
+| DELETE | `/permissions/{permissionId}/apis/{apiId}` | 解除 API 映射
+| GET | `/permissions/{permissionId}/apis` | 查询权限下的 API
+| POST | `/apis` | 登记后端 API
+| GET | `/apis` | 按 `systemId` 查询 API
+| GET | `/apis/{apiId}` | API 详情
+|===
+
+=== 6.6 系统与数据范围
+
+[cols="1,2,3"]
+|===
+| 方法 | 路径 | 说明
+
+| POST | `/systems` | 登记系统
+| GET | `/systems` | 系统列表
+| GET | `/systems/{systemId}` | 系统详情
+| POST | `/systems/data-scopes` | 创建数据范围字典
+| GET | `/systems/data-scopes` | 查询数据范围字典
+| POST | `/systems/role-data-scopes` | 兼容旧契约的角色范围绑定
+| GET | `/roles/{roleId}/data-scopes` | 查询角色数据范围
+| POST | `/roles/{roleId}/data-scopes` | 授予角色数据范围
+| DELETE | `/roles/{roleId}/data-scopes/{bindingId}` | 回收角色数据范围
+|===
+
+=== 6.7 组织机构
+
+[cols="1,2,3"]
+|===
+| 方法 | 路径 | 说明
+
+| POST | `/organizations` | 创建组织
+| GET | `/organizations` | 顶层或指定根节点的组织列表
+| GET | `/organizations/{orgId}` | 组织详情
+| GET | `/organizations/{orgId}/children` | 直接下级
+| PUT | `/organizations/{orgId}/parent` | 移动组织
+| PUT | `/organizations/{orgId}` | 修改和启停组织
+|===
+
+=== 6.8 OpenAPI 与日志
+
+[cols="1,2,3"]
+|===
+| 方法 | 路径 | 说明
+
+| GET | `/open/permissions` | 查询用户前端权限主键集合
+| GET | `/open/data-scopes` | 查询用户当前生效的数据范围
+| POST | `/open/authorize/resource` | 功能权限与数据范围联合判定
+| GET | `/logs` | 统一日志分页查询
+| GET | `/logs/export` | 导出筛选后的 CSV
+|===
+
+== 7 错误契约
+
+=== 7.1 管理端业务码
+
+[cols="1,2,1"]
+|===
+| Code | Name | HTTP
+
+| 1001 | PARAM_INVALID | 400
+| 1004 | IDEMPOTENCY_CONFLICT | 409
+| 1005 | RESOURCE_NOT_FOUND | 404
+| 2001 | UNAUTHENTICATED | 401
+| 2002 | TOKEN_INVALID | 401
+| 2003 | TOKEN_EXPIRED | 401
+| 2004 | TOKEN_REVOKED | 401
+| 2005 | ACCOUNT_SEALED | 403
+| 2006 | ACCOUNT_DISABLED | 403
+| 2007 | NO_FUNCTION_PERM | 403
+| 2008 | OUT_OF_DATA_SCOPE | 403
+| 2009 | SIGNATURE_INVALID | 401
+| 2010 | REPLAY_DETECTED | 401
+| 2011 | APP_DISABLED | 403
+| 3002 | ROLE_INHERIT_CYCLE | 409
+| 3003 | ORG_MOVE_INVALID | 409
+| 3004 | USER_ALREADY_SEALED | 409
+| 3005 | GRANT_DUPLICATE | 409
+| 3008 | LOCK_ACQUIRE_FAILED | 409
+| 3009 | RESOURCE_DUPLICATE | 409
+| 3010 | TARGET_USER_ABNORMAL | 409
+| 3011 | ROLE_EXCLUSION_CONFLICT | 409
+| 3012 | DATA_SCOPE_INVALID | 400
+| 5000 | INTERNAL_ERROR | 500
+| 5001 | SERVICE_UNAVAILABLE | 503
+|===
+
+=== 7.2 统一身份字符串业务码
+
+[cols="1,1,3"]
+|===
+| Code | HTTP | 场景
+
+| `BAD_REQUEST` | 400 | 参数、路径或请求体非法
+| `UNAUTHORIZED` | 401 | 未认证或令牌无效
+| `FORBIDDEN` | 403 | 账号状态或业务权限不允许
+| `API_OPERATION_NOT_FOUND` | 404 | operationId 不存在
+| `IDENTITY_DEPARTMENT_NOT_FOUND` | 404 | 统一身份部门不存在
+| `IDENTITY_USER_NOT_FOUND` | 404 | 统一身份用户不存在
+| `CONFLICT` | 409 | 数据冲突
+| `IDENTITY_SERVICE_UNAVAILABLE` | 503 | 统一身份依赖不可用
+| `INTERNAL_ERROR` | 500 | 未分类内部错误
+|===
+
+== 8 双后端契约
+
+当前共享黑盒场景覆盖：
+
+* 未认证访问返回 401/2001。
+* 登录后查询角色。
+* 不存在角色返回 404/1005。
+* 重复角色编码返回 409/3009。
+* 角色继承成环返回 409/3002。
+* 过期临时授权返回 400/1001。
+* 令牌校验失败使用数字 2001。
+* 不存在的 operationId 使用 `API_OPERATION_NOT_FOUND`。
+
+OOP 尚未迁移的接口不能视为共享已实现能力。执行双后端测试前需分别启动 8080 和 8081，
+并使用相同 schema/seed 基线。

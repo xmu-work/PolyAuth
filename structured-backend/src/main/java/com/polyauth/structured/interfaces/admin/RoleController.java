@@ -72,6 +72,7 @@ public class RoleController {
             @Positive
             Long roleId,
             @Valid
+            @RequestBody
             UpdateRoleDTO dto,
             @RequestAttribute(AuthInterceptor.ATTR_USER_ID)
             Long operatorId) {

@@ -221,6 +221,7 @@ pnpm build
 
 - `POST /auth/login` 为公开接口。
 - 统一身份契约见 [design/07_统一身份外部契约.md](design/07_统一身份外部契约.md)；该组 8 个接口直接返回业务对象和字符串错误码，不使用内部 `Result` 包装。
+- 登录响应的 `userId` 是本地数据库主键字符串；统一身份用户标识使用 JWT `sub` 或 `/auth/me.subject`，值为 `user_no`。
 - 管理端请求携带 `Authorization: Bearer <token>`。
 - 管理端请求必须先匹配已登记的 `iam_api`，再检查该 API 映射的前端权限；任一环节缺失都默认拒绝。
 - 数据权限开放接口可携带 `X-App-Id`、`X-Timestamp`、`X-Nonce`、`X-Signature` 进行接入方认证。
@@ -253,7 +254,7 @@ pnpm build
 | PUT | `/api/v1/organizations/{orgId}` | 修改或停用组织 |
 | GET/POST | `/api/v1/roles` | 角色列表 / 新建功能或数据角色 |
 | GET | `/api/v1/roles/{roleId}` | 角色详情 |
-| PUT | `/api/v1/roles/{roleId}` | 修改角色、状态和父角色 |
+| PUT | `/api/v1/roles/{roleId}` | JSON 修改角色、状态和父角色 |
 | GET/POST | `/api/v1/roles/{roleId}/exclusions` | 查询 / 新建角色互斥 |
 | DELETE | `/api/v1/roles/{roleId}/exclusions/{excludedRoleId}` | 解除角色互斥 |
 | GET/POST | `/api/v1/roles/{roleId}/data-scopes` | 查询 / 授予角色数据范围 |
@@ -264,6 +265,7 @@ pnpm build
 | GET | `/api/v1/roles/assignments` | 按用户查询角色分配 |
 | POST/DELETE/GET | `/api/v1/roles/{roleId}/permissions` | 角色权限授予 / 解除 / 查询 |
 | GET/POST | `/api/v1/systems` | 子系统列表 / 登记 |
+| GET | `/api/v1/systems/{systemId}` | 系统详情 |
 | GET/POST | `/api/v1/permissions` | 前端权限树查询 / 登记 |
 | POST/DELETE | `/api/v1/permissions/{permissionId}/apis/{apiId}` | 绑定 / 解除 API 映射 |
 | GET | `/api/v1/permissions/{permissionId}/apis` | 查询权限下的 API |
@@ -273,17 +275,19 @@ pnpm build
 | GET | `/api/v1/open/data-scopes` | 查询用户当前生效的数据范围 |
 | POST | `/api/v1/open/authorize/resource` | 功能权限与数据权限联合判定 |
 | GET/POST | `/api/v1/systems/data-scopes` | 数据范围字典查询 / 新建 |
+| POST | `/api/v1/systems/role-data-scopes` | 兼容旧契约的角色数据范围绑定 |
 | GET | `/api/v1/logs` | 统一日志分页查询（普通操作 + 权限变更） |
 | GET | `/api/v1/logs/export` | 导出统一日志 CSV |
 
 ## 验证状态
 
-结构化后端 120 项测试通过，覆盖 CloneFactory、统一身份、JWT、账号、组织、角色继承/互斥、数据权限、权限树、日志、校验和幂等。OOP 后端 22 项测试通过，覆盖角色不变量、继承展开、授权有效期、权限解析、用例编排、本地认证、JPA Adapter 和完整容器装配。
+结构化后端 121 项测试通过，覆盖 CloneFactory、统一身份、JWT、账号、组织、角色继承/互斥、数据权限、权限树、日志、校验和幂等。OOP 后端 24 项测试通过，覆盖角色不变量、继承展开、授权有效期、权限解析、用例编排、本地认证、统一身份错误契约、JPA Adapter 和完整容器装配。
 
-前端 19 项 Vitest 测试通过，`pnpm typecheck`、`pnpm build` 和 `pnpm lint` 均通过。
+前端 20 项 Vitest 测试通过，`pnpm typecheck`、`pnpm build` 和 `pnpm lint` 均通过。
 
-`contract-tests` 共 6 个共享黑盒场景；未指定 `contract.baseUrl` 时会明确跳过，不伪造通过。要确认两套实现等价，必须分别启动 8080、8081 并执行双后端契约脚本。
+`contract-tests` 共 8 个共享黑盒场景；未指定 `contract.baseUrl` 时会明确跳过，不伪造通过。要确认两套实现等价，必须分别启动 8080、8081 并执行双后端契约脚本。
 
 当前 OOP 尚未迁移组织管理、数据权限、角色互斥、系统/API 管理、完整统一身份查询和管理端审计查询，因此不能标记为全功能等价；迁移状态见 `contract-tests/README.md`。
 
-`design/` 目录保留课程详细设计材料；功能范围以本 README 和当前代码为准。
+`design/` 目录保留课程详细设计材料；功能范围以本 README、当前代码和
+[RBAC后端API使用手册.md](RBAC后端API使用手册.md) 为准。
