@@ -5,6 +5,7 @@ import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessage } from 'element-plus'
 import { Lock, User } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/stores/auth.store'
+import { ADMIN_SYSTEM_CODE } from '@/constants'
 
 const route = useRoute()
 const router = useRouter()
@@ -53,6 +54,7 @@ async function submit(): Promise<void> {
     await authStore.login({
       username: form.username.trim(),
       password: form.password,
+      systems: [ADMIN_SYSTEM_CODE],
     })
     await router.replace(safeRedirect())
   } catch (error) {

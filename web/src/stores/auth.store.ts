@@ -8,7 +8,6 @@ import { tokenStorage } from '@/utils/tokenStorage'
 export const useAuthStore = defineStore('auth', () => {
   const snapshot = tokenStorage.snapshot()
   const accessToken = ref<string | null>(snapshot.accessToken)
-  const refreshToken = ref<string | null>(snapshot.refreshToken)
   const userId = ref<number | null>(snapshot.userId)
   const displayName = ref<string | null>(snapshot.displayName)
   const expiresAt = ref<number | null>(snapshot.expiresAt)
@@ -20,7 +19,6 @@ export const useAuthStore = defineStore('auth', () => {
   function restore(): void {
     const stored = tokenStorage.snapshot()
     accessToken.value = stored.accessToken
-    refreshToken.value = stored.refreshToken
     userId.value = stored.userId
     displayName.value = stored.displayName
     expiresAt.value = stored.expiresAt
@@ -29,7 +27,6 @@ export const useAuthStore = defineStore('auth', () => {
   function clearSession(): void {
     tokenStorage.clear()
     accessToken.value = null
-    refreshToken.value = null
     userId.value = null
     displayName.value = null
     expiresAt.value = null
@@ -50,7 +47,6 @@ export const useAuthStore = defineStore('auth', () => {
 
     tokenStorage.save({
       accessToken: response.accessToken,
-      refreshToken: response.refreshToken,
       userId: normalizedUserId,
       displayName: response.displayName,
       expiresIn: response.expiresIn,
@@ -78,7 +74,6 @@ export const useAuthStore = defineStore('auth', () => {
 
   return {
     accessToken,
-    refreshToken,
     userId,
     displayName,
     expiresAt,

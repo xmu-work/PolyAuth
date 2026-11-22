@@ -7,7 +7,7 @@
 | 项 | 线上现状 | 升级后 |
 | --- | --- | --- |
 | 镜像 | `iam-app:1.0.0`（hao1417 分支 `74c350a` 构建） | `iam-app:1.0.1`（main 最新） |
-| 组织接口 `/orgs` | `UnsupportedOperationException: 待实现` → 500 | 已实现（树、详情、下级、新建、移动） |
+| 组织接口 `/organizations` | `UnsupportedOperationException: 待实现` → 500 | 已实现（树、详情、下级、新建、移动；旧 `/orgs` 路径由幂等升级脚本修正） |
 | 表结构 | 14 张表 | **不变**（`schema.sql` 与实体自 `74c350a` 起未改） |
 | 功能点 | 25 个（10001~10008、20001~20017） | 30 个（补 20018~20022） |
 | 超级管理员绑定 | 25 条 | 30 条 |
@@ -82,11 +82,11 @@ docker run --rm --network iam-net curlimages/curl -s http://app:8081/actuator/he
 
 TOKEN=$(docker run --rm --network iam-net curlimages/curl -s -X POST http://app:8080/api/v1/auth/login \
   -H 'Content-Type: application/json' \
-  -d '{"username":"admin","password":"Admin@123","clientIp":"127.0.0.1"}' | sed -E 's/.*"accessToken":"([^"]+)".*/\1/')
+  -d '{"username":"admin","password":"Admin@123","systems":["ADMIN"]}' | sed -E 's/.*"accessToken":"([^"]+)".*/\1/')
 
-docker run --rm --network iam-net curlimages/curl -s http://app:8080/api/v1/orgs -H "Authorization: Bearer $TOKEN"
+docker run --rm --network iam-net curlimages/curl -s http://app:8080/api/v1/organizations -H "Authorization: Bearer $TOKEN"
 # code=0，data 中有"总公司"
-docker run --rm --network iam-net curlimages/curl -s http://app:8080/api/v1/orgs/1/children -H "Authorization: Bearer $TOKEN"
+docker run --rm --network iam-net curlimages/curl -s http://app:8080/api/v1/organizations/1/children -H "Authorization: Bearer $TOKEN"
 # data 中有"信息中心"
 
 docker service logs iam_app --since 5m 2>&1 | grep -E 'ERROR|Exception' || echo "无错误日志"

@@ -205,7 +205,7 @@ docker exec "$CID" sh -c 'exec mysql -uroot -p"$(cat /run/secrets/mysql_root_pas
 docker run --rm --network iam-net curlimages/curl \
   -s -X POST http://app:8080/api/v1/auth/login \
   -H 'Content-Type: application/json' \
-  -d '{"username":"admin","password":"Admin@123","clientIp":"127.0.0.1"}'
+  -d '{"username":"admin","password":"Admin@123","systems":["ADMIN"]}'
 ```
 
 返回 JSON 里有 `accessToken` 即后端跑通。也可以看三副本健康与日志：

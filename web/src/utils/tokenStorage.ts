@@ -4,15 +4,12 @@
  */
 
 const KEY_ACCESS_TOKEN = 'iam.accessToken'
-const KEY_REFRESH_TOKEN = 'iam.refreshToken'
 const KEY_USER_ID = 'iam.userId'
 const KEY_DISPLAY_NAME = 'iam.displayName'
 const KEY_EXPIRES_AT = 'iam.expiresAt'
 
 export interface SessionSnapshot {
   accessToken: string | null
-  /** v1 仅存档不用（契约 5.2-5：无刷新端点，[待后端] /auth/refresh） */
-  refreshToken: string | null
   /** 登录响应 userId 为 String（契约 3.2），写入会话时统一 Number() 归一 */
   userId: number | null
   /** 脱敏展示名（契约 5.2-7：无 profile 端点，以登录响应存档为准） */
@@ -23,7 +20,6 @@ export interface SessionSnapshot {
 
 export interface SessionInput {
   accessToken: string
-  refreshToken?: string
   userId: number
   displayName: string
   /** 令牌有效期（秒），登录响应 expiresIn=7200 */
@@ -33,9 +29,6 @@ export interface SessionInput {
 export const tokenStorage = {
   save(session: SessionInput): void {
     localStorage.setItem(KEY_ACCESS_TOKEN, session.accessToken)
-    if (session.refreshToken) {
-      localStorage.setItem(KEY_REFRESH_TOKEN, session.refreshToken)
-    }
     localStorage.setItem(KEY_USER_ID, String(session.userId))
     localStorage.setItem(KEY_DISPLAY_NAME, session.displayName)
     localStorage.setItem(KEY_EXPIRES_AT, String(Date.now() + session.expiresIn * 1000))
@@ -50,7 +43,6 @@ export const tokenStorage = {
     const expiresAt = localStorage.getItem(KEY_EXPIRES_AT)
     return {
       accessToken: localStorage.getItem(KEY_ACCESS_TOKEN),
-      refreshToken: localStorage.getItem(KEY_REFRESH_TOKEN),
       userId: userId === null ? null : Number(userId),
       displayName: localStorage.getItem(KEY_DISPLAY_NAME),
       expiresAt: expiresAt === null ? null : Number(expiresAt),
@@ -64,7 +56,7 @@ export const tokenStorage = {
 
   clear(): void {
     localStorage.removeItem(KEY_ACCESS_TOKEN)
-    localStorage.removeItem(KEY_REFRESH_TOKEN)
+    localStorage.removeItem('iam.refreshToken')
     localStorage.removeItem(KEY_USER_ID)
     localStorage.removeItem(KEY_DISPLAY_NAME)
     localStorage.removeItem(KEY_EXPIRES_AT)

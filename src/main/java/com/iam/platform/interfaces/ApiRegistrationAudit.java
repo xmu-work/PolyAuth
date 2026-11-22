@@ -26,9 +26,8 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class ApiRegistrationAudit {
 
-    private static final Set<String> IGNORED_PREFIXES = Set.of("/open/", "/actuator", "/error", "/druid");
-    private static final Set<String> IGNORED_PATTERNS =
-            Set.of("/auth/login", "/auth/logout", "/auth/validate", "/auth/password");
+    private static final Set<String> IGNORED_PREFIXES =
+            Set.of("/open/", "/auth/", "/actuator", "/error", "/druid");
 
     private final ApplicationContext applicationContext;
     private final ApiService apiService;
@@ -80,6 +79,6 @@ public class ApiRegistrationAudit {
     }
 
     private boolean isIgnored(String pattern) {
-        return IGNORED_PATTERNS.contains(pattern) || IGNORED_PREFIXES.stream().anyMatch(pattern::startsWith);
+        return IGNORED_PREFIXES.stream().anyMatch(pattern::startsWith);
     }
 }

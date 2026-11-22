@@ -1,5 +1,7 @@
 package com.iam.platform.interfaces.admin.vo;
 
+import cn.edu.xmu.clonefactory.CopyFrom;
+import cn.edu.xmu.clonefactory.util.CloneFactory;
 import com.iam.platform.infrastructure.persistence.entity.IamSystem;
 import lombok.Data;
 
@@ -9,6 +11,7 @@ import java.time.LocalDateTime;
  * 接入系统安全视图，不暴露接入方密钥和内部公钥字段。
  */
 @Data
+@CopyFrom(IamSystem.class)
 public class SystemVO {
 
     private Long id;
@@ -26,15 +29,6 @@ public class SystemVO {
      */
     public static SystemVO from(IamSystem system) {
         SystemVO vo = new SystemVO();
-        vo.setId(system.getId());
-        vo.setSystemCode(system.getSystemCode());
-        vo.setSystemName(system.getSystemName());
-        vo.setCallbackUrl(system.getCallbackUrl());
-        vo.setStatus(system.getStatus());
-        vo.setDescription(system.getDescription());
-        vo.setIsDeleted(system.getIsDeleted());
-        vo.setCreatedAt(system.getCreatedAt());
-        vo.setUpdatedAt(system.getUpdatedAt());
-        return vo;
+        return CloneFactory.copy(vo, system);
     }
 }

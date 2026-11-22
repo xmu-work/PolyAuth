@@ -1,5 +1,7 @@
 package com.iam.platform.interfaces.admin.vo;
 
+import cn.edu.xmu.clonefactory.CopyFrom;
+import cn.edu.xmu.clonefactory.util.CloneFactory;
 import com.iam.platform.infrastructure.persistence.entity.IamRole;
 import lombok.Data;
 
@@ -9,6 +11,7 @@ import java.time.LocalDateTime;
  * 角色 API 响应视图。
  */
 @Data
+@CopyFrom(IamRole.class)
 public class RoleVO {
 
     private Long id;
@@ -29,18 +32,6 @@ public class RoleVO {
      */
     public static RoleVO from(IamRole role) {
         RoleVO vo = new RoleVO();
-        vo.setId(role.getId());
-        vo.setRoleCode(role.getRoleCode());
-        vo.setRoleName(role.getRoleName());
-        vo.setRoleType(role.getRoleType());
-        vo.setParentId(role.getParentId());
-        vo.setStatus(role.getStatus());
-        vo.setDescription(role.getDescription());
-        vo.setIsDeleted(role.getIsDeleted());
-        vo.setCreatedAt(role.getCreatedAt());
-        vo.setUpdatedAt(role.getUpdatedAt());
-        vo.setCreatedBy(role.getCreatedBy());
-        vo.setUpdatedBy(role.getUpdatedBy());
-        return vo;
+        return CloneFactory.copy(vo, role);
     }
 }

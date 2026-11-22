@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -53,19 +54,6 @@ public class DecisionService {
     }
 
     /**
-     * 批量功能权限判定：只计算一次用户权限集合，再逐个比对。
-     */
-    @Transactional(readOnly = true)
-    public PermissionCheckResult checkPermissions(Long userId, String systemCode, List<Long> permissionIds) {
-        Set<Long> granted = getUserPermissions(userId, systemCode);
-        PermissionCheckResult result = new PermissionCheckResult();
-        for (Long id : permissionIds) {
-            result.getResults().put(id, granted.contains(id));
-        }
-        return result;
-    }
-
-    /**
      * 查询用户在某子系统下已授权的前端权限 ID 集合。
      */
     @Transactional(readOnly = true)
@@ -98,6 +86,24 @@ public class DecisionService {
             }
         }
         return granted;
+    }
+
+    /**
+     * 查询用户当前生效的角色编码，包含父角色继承并过滤过期或停用授权。
+     */
+    @Transactional(readOnly = true)
+    public Set<String> getUserRoleCodes(Long userId) {
+        boolean userNormal = userRepository.findById(userId)
+                .filter(u -> u.getIsDeleted() == 0 && AccountStatus.NORMAL.getCode().equals(u.getAccountStatus()))
+                .isPresent();
+        if (!userNormal) {
+            return Set.of();
+        }
+        return roleRepository.findAllById(activeRoleIds(userId)).stream()
+                .map(IamRole::getRoleCode)
+                .filter(code -> code != null && !code.isBlank())
+                .map(code -> code.toLowerCase(Locale.ROOT))
+                .collect(Collectors.toCollection(java.util.LinkedHashSet::new));
     }
 
     /**

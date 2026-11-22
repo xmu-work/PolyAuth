@@ -1,5 +1,7 @@
 package com.iam.platform.interfaces.admin.vo;
 
+import cn.edu.xmu.clonefactory.CopyFrom;
+import cn.edu.xmu.clonefactory.util.CloneFactory;
 import com.iam.platform.application.account.UserView;
 import lombok.Data;
 
@@ -9,6 +11,7 @@ import java.time.LocalDateTime;
  * 用户 API 响应视图，仅包含解密后的展示字段和脱敏电话。
  */
 @Data
+@CopyFrom(UserView.class)
 public class UserVO {
 
     private Long id;
@@ -29,18 +32,6 @@ public class UserVO {
      */
     public static UserVO from(UserView view) {
         UserVO vo = new UserVO();
-        vo.setId(view.getId());
-        vo.setUserNo(view.getUserNo());
-        vo.setRealName(view.getRealName());
-        vo.setPhoneMasked(view.getPhoneMasked());
-        vo.setOrgId(view.getOrgId());
-        vo.setPost(view.getPost());
-        vo.setAccountStatus(view.getAccountStatus());
-        vo.setLeaveTime(view.getLeaveTime());
-        vo.setLastLoginAt(view.getLastLoginAt());
-        vo.setIsDeleted(view.getIsDeleted());
-        vo.setCreatedAt(view.getCreatedAt());
-        vo.setUpdatedAt(view.getUpdatedAt());
-        return vo;
+        return CloneFactory.copy(vo, view);
     }
 }

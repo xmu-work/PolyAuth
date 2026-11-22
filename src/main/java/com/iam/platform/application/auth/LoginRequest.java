@@ -1,8 +1,11 @@
 package com.iam.platform.application.auth;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
+
+import java.util.List;
 
 /**
  * 登录请求 DTO。
@@ -18,7 +21,8 @@ public class LoginRequest {
     @Size(max = 64)
     private String password;
 
-    private String captchaId;
-    private String captchaCode;
+    @NotEmpty
+    private List<@NotBlank String> systems;
+
     private String clientIp;
 }

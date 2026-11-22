@@ -1,5 +1,7 @@
 package com.iam.platform.interfaces.admin.vo;
 
+import cn.edu.xmu.clonefactory.CopyFrom;
+import cn.edu.xmu.clonefactory.util.CloneFactory;
 import com.iam.platform.infrastructure.persistence.entity.IamOrg;
 import lombok.Data;
 
@@ -9,6 +11,7 @@ import java.time.LocalDateTime;
  * 组织节点 API 响应视图。
  */
 @Data
+@CopyFrom(IamOrg.class)
 public class OrganizationVO {
 
     private Long id;
@@ -30,19 +33,6 @@ public class OrganizationVO {
      */
     public static OrganizationVO from(IamOrg org) {
         OrganizationVO vo = new OrganizationVO();
-        vo.setId(org.getId());
-        vo.setParentId(org.getParentId());
-        vo.setAncestors(org.getAncestors());
-        vo.setOrgCode(org.getOrgCode());
-        vo.setOrgName(org.getOrgName());
-        vo.setOrgType(org.getOrgType());
-        vo.setOrgLevel(org.getOrgLevel());
-        vo.setLeaderUserId(org.getLeaderUserId());
-        vo.setSortNo(org.getSortNo());
-        vo.setStatus(org.getStatus());
-        vo.setIsDeleted(org.getIsDeleted());
-        vo.setCreatedAt(org.getCreatedAt());
-        vo.setUpdatedAt(org.getUpdatedAt());
-        return vo;
+        return CloneFactory.copy(vo, org);
     }
 }

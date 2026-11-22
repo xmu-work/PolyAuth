@@ -4,12 +4,18 @@ import com.iam.platform.application.account.AccountService;
 import com.iam.platform.application.account.UserView;
 import com.iam.platform.application.api.ApiService;
 import com.iam.platform.application.auth.AuthService;
+import com.iam.platform.application.auth.AuthenticatedSession;
 import com.iam.platform.application.auth.LoginResponse;
 import com.iam.platform.application.decision.DecisionService;
-import com.iam.platform.application.decision.PermissionCheckResult;
 import com.iam.platform.application.datascope.DataPermissionService;
 import com.iam.platform.application.datascope.DataScopeService;
 import com.iam.platform.application.datascope.ResourceDecision;
+import com.iam.platform.application.identity.IdentityProfile;
+import com.iam.platform.application.identity.IdentityDepartmentData;
+import com.iam.platform.application.identity.IdentityDepartmentUserData;
+import com.iam.platform.application.identity.IdentityPageSlice;
+import com.iam.platform.application.identity.IdentityService;
+import com.iam.platform.application.identity.IdentityUserData;
 import com.iam.platform.application.idempotency.IdempotencyStore;
 import com.iam.platform.application.log.LogService;
 import com.iam.platform.application.openapi.OpenApiAuthenticator;
@@ -76,11 +82,15 @@ class ApiControllerTest {
     private DataScopeService dataScopeService;
     @MockitoBean
     private DataPermissionService dataPermissionService;
+    @MockitoBean
+    private IdentityService identityService;
 
     @BeforeEach
     void setUp() {
-        when(authService.authenticate("good-token")).thenReturn(1L);
-        when(authService.authenticate("bad-token")).thenThrow(new BusinessException(ErrorCode.TOKEN_INVALID));
+        when(authService.authenticateSession("good-token"))
+                .thenReturn(new AuthenticatedSession(1L, "course-project-management"));
+        when(authService.authenticateSession("bad-token"))
+                .thenThrow(new BusinessException(ErrorCode.TOKEN_INVALID));
         IamApi registered = new IamApi();
         registered.setId(30000L);
         registered.setPermissionId(90000L);
@@ -108,9 +118,165 @@ class ApiControllerTest {
         when(authService.login(any())).thenReturn(response);
 
         mvc.perform(post("/auth/login").contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"username\":\"admin\",\"password\":\"x\"}"))
+                        .content("{\"username\":\"admin\",\"password\":\"x\","
+                                + "\"systems\":[\"ADMIN\"]}"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.accessToken").value("t"));
+                .andExpect(jsonPath("$.accessToken").value("t"));
+    }
+
+    @Test
+    @DisplayName("FR-31 统一身份登录遵循课程系统外部契约")
+    void identityLoginMatchesExternalContract() throws Exception {
+        LoginResponse response = new LoginResponse();
+        response.setAccessToken("external-token");
+        response.setTokenType("Bearer");
+        response.setExpiresIn(7200L);
+        when(authService.login(any())).thenReturn(response);
+
+        mvc.perform(post("/auth/login").contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "username": 20220101,
+                                  "password": "pwd",
+                                  "systems": ["course-project-management"]
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.accessToken").value("external-token"))
+                .andExpect(jsonPath("$.tokenType").value("Bearer"))
+                .andExpect(jsonPath("$.expiresIn").value(7200))
+                .andExpect(jsonPath("$.data").doesNotExist())
+                .andExpect(jsonPath("$.code").doesNotExist());
+    }
+
+    @Test
+    @DisplayName("FR-34 统一身份退出登录返回 204 且无响应体")
+    void identityLogoutReturnsNoContent() throws Exception {
+        mvc.perform(post("/auth/logout").header("Authorization", AUTH))
+                .andExpect(status().isNoContent())
+                .andExpect(content().string(""));
+    }
+
+    @Test
+    @DisplayName("FR-38 当前统一身份用户返回角色与前端权限码")
+    void identityCurrentUserReturnsRolesAndPermissionCodes() throws Exception {
+        when(identityService.getCurrentUser(1L, "course-project-management"))
+                .thenReturn(new IdentityProfile("u1", List.of("teacher"),
+                        List.of("course.view"), "张三", "u1"));
+
+        mvc.perform(get("/auth/me").header("Authorization", AUTH))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.subject").value("u1"))
+                .andExpect(jsonPath("$.roles[0]").value("teacher"))
+                .andExpect(jsonPath("$.permissions[0]").value("course.view"))
+                .andExpect(jsonPath("$.name").value("张三"))
+                .andExpect(jsonPath("$.no").value("u1"))
+                .andExpect(jsonPath("$.data").doesNotExist());
+    }
+
+    @Test
+    @DisplayName("FR-39 当前用户前端权限码校验返回 allowed")
+    void identityPermissionCheckReturnsAllowed() throws Exception {
+        when(identityService.hasPermissionCode(1L, "course-project-management", "course.view"))
+                .thenReturn(true);
+
+        mvc.perform(get("/auth/permissions/course.view").header("Authorization", AUTH))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.allowed").value(true))
+                .andExpect(jsonPath("$.permission").doesNotExist());
+    }
+
+    @Test
+    @DisplayName("FR-09 统一身份部门按直接下级分页返回展开标记")
+    void identityDepartmentsReturnDirectChildrenPage() throws Exception {
+        when(identityService.pageDepartments(null, 1L, 1, 20))
+                .thenReturn(new IdentityPageSlice<>(1L, List.of(
+                        new IdentityDepartmentData(2L, "CS", "计算机学院", 1L, true))));
+
+        mvc.perform(get("/auth/departments").header("Authorization", AUTH)
+                        .param("parentId", "1").param("page", "1").param("pageSize", "20"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.page").value(1))
+                .andExpect(jsonPath("$.pageSize").value(20))
+                .andExpect(jsonPath("$.total").value(1))
+                .andExpect(jsonPath("$.items[0].id").value(2))
+                .andExpect(jsonPath("$.items[0].code").value("CS"))
+                .andExpect(jsonPath("$.items[0].name").value("计算机学院"))
+                .andExpect(jsonPath("$.items[0].parentId").value(1))
+                .andExpect(jsonPath("$.items[0].hasChildren").value(true));
+    }
+
+    @Test
+    @DisplayName("FR-37 当前用户按 operationId 校验 API 调用权限")
+    void identityApiPermissionUsesOperationId() throws Exception {
+        when(identityService.hasApiOperation(
+                1L, "course-project-management", "listAdminCourses")).thenReturn(true);
+
+        mvc.perform(get("/auth/api-permissions/listAdminCourses").header("Authorization", AUTH))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.operationId").value("listAdminCourses"))
+                .andExpect(jsonPath("$.allowed").value(true));
+    }
+
+    @Test
+    @DisplayName("FR-02 统一身份部门用户分页不返回联系方式")
+    void identityDepartmentUsersReturnMinimalIdentityFields() throws Exception {
+        when(identityService.pageDepartmentUsers(1L, "孙", 1, 20))
+                .thenReturn(new IdentityPageSlice<>(1L, List.of(
+                        new IdentityDepartmentUserData("T1008", "T1008", "孙晨",
+                                1L, "计算机学院"))));
+
+        mvc.perform(get("/auth/departments/1/users").header("Authorization", AUTH)
+                        .param("keyword", "孙").param("page", "1").param("pageSize", "20"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.page").value(1))
+                .andExpect(jsonPath("$.pageSize").value(20))
+                .andExpect(jsonPath("$.total").value(1))
+                .andExpect(jsonPath("$.items[0].userId").value("T1008"))
+                .andExpect(jsonPath("$.items[0].no").value("T1008"))
+                .andExpect(jsonPath("$.items[0].name").value("孙晨"))
+                .andExpect(jsonPath("$.items[0].departmentId").value(1))
+                .andExpect(jsonPath("$.items[0].departmentName").value("计算机学院"))
+                .andExpect(jsonPath("$.items[0].phone").doesNotExist())
+                .andExpect(jsonPath("$.items[0].email").doesNotExist());
+    }
+
+    @Test
+    @DisplayName("FR-02 统一身份用户查询只返回标识、工号和姓名")
+    void identityUserLookupReturnsMinimalFields() throws Exception {
+        when(identityService.lookupUser(1L, "course-project-management", "T1008"))
+                .thenReturn(new IdentityUserData("T1008", "T1008", "孙晨"));
+
+        mvc.perform(get("/auth/users/T1008").header("Authorization", AUTH))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.userId").value("T1008"))
+                .andExpect(jsonPath("$.no").value("T1008"))
+                .andExpect(jsonPath("$.name").value("孙晨"))
+                .andExpect(jsonPath("$.phone").doesNotExist())
+                .andExpect(jsonPath("$.email").doesNotExist());
+    }
+
+    @Test
+    @DisplayName("FR-32 统一身份接口未登录返回字符串错误码")
+    void identityEndpointsUseStringErrorCode() throws Exception {
+        mvc.perform(get("/auth/me"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("UNAUTHORIZED"))
+                .andExpect(jsonPath("$.message").value("请先登录"));
+    }
+
+    @Test
+    @DisplayName("FR-37 不存在的 operationId 返回契约错误码")
+    void identityMissingOperationReturnsContractError() throws Exception {
+        when(identityService.hasApiOperation(
+                1L, "course-project-management", "missingOperation"))
+                .thenThrow(new BusinessException(ErrorCode.RESOURCE_NOT_FOUND,
+                        "没有找到对应的 API 操作。"));
+
+        mvc.perform(get("/auth/api-permissions/missingOperation").header("Authorization", AUTH))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("API_OPERATION_NOT_FOUND"))
+                .andExpect(jsonPath("$.message").value("没有找到对应的 API 操作。"));
     }
 
     @Test
@@ -176,7 +342,8 @@ class ApiControllerTest {
 
     @Test
     void idempotencyFingerprintIncludesCaller() throws Exception {
-        when(authService.authenticate("second-token")).thenReturn(2L);
+        when(authService.authenticateSession("second-token"))
+                .thenReturn(new AuthenticatedSession(2L, "course-project-management"));
         when(roleService.grantRole(eq(5L), eq(2L), isNull(), anyLong(), isNull()))
                 .thenReturn(new IamUserRole());
         when(idempotencyStore.acquire(eq("caller-key"), anyString(), anyLong()))
@@ -324,21 +491,9 @@ class ApiControllerTest {
     }
 
     @Test
-    void openApiAuthorizesIndependentApiAndReturnsFrontendPermissions() throws Exception {
-        IamApi api = new IamApi();
-        api.setId(30001L);
-        api.setPermissionId(20001L);
-        when(apiService.getApi(30001L)).thenReturn(api);
-        when(decisionService.hasPermission(1L, "ADMIN", 20001L)).thenReturn(true);
+    void openApiReturnsFrontendPermissions() throws Exception {
         when(decisionService.getUserPermissions(1L, "ADMIN")).thenReturn(Set.of(20001L));
 
-        mvc.perform(get("/open/authorize").header("Authorization", AUTH)
-                        .param("userId", "1").param("systemCode", "ADMIN").param("apiId", "30001"))
-                .andExpect(jsonPath("$.data").value(true));
-        mvc.perform(post("/open/authorize/batch").header("Authorization", AUTH)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"userId\":1,\"systemCode\":\"ADMIN\",\"apiIds\":[30001]}"))
-                .andExpect(jsonPath("$.data.results.30001").value(true));
         mvc.perform(get("/open/permissions").header("Authorization", AUTH)
                         .param("userId", "1").param("systemCode", "ADMIN"))
                 .andExpect(jsonPath("$.data[0]").value(20001));

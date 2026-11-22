@@ -11,7 +11,10 @@ SET time_zone = '+08:00';
 
 -- 1. 管理后台自身作为一个接入系统
 INSERT INTO iam_system (id, system_code, system_name, status, description, is_deleted)
-VALUES (1, 'ADMIN', '权限管理后台', 'ACTIVE', '本系统管理后台自身', 0);
+VALUES
+(1, 'ADMIN', '权限管理后台', 'ACTIVE', '本系统管理后台自身', 0),
+(2, 'course-project-management', '课程项目管理系统', 'ACTIVE',
+ '首个统一身份外部业务系统', 0);
 
 -- 2. 菜单权限：ID 与 web/src/constants/permissions.ts 保持一致
 INSERT INTO iam_permission
@@ -73,6 +76,12 @@ VALUES
 (20037, 1, 10002, 'ORG_UPDATE',           '修改和停用组织',   'BUTTON', NULL, 'ALL',  6, 'ACTIVE', 0),
 (20038, 1, 10003, 'USER_TRANSFER',        '员工调岗',         'BUTTON', NULL, 'ALL',  5, 'ACTIVE', 0),
 (20039, 1, 10003, 'USER_SENSITIVE_VIEW',  '查看敏感信息明文', 'BUTTON', NULL, 'ALL',  6, 'ACTIVE', 0);
+
+-- 课程系统的教师管理入口；课程业务权限由课程系统管理员继续登记。
+INSERT INTO iam_permission
+    (id, system_id, parent_id, permission_code, permission_name, permission_type, route_path, action, sort_no, status, is_deleted)
+VALUES
+(40001, 2, NULL, 'TEC', '添加教师', 'BUTTON', NULL, 'ALL', 1, 'ACTIVE', 0);
 
 -- 4. 后端 API：独立主键，通过 permission_id 关联一个前端菜单/按钮权限
 INSERT INTO iam_api
@@ -153,8 +162,17 @@ VALUES
 (10, 'DATA_ACCOUNTANT', '会计',       'DATA', 'ACTIVE', '与出纳互斥', 5),
 (11, 'DATA_CASHIER',    '出纳',       'DATA', 'ACTIVE', '与会计互斥', 5);
 
+INSERT INTO iam_role (id, role_code, role_name, role_type, status, description, is_deleted)
+VALUES
+(12, 'admin',   '课程管理员', 'FUNC', 'ACTIVE', '课程系统统一身份管理员角色', 0),
+(13, 'teacher', '教师',       'FUNC', 'ACTIVE', '课程系统统一身份教师角色', 0),
+(14, 'student', '学生',       'FUNC', 'ACTIVE', '课程系统统一身份学生角色', 0);
+
 INSERT INTO iam_role_permission (role_id, permission_id, allowed_action)
 SELECT 1, id, action FROM iam_permission WHERE system_id = 1 AND is_deleted = 0;
+
+INSERT INTO iam_role_permission (role_id, permission_id, allowed_action)
+VALUES (12, 40001, 'ALL');
 
 -- 会计与出纳为静态互斥角色。
 INSERT INTO iam_role_exclusion (role_id, excluded_role_id, created_by)
@@ -186,4 +204,6 @@ VALUES (1, 'admin',
         1, 'NORMAL', 0);
 
 INSERT INTO iam_user_role (user_id, role_id, effective_time, grant_reason, status)
-VALUES (1, 1, NOW(), '系统初始化', 'ACTIVE');
+VALUES
+(1, 1, NOW(), '系统初始化', 'ACTIVE'),
+(1, 12, NOW(), '课程系统联调管理员', 'ACTIVE');

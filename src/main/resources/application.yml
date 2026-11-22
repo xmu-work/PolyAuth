@@ -58,7 +58,6 @@ spring:
 jwt:
   secret: ${JWT_SECRET:iam-platform-secret-key-please-change-in-production-2026}
   access-token-expire: 7200        # 访问令牌有效期（秒），2小时
-  refresh-token-expire: 604800     # 刷新令牌有效期（秒），7天
   issuer: iam-platform
 
 # 加密脱敏配置（生产环境通过环境变量注入）

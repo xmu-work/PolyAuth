@@ -27,6 +27,11 @@ export interface BusinessError {
   message: string
 }
 
+interface IdentityError {
+  code: string
+  message: string
+}
+
 /**
  * 未授权回调注册（2001~2006 触发，契约 4.6）
  * 由 F-AUTH 模块的 auth store / 路由守卫装配，避免 request ↔ store 循环依赖
@@ -122,6 +127,28 @@ function handleBusinessError(body: Result, silent = false, isLogin = false): Pro
   }
 }
 
+function handleIdentityError(
+  body: IdentityError,
+  silent = false,
+  isLogin = false,
+): Promise<never> {
+  const message = body.message || '请求失败'
+  if (isLogin && body.code === 'UNAUTHORIZED') {
+    if (!silent) {
+      ElMessage.error(message)
+    }
+    return rejectWith(-1, message)
+  }
+  if (body.code === 'UNAUTHORIZED') {
+    unauthorizedHandler(-1, '登录状态失效，请重新登录')
+    return rejectWith(-1, message)
+  }
+  if (!silent) {
+    ElMessage.error(message)
+  }
+  return rejectWith(-1, message)
+}
+
 request.interceptors.response.use(
   (response) => {
     const body = response.data as Result | undefined
@@ -132,12 +159,30 @@ request.interceptors.response.use(
       }
       return handleBusinessError(body, response.config.silent, isLoginUrl(response.config.url))
     }
+    if (body && typeof (body as unknown as IdentityError).code === 'string') {
+      return handleIdentityError(
+        body as unknown as IdentityError,
+        response.config.silent,
+        isLoginUrl(response.config.url),
+      )
+    }
     return response.data
   },
-  (error: AxiosError<Result>) => {
+  (error: AxiosError<Result | IdentityError>) => {
     // 后端 GlobalExceptionHandler 保证 HTTP 状态与错误码匹配，body 同走错误矩阵
     if (error.response?.data && typeof error.response.data.code === 'number') {
-      return handleBusinessError(error.response.data, error.config?.silent, isLoginUrl(error.config?.url))
+      return handleBusinessError(
+        error.response.data as Result,
+        error.config?.silent,
+        isLoginUrl(error.config?.url),
+      )
+    }
+    if (error.response?.data && typeof error.response.data.code === 'string') {
+      return handleIdentityError(
+        error.response.data as IdentityError,
+        error.config?.silent,
+        isLoginUrl(error.config?.url),
+      )
     }
     if (error.code === 'ECONNABORTED') {
       if (!error.config?.silent) {
@@ -146,7 +191,7 @@ request.interceptors.response.use(
     } else if (!error.config?.silent) {
       ElMessage.error('网络异常，无法连接服务器')
     }
-    return rejectWith(error.response?.data?.code ?? -1, error.message)
+    return rejectWith(-1, error.message)
   },
 )
 
