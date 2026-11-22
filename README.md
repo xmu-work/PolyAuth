@@ -94,7 +94,7 @@
 核心目录：
 
 ```text
-RBAC-Structured/
+RBAC/
 ├── src/main/java/com/iam/platform/
 │   ├── interfaces/        REST 接口、认证鉴权、请求追踪与幂等
 │   ├── application/       业务服务与功能权限决策

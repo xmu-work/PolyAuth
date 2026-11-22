@@ -1,4 +1,4 @@
-# 后端镜像（构建上下文 = 仓库根目录 RBAC-Structured/）
+# 后端镜像（构建上下文 = 仓库根目录 RBAC/）
 #   docker build -f deploy/swarm/Dockerfile.app -t <registry>/iam-app:1.0.0 .
 # 单元测试请在 CI 或构建机上单独跑 mvn verify，镜像构建默认跳过测试。
 

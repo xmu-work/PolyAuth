@@ -1,4 +1,4 @@
-# 前端镜像（构建上下文 = 仓库根目录 RBAC-Structured/）
+# 前端镜像（构建上下文 = 仓库根目录 RBAC/）
 #   docker build -f deploy/swarm/Dockerfile.web -t <registry>/iam-web:1.0.0 .
 # 构建读取 web/.env.production：VITE_API_BASE=/api/v1，生产走同源 /api/v1。
 

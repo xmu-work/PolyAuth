@@ -10,7 +10,7 @@
 
 | 项目 | 基准 |
 |---|---|
-| 仓库 | xmu-work/RBAC-Structured |
+| 仓库 | xmu-work/RBAC |
 | 源码位置 | 当前仓库根目录；本手册与 README.md 并列 |
 | 分支与完整提交 | `main` · `8d78558`（Merge pull request #9） |
 | 业务入口覆盖 | 角色继承、互斥、数据范围、调岗、组织停用、资源联合鉴权与日志导出均已实现 |

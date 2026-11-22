@@ -1,4 +1,4 @@
-# RBAC-Structured 当前阶段部署手册：4 台 + SWR + 先跑后端
+# RBAC 当前阶段部署手册：4 台 + SWR + 先跑后端
 
 这是**当前阶段的操作手册**。目标形态（8 台、含前端）见 `DEPLOYMENT_SWARM.md`；systemd 裸机方案见 `DEPLOYMENT_8_NODES.md`（暂不使用）。服务器：`manage`、`compiler`、`course-node1`、`course-node2`，Swarm 集群已建好。
 
@@ -40,20 +40,20 @@ sudo mkdir -p /srv/iam/mysql /srv/iam/redis
 
 ## 3. 代码获取与更新（git 方式）
 
-服务器统一从 GitHub 拉代码，不再用 tar 打包。仓库：`https://github.com/xmu-work/RBAC-Structured.git`（main 分支，公开仓库，服务器拉取无需凭据）。
+服务器统一从 GitHub 拉代码，不再用 tar 打包。仓库：`https://github.com/xmu-work/RBAC.git`（main 分支，公开仓库，服务器拉取无需凭据）。
 
 **首次获取**（compiler 和 manage 各执行一次；node1/node2 只跑镜像，不需要代码）：
 
 ```bash
 cd ~
-git clone --depth 1 https://github.com/xmu-work/RBAC-Structured.git
-cd RBAC-Structured
+git clone --depth 1 https://github.com/xmu-work/RBAC.git
+cd RBAC
 ```
 
 **以后更新并重新发布**（compiler 上）：
 
 ```bash
-cd ~/RBAC-Structured
+cd ~/RBAC
 git pull                                  # 拉取 main 最新代码
 
 export JAVA_HOME=$HOME/jdk-21.0.2
@@ -109,7 +109,7 @@ docker login "swr.${REGION}.myhuaweicloud.com" -u "${REGION}@${AK}" -p "$SIGN"
 ## 5. 构建并推送镜像（在 compiler 上）
 
 ```bash
-cd ~/RBAC-Structured
+cd ~/RBAC
 
 ORG=iam-course        # 换成你的组织名
 REG=swr.cn-north-4.myhuaweicloud.com/$ORG
@@ -159,7 +159,7 @@ docker secret ls   # 应有 6 个
 把仓库也传到 manage 一份（栈文件在仓库里；可以用第 3 节同样的 tar + scp），然后：
 
 ```bash
-cd ~/RBAC-Structured/deploy/swarm
+cd ~/RBAC/deploy/swarm
 # 先把文件里的 ORG 全部替换成你的组织名（两处：mysql、redis、app 镜像地址）
 sed -i 's|/ORG/|/iam-course/|g' iam-stack-backend.yml   # 换成实际组织名
 
@@ -181,7 +181,7 @@ watch docker stack ps iam
 
 ```bash
 # Windows 本机
-scp ~/RBAC-Structured/src/main/resources/db/{schema.sql,seed.sql} root@<node1的IP>:/tmp/
+scp ~/RBAC/src/main/resources/db/{schema.sql,seed.sql} root@<node1的IP>:/tmp/
 ```
 
 ```bash

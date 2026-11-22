@@ -36,7 +36,7 @@ ls -lh /srv/iam/backup
 ## 3. 构建并推送 1.0.1（compiler）
 
 ```bash
-cd ~/RBAC-Structured
+cd ~/RBAC
 git status --short | grep -v '^?? web/mock/' # 确认没有本地改动（web/mock 下的临时 .mjs 可忽略）
 git pull
 git log --oneline -1                          # 应为合入本文的那次提交
@@ -55,7 +55,7 @@ docker push $REG/iam-app:1.0.1
 旧版应用不读取新增的这几行数据，所以先改数据、后换镜像也不影响线上。
 
 ```bash
-# 从 compiler 转传：scp ~/RBAC-Structured/src/main/resources/db/upgrade_v1.1_org.sql <course-node1>:/tmp/
+# 从 compiler 转传：scp ~/RBAC/src/main/resources/db/upgrade_v1.1_org.sql <course-node1>:/tmp/
 CID=$(docker ps -qf name=iam_mysql)
 docker exec -i "$CID" sh -c 'exec mysql -uroot -p"$(cat /run/secrets/mysql_root_password)" --default-character-set=utf8mb4 iam_platform' \
   < /tmp/upgrade_v1.1_org.sql
@@ -66,7 +66,7 @@ docker exec -i "$CID" sh -c 'exec mysql -uroot -p"$(cat /run/secrets/mysql_root_
 ## 5. 滚动更新应用（manage）
 
 ```bash
-cd ~/RBAC-Structured && git pull              # 栈文件里的镜像标签已改为 1.0.1
+cd ~/RBAC && git pull                         # 栈文件里的镜像标签已改为 1.0.1
 docker service update --with-registry-auth \
   --image swr.cn-north-4.myhuaweicloud.com/ooad-mytx/iam-app:1.0.1 iam_app
 docker service ps iam_app --no-trunc | head -3 # 新任务 Running，旧任务 Shutdown
