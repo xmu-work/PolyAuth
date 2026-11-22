@@ -822,6 +822,58 @@ RBAC0 实现第 ①②③ 步；③′ 与 ④ 在 RBAC3 阶段加入，届时�
 | 第 19 套系统适配层、HR 事件契约 | 扩展 | 课程范围外
 |===
 
+== 9 关键类图与顺序图
+
+本章图中的类名、字段、方法、消息顺序和异常路径均来自当前 `structured-backend/`、`oop-backend/` 与 `web/` 实现。SVG 是可编辑源图，PNG 是文档插图；两种格式由同一脚本同步生成。
+
+=== 9.1 结构化后端类图
+
+认证图以 `AuthService` 为几何中心和视觉中心；控制器、拦截器、加密组件、日志组件与两个仓储分布在四周。对象字段对应实线空心箭头关联，箭头旁标注实际 `role name`。
+
+.AuthService 认证核心类图
+image::类图_结构化后端_认证.png[AuthService 认证核心类图,width=100%]
+
+权限决策图以 `DecisionService` 为中心。调用方位于上侧和左右两侧，四个 Repository 位于下侧；判定线不会穿过任何非端点类框。
+
+.DecisionService 权限决策类图
+image::类图_结构化后端_权限决策.png[DecisionService 权限决策类图,width=100%]
+
+=== 9.2 面向对象后端类图
+
+认证类图以 `AuthenticationUseCase` 为中心，应用层字段类型均为业务端口；JWT、JPA、密码哈希、姓名加密等具体实现不反向进入用例层。
+
+.AuthenticationUseCase 认证用例类图
+image::类图_面向对象后端_认证.png[AuthenticationUseCase 认证用例类图,width=100%]
+
+权限类图以 `PermissionAccessUseCase` 为中心。仓储只提供授权事实，`PermissionResolver` 与 `RoleHierarchy` 负责静态纯计算，体现“数据读取”和“规则计算”分离。
+
+.PermissionAccessUseCase 权限查询类图
+image::类图_面向对象后端_权限决策.png[PermissionAccessUseCase 权限查询类图,width=100%]
+
+=== 9.3 结构化后端顺序图
+
+登录图使用 `alt` 区分成功登录和密码校验失败。同步调用编号；返回值、异常与 401 响应使用虚线空心箭头且不编号。异常直接从仍处于激活状态的 `AuthService` 执行条返回控制器执行条。
+
+.结构化后端登录成功与凭证失败
+image::顺序图_结构化后端_登录.png[结构化后端登录顺序图,width=100%]
+
+管理端鉴权图先完成令牌认证和 API 映射查询，再进入默认拒绝的 `alt`。成功分支包含用户状态、有效授权、父角色循环和权限候选过滤；失败分支从 `AuthInterceptor` 的活动执行条直接抛出 403 语义异常。
+
+.结构化后端管理端默认拒绝鉴权
+image::顺序图_结构化后端_管理端鉴权.png[结构化后端管理端鉴权顺序图,width=100%]
+
+角色权限授予图的 `loop` 完整框住逐项查询权限和保存绑定的两个独立执行条；循环前的角色/已有绑定查询、循环后的快照读取和审计记录均留在框外。
+
+.结构化后端角色前端权限授予
+image::顺序图_结构化后端_角色权限授予.png[结构化后端角色权限授予顺序图,width=100%]
+
+=== 9.4 面向对象后端顺序图
+
+权限查询图展示 `AuthController → OperationAccessUseCase → PermissionAccessUseCase → Repository` 的依赖方向。`PermissionResolver` 与 `RoleHierarchy` 的 lifeline 使用 `«MetaClass»` 标识静态方法调用。
+
+.面向对象后端按 operationId 查询权限
+image::顺序图_面向对象后端_权限查询.png[面向对象后端权限查询顺序图,width=100%]
+
 == 附录 A RBAC0 需求追踪
 
 [cols="1,1,2,2,2"]
@@ -863,5 +915,15 @@ python3 dfd1.py ../dfd_1级.svg && ./render.sh ../dfd_1级.svg ../数据流图_1
 ----
 
 其余图分别对应 `dfd0.py`、`dfd2_p2.py`、`dfd2_p3.py`、`structure.py`。`render.sh` 用本机 Chrome 按 2 倍分辨率导出 PNG。
+
+类图与顺序图由 `build_uml.py` 统一生成 SVG 和 2 倍 PNG：
+
+[source,bash]
+----
+cd design/diagram-src
+python build_uml.py
+----
+
+生成前会检查类框重叠、连线穿框、类成员溢出、lifeline 文本溢出，以及同步/回复箭头与 execution specification 的连接位置。`build_uml.py` 依赖 PATH 中的 `rsvg-convert`。
 
 文档结束。

@@ -1,0 +1,121 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2100" height="1300" viewBox="0 0 2100 1300" font-family="Microsoft YaHei, Noto Sans CJK SC, SimHei, sans-serif">
+<defs>
+  <marker id="open-arrow" markerWidth="10" markerHeight="10" refX="9" refY="4" orient="auto" markerUnits="strokeWidth">
+    <path d="M0,0 L9,4 L0,8" fill="none" stroke="#415269" stroke-width="1.6"/>
+  </marker>
+  <marker id="filled-arrow" markerWidth="10" markerHeight="10" refX="9" refY="4" orient="auto" markerUnits="strokeWidth">
+    <path d="M0,0 L9,4 L0,8 Z" fill="#27364a"/>
+  </marker>
+  <marker id="hollow-triangle" markerWidth="13" markerHeight="12" refX="11" refY="5" orient="auto" markerUnits="strokeWidth">
+    <path d="M0,0 L12,5 L0,10 Z" fill="#fff" stroke="#415269" stroke-width="1.4"/>
+  </marker>
+</defs>
+<rect width="2100" height="1300" fill="#fff"/>
+<text x="1050" y="38" text-anchor="middle" font-size="25" font-weight="700" fill="#172033">面向对象后端 · 认证用例类图</text>
+<text x="42" y="74" font-size="13.5" fill="#5a6678">以 AuthenticationUseCase 为中心；应用层只依赖端口，不直接依赖 JPA 或 JWT 实现。</text>
+<path d="M350.0,311.0 L350.0,390.0 L760.0,390.0 L760.0,470.0" fill="none" stroke="#415269" stroke-width="1.7" marker-end="url(#open-arrow)"/>
+<path d="M1720.0,306.0 L1720.0,390.0 L1340.0,390.0 L1340.0,470.0" fill="none" stroke="#415269" stroke-width="1.7" marker-end="url(#open-arrow)"/>
+<path d="M690.0,550.0 L530.0,550.0" fill="none" stroke="#415269" stroke-width="1.7" marker-end="url(#open-arrow)"/>
+<path d="M690.0,795.0 L530.0,795.0" fill="none" stroke="#415269" stroke-width="1.7" marker-end="url(#open-arrow)"/>
+<path d="M1410.0,550.0 L1510.0,550.0" fill="none" stroke="#415269" stroke-width="1.7" marker-end="url(#open-arrow)"/>
+<path d="M1410.0,765.0 L1510.0,765.0" fill="none" stroke="#415269" stroke-width="1.7" marker-end="url(#open-arrow)"/>
+<path d="M800.0,829.0 L800.0,915.0 L375.0,915.0 L375.0,1000.0" fill="none" stroke="#415269" stroke-width="1.7" marker-end="url(#open-arrow)"/>
+<path d="M970.0,829.0 L970.0,935.0 L865.0,935.0 L865.0,1000.0" fill="none" stroke="#415269" stroke-width="1.7" marker-end="url(#open-arrow)"/>
+<path d="M1120.0,829.0 L1120.0,920.0 L1375.0,920.0 L1375.0,1000.0" fill="none" stroke="#415269" stroke-width="1.7" marker-end="url(#open-arrow)"/>
+<path d="M1300.0,829.0 L1300.0,945.0 L1825.0,945.0 L1825.0,1000.0" fill="none" stroke="#415269" stroke-width="1.7" marker-end="url(#open-arrow)"/>
+<rect x="100" y="120" width="530" height="205" rx="7" fill="#ffffff" stroke="#6b5b95" stroke-width="1.8"/>
+<path d="M107,120 H623 Q630,120 630,127 V184 H100 V127 Q100,120 107,120 Z" fill="#f5f1fb" stroke="#6b5b95" stroke-width="1.8"/>
+<line x1="100" y1="244" x2="630" y2="244" stroke="#6b5b95" stroke-width="1.2"/>
+<text x="365.0" y="142" text-anchor="middle" font-size="12.5" font-style="italic" fill="#5a6678">«controller»</text>
+<text x="365.0" y="165" text-anchor="middle" font-size="16.5" font-weight="700" fill="#172033">AuthController</text>
+<text x="114" y="206" font-size="12.8" fill="#26364a">- authenticationUseCase: AuthenticationUseCase</text>
+<text x="114" y="227" font-size="12.8" fill="#26364a">- operationAccessUseCase: OperationAccessUseCase</text>
+<text x="114" y="266" font-size="12.8" fill="#26364a">+ login(LoginRequestDTO, HttpServletRequest): LoginResult</text>
+<text x="114" y="287" font-size="12.8" fill="#26364a">+ logout(String): void</text>
+<text x="114" y="308" font-size="12.8" fill="#26364a">+ apiPermission(...): ApiPermissionCheckVO</text>
+<rect x="1450" y="115" width="540" height="205" rx="7" fill="#ffffff" stroke="#6b5b95" stroke-width="1.8"/>
+<path d="M1457,115 H1983 Q1990,115 1990,122 V179 H1450 V122 Q1450,115 1457,115 Z" fill="#f5f1fb" stroke="#6b5b95" stroke-width="1.8"/>
+<line x1="1450" y1="260" x2="1990" y2="260" stroke="#6b5b95" stroke-width="1.2"/>
+<text x="1720.0" y="137" text-anchor="middle" font-size="12.5" font-style="italic" fill="#5a6678">«component»</text>
+<text x="1720.0" y="160" text-anchor="middle" font-size="16.5" font-weight="700" fill="#172033">AuthInterceptor</text>
+<text x="1464" y="201" font-size="12.8" fill="#26364a">- authenticationUseCase: AuthenticationUseCase</text>
+<text x="1464" y="222" font-size="12.8" fill="#26364a">- operationAccessUseCase: OperationAccessUseCase</text>
+<text x="1464" y="243" font-size="12.8" fill="#26364a">- auditTrail: AuditTrail</text>
+<text x="1464" y="282" font-size="12.8" fill="#26364a">+ preHandle(...): boolean</text>
+<text x="1464" y="303" font-size="12.8" fill="#26364a">+ afterCompletion(...): void</text>
+<rect x="690" y="470" width="720" height="373" rx="7" fill="#ffffff" stroke="#1f4e8c" stroke-width="1.8"/>
+<path d="M697,470 H1403 Q1410,470 1410,477 V534 H690 V477 Q690,470 697,470 Z" fill="#e8f1fc" stroke="#1f4e8c" stroke-width="1.8"/>
+<line x1="690" y1="720" x2="1410" y2="720" stroke="#1f4e8c" stroke-width="1.2"/>
+<text x="1050.0" y="492" text-anchor="middle" font-size="12.5" font-style="italic" fill="#5a6678">«service»</text>
+<text x="1050.0" y="515" text-anchor="middle" font-size="16.5" font-weight="700" fill="#172033">AuthenticationUseCase</text>
+<text x="704" y="556" font-size="12.8" fill="#26364a">- userRepository: UserAccountRepository</text>
+<text x="704" y="577" font-size="12.8" fill="#26364a">- tokenRepository: TokenSessionRepository</text>
+<text x="704" y="598" font-size="12.8" fill="#26364a">- passwordVerifier: PasswordVerifier</text>
+<text x="704" y="619" font-size="12.8" fill="#26364a">- nameCipher: NameCipher</text>
+<text x="704" y="640" font-size="12.8" fill="#26364a">- tokenSecretHasher: TokenSecretHasher</text>
+<text x="704" y="661" font-size="12.8" fill="#26364a">- tokenIssuer: AccessTokenIssuer</text>
+<text x="704" y="682" font-size="12.8" fill="#26364a">- auditTrail: AuditTrail</text>
+<text x="704" y="703" font-size="12.8" fill="#26364a">- clock: Clock</text>
+<text x="704" y="742" font-size="12.8" fill="#26364a">+ login(LoginCommand): LoginResult</text>
+<text x="704" y="763" font-size="12.8" fill="#26364a">+ authenticate(String): AuthenticatedPrincipal</text>
+<text x="704" y="784" font-size="12.8" fill="#26364a">+ logout(String): void</text>
+<text x="704" y="805" font-size="12.8" fill="#26364a">+ validate(String): boolean</text>
+<text x="704" y="826" font-size="12.8" fill="#26364a">+ userNo(Long): String</text>
+<rect x="100" y="500" width="430" height="127" rx="7" fill="#ffffff" stroke="#3d7a57" stroke-width="1.8"/>
+<path d="M107,500 H523 Q530,500 530,507 V564 H100 V507 Q100,500 107,500 Z" fill="#eef7f1" stroke="#3d7a57" stroke-width="1.8"/>
+<line x1="100" y1="588" x2="530" y2="588" stroke="#3d7a57" stroke-width="1.2"/>
+<text x="315.0" y="522" text-anchor="middle" font-size="12.5" font-style="italic" fill="#5a6678">«interface»</text>
+<text x="315.0" y="545" text-anchor="middle" font-size="16.5" font-weight="700" fill="#172033">PasswordVerifier</text>
+<text x="114" y="610" font-size="12.8" fill="#26364a">+ verify(String, String): boolean</text>
+<rect x="100" y="735" width="430" height="127" rx="7" fill="#ffffff" stroke="#3d7a57" stroke-width="1.8"/>
+<path d="M107,735 H523 Q530,735 530,742 V799 H100 V742 Q100,735 107,735 Z" fill="#eef7f1" stroke="#3d7a57" stroke-width="1.8"/>
+<line x1="100" y1="823" x2="530" y2="823" stroke="#3d7a57" stroke-width="1.2"/>
+<text x="315.0" y="757" text-anchor="middle" font-size="12.5" font-style="italic" fill="#5a6678">«interface»</text>
+<text x="315.0" y="780" text-anchor="middle" font-size="16.5" font-weight="700" fill="#172033">NameCipher</text>
+<text x="114" y="845" font-size="12.8" fill="#26364a">+ decrypt(String): String</text>
+<rect x="1510" y="490" width="460" height="148" rx="7" fill="#ffffff" stroke="#3d7a57" stroke-width="1.8"/>
+<path d="M1517,490 H1963 Q1970,490 1970,497 V554 H1510 V497 Q1510,490 1517,490 Z" fill="#eef7f1" stroke="#3d7a57" stroke-width="1.8"/>
+<line x1="1510" y1="578" x2="1970" y2="578" stroke="#3d7a57" stroke-width="1.2"/>
+<text x="1740.0" y="512" text-anchor="middle" font-size="12.5" font-style="italic" fill="#5a6678">«interface»</text>
+<text x="1740.0" y="535" text-anchor="middle" font-size="16.5" font-weight="700" fill="#172033">AccessTokenIssuer</text>
+<text x="1524" y="600" font-size="12.8" fill="#26364a">+ issue(String, List&lt;String&gt;): IssuedToken</text>
+<text x="1524" y="621" font-size="12.8" fill="#26364a">+ read(String): AccessTokenClaims</text>
+<rect x="1510" y="710" width="460" height="127" rx="7" fill="#ffffff" stroke="#3d7a57" stroke-width="1.8"/>
+<path d="M1517,710 H1963 Q1970,710 1970,717 V774 H1510 V717 Q1510,710 1517,710 Z" fill="#eef7f1" stroke="#3d7a57" stroke-width="1.8"/>
+<line x1="1510" y1="798" x2="1970" y2="798" stroke="#3d7a57" stroke-width="1.2"/>
+<text x="1740.0" y="732" text-anchor="middle" font-size="12.5" font-style="italic" fill="#5a6678">«interface»</text>
+<text x="1740.0" y="755" text-anchor="middle" font-size="16.5" font-weight="700" fill="#172033">TokenSecretHasher</text>
+<text x="1524" y="820" font-size="12.8" fill="#26364a">+ hash(String): String</text>
+<rect x="160" y="1000" width="430" height="169" rx="7" fill="#ffffff" stroke="#3d7a57" stroke-width="1.8"/>
+<path d="M167,1000 H583 Q590,1000 590,1007 V1064 H160 V1007 Q160,1000 167,1000 Z" fill="#eef7f1" stroke="#3d7a57" stroke-width="1.8"/>
+<line x1="160" y1="1088" x2="590" y2="1088" stroke="#3d7a57" stroke-width="1.2"/>
+<text x="375.0" y="1022" text-anchor="middle" font-size="12.5" font-style="italic" fill="#5a6678">«interface»</text>
+<text x="375.0" y="1045" text-anchor="middle" font-size="16.5" font-weight="700" fill="#172033">UserAccountRepository</text>
+<text x="174" y="1110" font-size="12.8" fill="#26364a">+ findById(Long): Optional&lt;UserAccount&gt;</text>
+<text x="174" y="1131" font-size="12.8" fill="#26364a">+ findByUserNo(String): Optional&lt;UserAccount&gt;</text>
+<text x="174" y="1152" font-size="12.8" fill="#26364a">+ save(UserAccount): UserAccount</text>
+<rect x="650" y="1000" width="430" height="148" rx="7" fill="#ffffff" stroke="#3d7a57" stroke-width="1.8"/>
+<path d="M657,1000 H1073 Q1080,1000 1080,1007 V1064 H650 V1007 Q650,1000 657,1000 Z" fill="#eef7f1" stroke="#3d7a57" stroke-width="1.8"/>
+<line x1="650" y1="1088" x2="1080" y2="1088" stroke="#3d7a57" stroke-width="1.2"/>
+<text x="865.0" y="1022" text-anchor="middle" font-size="12.5" font-style="italic" fill="#5a6678">«interface»</text>
+<text x="865.0" y="1045" text-anchor="middle" font-size="16.5" font-weight="700" fill="#172033">TokenSessionRepository</text>
+<text x="664" y="1110" font-size="12.8" fill="#26364a">+ findByTokenHash(String): Optional&lt;TokenSession&gt;</text>
+<text x="664" y="1131" font-size="12.8" fill="#26364a">+ save(TokenSession): void</text>
+<rect x="1160" y="1000" width="430" height="169" rx="7" fill="#ffffff" stroke="#3d7a57" stroke-width="1.8"/>
+<path d="M1167,1000 H1583 Q1590,1000 1590,1007 V1064 H1160 V1007 Q1160,1000 1167,1000 Z" fill="#eef7f1" stroke="#3d7a57" stroke-width="1.8"/>
+<line x1="1160" y1="1088" x2="1590" y2="1088" stroke="#3d7a57" stroke-width="1.2"/>
+<text x="1375.0" y="1022" text-anchor="middle" font-size="12.5" font-style="italic" fill="#5a6678">«interface»</text>
+<text x="1375.0" y="1045" text-anchor="middle" font-size="16.5" font-weight="700" fill="#172033">AuditTrail</text>
+<text x="1174" y="1110" font-size="12.8" fill="#26364a">+ recordLogin(...): void</text>
+<text x="1174" y="1131" font-size="12.8" fill="#26364a">+ recordRequest(...): void</text>
+<text x="1174" y="1152" font-size="12.8" fill="#26364a">+ recordPermissionChange(...): void</text>
+<rect x="1650" y="1000" width="350" height="148" rx="7" fill="#ffffff" stroke="#52657a" stroke-width="1.8"/>
+<path d="M1657,1000 H1993 Q2000,1000 2000,1007 V1064 H1650 V1007 Q1650,1000 1657,1000 Z" fill="#f1f5f9" stroke="#52657a" stroke-width="1.8"/>
+<line x1="1650" y1="1088" x2="2000" y2="1088" stroke="#52657a" stroke-width="1.2"/>
+<text x="1825.0" y="1022" text-anchor="middle" font-size="12.5" font-style="italic" fill="#5a6678">«JDK»</text>
+<text x="1825.0" y="1045" text-anchor="middle" font-size="16.5" font-weight="700" fill="#172033">Clock</text>
+<text x="1664" y="1110" font-size="12.8" fill="#26364a">+ instant(): Instant</text>
+<text x="1664" y="1131" font-size="12.8" fill="#26364a">+ millis(): long</text>
+<rect x="479.6" y="365" width="150.79999999999998" height="18" rx="3" fill="#fff" opacity="0.96"/><text x="555" y="378" text-anchor="middle" font-size="12" fill="#1f4e8c">authenticationUseCase</text><rect x="1454.6" y="365" width="150.79999999999998" height="18" rx="3" fill="#fff" opacity="0.96"/><text x="1530" y="378" text-anchor="middle" font-size="12" fill="#1f4e8c">authenticationUseCase</text><rect x="551.16" y="524" width="117.67999999999996" height="18" rx="3" fill="#fff" opacity="0.96"/><text x="610" y="537" text-anchor="middle" font-size="12" fill="#1f4e8c">passwordVerifier</text><rect x="570.6" y="769" width="78.8" height="18" rx="3" fill="#fff" opacity="0.96"/><text x="610" y="782" text-anchor="middle" font-size="12" fill="#1f4e8c">nameCipher</text><rect x="1417.12" y="524" width="85.75999999999999" height="18" rx="3" fill="#fff" opacity="0.96"/><text x="1460" y="537" text-anchor="middle" font-size="12" fill="#1f4e8c">tokenIssuer</text><rect x="1395.64" y="739" width="128.71999999999997" height="18" rx="3" fill="#fff" opacity="0.96"/><text x="1460" y="752" text-anchor="middle" font-size="12" fill="#1f4e8c">tokenSecretHasher</text><rect x="528.12" y="890" width="103.75999999999998" height="18" rx="3" fill="#fff" opacity="0.96"/><text x="580" y="903" text-anchor="middle" font-size="12" fill="#1f4e8c">userRepository</text><rect x="859.64" y="910" width="110.71999999999997" height="18" rx="3" fill="#fff" opacity="0.96"/><text x="915" y="923" text-anchor="middle" font-size="12" fill="#1f4e8c">tokenRepository</text><rect x="1209.92" y="895" width="70.16" height="18" rx="3" fill="#fff" opacity="0.96"/><text x="1245" y="908" text-anchor="middle" font-size="12" fill="#1f4e8c">auditTrail</text><rect x="1540.04" y="920" width="39.92" height="18" rx="3" fill="#fff" opacity="0.96"/><text x="1560" y="933" text-anchor="middle" font-size="12" fill="#1f4e8c">clock</text>
+<line x1="42" y1="1266" x2="2058" y2="1266" stroke="#d9e2ec"/><text x="42" y="1287" font-size="12" fill="#5a6678">右侧与下方为应用端口。具体实现位于 infrastructure：JwtAccessTokenIssuer、Jpa*RepositoryAdapter、Pbkdf2PasswordVerifier、AesNameCipher 等。</text>
+</svg>

@@ -1,0 +1,107 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2400" height="1510" viewBox="0 0 2400 1510" font-family="Microsoft YaHei, Noto Sans CJK SC, SimHei, sans-serif">
+<defs>
+  <marker id="open-arrow" markerWidth="10" markerHeight="10" refX="9" refY="4" orient="auto" markerUnits="strokeWidth">
+    <path d="M0,0 L9,4 L0,8" fill="none" stroke="#415269" stroke-width="1.6"/>
+  </marker>
+  <marker id="filled-arrow" markerWidth="10" markerHeight="10" refX="9" refY="4" orient="auto" markerUnits="strokeWidth">
+    <path d="M0,0 L9,4 L0,8 Z" fill="#27364a"/>
+  </marker>
+  <marker id="hollow-triangle" markerWidth="13" markerHeight="12" refX="11" refY="5" orient="auto" markerUnits="strokeWidth">
+    <path d="M0,0 L12,5 L0,10 Z" fill="#fff" stroke="#415269" stroke-width="1.4"/>
+  </marker>
+</defs>
+<rect width="2400" height="1510" fill="#fff"/>
+<text x="1200" y="38" text-anchor="middle" font-size="25" font-weight="700" fill="#172033">面向对象后端 · 权限查询类图</text>
+<text x="42" y="74" font-size="13.5" fill="#5a6678">以 PermissionAccessUseCase 为中心；仓储只返回授权事实，PermissionResolver 负责纯计算。</text>
+<path d="M1200.0,324.0 L1200.0,480.0" fill="none" stroke="#415269" stroke-width="1.7" marker-end="url(#open-arrow)"/>
+<path d="M800.0,570.0 L550.0,570.0" fill="none" stroke="#415269" stroke-width="1.7" marker-end="url(#open-arrow)"/>
+<path d="M800.0,650.0 L620.0,650.0 L620.0,760.0 L550.0,760.0" fill="none" stroke="#415269" stroke-width="1.7" marker-end="url(#open-arrow)"/>
+<path d="M1500.0,580.0 L1830.0,580.0" fill="none" stroke="#415269" stroke-width="1.7" marker-end="url(#open-arrow)"/>
+<path d="M1500.0,690.0 L1830.0,690.0" fill="none" stroke="#415269" stroke-width="1.7" marker-end="url(#open-arrow)"/>
+<path d="M900.0,734.0 L900.0,930.0 L520.0,930.0 L520.0,1040.0" fill="none" stroke="#415269" stroke-width="1.7" marker-end="url(#open-arrow)"/>
+<path d="M1350.0,734.0 L1350.0,960.0 L2040.0,960.0 L2040.0,1040.0" fill="none" stroke="#415269" stroke-width="1.7" marker-end="url(#open-arrow)"/>
+<path d="M1100.0,734.0 L1100.0,1120.0" fill="none" stroke="#415269" stroke-width="1.7" stroke-dasharray="8,5" marker-end="url(#open-arrow)"/>
+<path d="M1320.0,1190.0 L1380.0,1190.0" fill="none" stroke="#415269" stroke-width="1.7" stroke-dasharray="8,5" marker-end="url(#open-arrow)"/>
+<rect x="880" y="100" width="640" height="184" rx="7" fill="#ffffff" stroke="#6b5b95" stroke-width="1.8"/>
+<path d="M887,100 H1513 Q1520,100 1520,107 V164 H880 V107 Q880,100 887,100 Z" fill="#f5f1fb" stroke="#6b5b95" stroke-width="1.8"/>
+<line x1="880" y1="224" x2="1520" y2="224" stroke="#6b5b95" stroke-width="1.2"/>
+<text x="1200.0" y="122" text-anchor="middle" font-size="12.5" font-style="italic" fill="#5a6678">«service»</text>
+<text x="1200.0" y="145" text-anchor="middle" font-size="16.5" font-weight="700" fill="#172033">OperationAccessUseCase</text>
+<text x="894" y="186" font-size="12.8" fill="#26364a">- operationCatalogRepository: OperationCatalogRepository</text>
+<text x="894" y="207" font-size="12.8" fill="#26364a">- permissionAccessUseCase: PermissionAccessUseCase</text>
+<text x="894" y="246" font-size="12.8" fill="#26364a">+ requireRequest(Long, String, String, String): void</text>
+<text x="894" y="267" font-size="12.8" fill="#26364a">+ operationAllowed(Long, String, String): boolean</text>
+<rect x="100" y="500" width="450" height="169" rx="7" fill="#ffffff" stroke="#3d7a57" stroke-width="1.8"/>
+<path d="M107,500 H543 Q550,500 550,507 V564 H100 V507 Q100,500 107,500 Z" fill="#eef7f1" stroke="#3d7a57" stroke-width="1.8"/>
+<line x1="100" y1="588" x2="550" y2="588" stroke="#3d7a57" stroke-width="1.2"/>
+<text x="325.0" y="522" text-anchor="middle" font-size="12.5" font-style="italic" fill="#5a6678">«interface»</text>
+<text x="325.0" y="545" text-anchor="middle" font-size="16.5" font-weight="700" fill="#172033">RoleGrantRepository</text>
+<text x="114" y="610" font-size="12.8" fill="#26364a">+ findByUserId(Long): List&lt;RoleGrant&gt;</text>
+<text x="114" y="631" font-size="12.8" fill="#26364a">+ findByUserIdAndRoleId(Long, Long): Optional&lt;RoleGrant&gt;</text>
+<text x="114" y="652" font-size="12.8" fill="#26364a">+ save(RoleGrant): RoleGrant</text>
+<rect x="100" y="760" width="450" height="169" rx="7" fill="#ffffff" stroke="#3d7a57" stroke-width="1.8"/>
+<path d="M107,760 H543 Q550,760 550,767 V824 H100 V767 Q100,760 107,760 Z" fill="#eef7f1" stroke="#3d7a57" stroke-width="1.8"/>
+<line x1="100" y1="848" x2="550" y2="848" stroke="#3d7a57" stroke-width="1.2"/>
+<text x="325.0" y="782" text-anchor="middle" font-size="12.5" font-style="italic" fill="#5a6678">«interface»</text>
+<text x="325.0" y="805" text-anchor="middle" font-size="16.5" font-weight="700" fill="#172033">RoleRepository</text>
+<text x="114" y="870" font-size="12.8" fill="#26364a">+ findById(Long): Optional&lt;Role&gt;</text>
+<text x="114" y="891" font-size="12.8" fill="#26364a">+ findAll(): List&lt;Role&gt;</text>
+<text x="114" y="912" font-size="12.8" fill="#26364a">+ save(Role): Role</text>
+<rect x="100" y="1040" width="450" height="148" rx="7" fill="#ffffff" stroke="#3d7a57" stroke-width="1.8"/>
+<path d="M107,1040 H543 Q550,1040 550,1047 V1104 H100 V1047 Q100,1040 107,1040 Z" fill="#eef7f1" stroke="#3d7a57" stroke-width="1.8"/>
+<line x1="100" y1="1128" x2="550" y2="1128" stroke="#3d7a57" stroke-width="1.2"/>
+<text x="325.0" y="1062" text-anchor="middle" font-size="12.5" font-style="italic" fill="#5a6678">«interface»</text>
+<text x="325.0" y="1085" text-anchor="middle" font-size="16.5" font-weight="700" fill="#172033">PermissionCatalogRepository</text>
+<text x="114" y="1150" font-size="12.8" fill="#26364a">+ findFact(Long): Optional&lt;PermissionFact&gt;</text>
+<text x="114" y="1171" font-size="12.8" fill="#26364a">+ findFacts(Collection&lt;Long&gt;): List&lt;PermissionFact&gt;</text>
+<rect x="1830" y="500" width="500" height="169" rx="7" fill="#ffffff" stroke="#3d7a57" stroke-width="1.8"/>
+<path d="M1837,500 H2323 Q2330,500 2330,507 V564 H1830 V507 Q1830,500 1837,500 Z" fill="#eef7f1" stroke="#3d7a57" stroke-width="1.8"/>
+<line x1="1830" y1="588" x2="2330" y2="588" stroke="#3d7a57" stroke-width="1.2"/>
+<text x="2080.0" y="522" text-anchor="middle" font-size="12.5" font-style="italic" fill="#5a6678">«interface»</text>
+<text x="2080.0" y="545" text-anchor="middle" font-size="16.5" font-weight="700" fill="#172033">UserAccountRepository</text>
+<text x="1844" y="610" font-size="12.8" fill="#26364a">+ findById(Long): Optional&lt;UserAccount&gt;</text>
+<text x="1844" y="631" font-size="12.8" fill="#26364a">+ findByUserNo(String): Optional&lt;UserAccount&gt;</text>
+<text x="1844" y="652" font-size="12.8" fill="#26364a">+ save(UserAccount): UserAccount</text>
+<rect x="1830" y="760" width="500" height="169" rx="7" fill="#ffffff" stroke="#3d7a57" stroke-width="1.8"/>
+<path d="M1837,760 H2323 Q2330,760 2330,767 V824 H1830 V767 Q1830,760 1837,760 Z" fill="#eef7f1" stroke="#3d7a57" stroke-width="1.8"/>
+<line x1="1830" y1="848" x2="2330" y2="848" stroke="#3d7a57" stroke-width="1.2"/>
+<text x="2080.0" y="782" text-anchor="middle" font-size="12.5" font-style="italic" fill="#5a6678">«interface»</text>
+<text x="2080.0" y="805" text-anchor="middle" font-size="16.5" font-weight="700" fill="#172033">RolePermissionRepository</text>
+<text x="1844" y="870" font-size="12.8" fill="#26364a">+ findByRoleId(Long): List&lt;RolePermissionGrant&gt;</text>
+<text x="1844" y="891" font-size="12.8" fill="#26364a">+ findByRoleIds(Collection&lt;Long&gt;): List&lt;RolePermissionGrant&gt;</text>
+<text x="1844" y="912" font-size="12.8" fill="#26364a">+ bind(...): void</text>
+<rect x="1900" y="1040" width="400" height="127" rx="7" fill="#ffffff" stroke="#52657a" stroke-width="1.8"/>
+<path d="M1907,1040 H2293 Q2300,1040 2300,1047 V1104 H1900 V1047 Q1900,1040 1907,1040 Z" fill="#f1f5f9" stroke="#52657a" stroke-width="1.8"/>
+<line x1="1900" y1="1128" x2="2300" y2="1128" stroke="#52657a" stroke-width="1.2"/>
+<text x="2100.0" y="1062" text-anchor="middle" font-size="12.5" font-style="italic" fill="#5a6678">«JDK»</text>
+<text x="2100.0" y="1085" text-anchor="middle" font-size="16.5" font-weight="700" fill="#172033">Clock</text>
+<text x="1914" y="1150" font-size="12.8" fill="#26364a">+ instant(): Instant</text>
+<rect x="800" y="480" width="700" height="268" rx="7" fill="#ffffff" stroke="#1f4e8c" stroke-width="1.8"/>
+<path d="M807,480 H1493 Q1500,480 1500,487 V544 H800 V487 Q800,480 807,480 Z" fill="#e8f1fc" stroke="#1f4e8c" stroke-width="1.8"/>
+<line x1="800" y1="688" x2="1500" y2="688" stroke="#1f4e8c" stroke-width="1.2"/>
+<text x="1150.0" y="502" text-anchor="middle" font-size="12.5" font-style="italic" fill="#5a6678">«service»</text>
+<text x="1150.0" y="525" text-anchor="middle" font-size="16.5" font-weight="700" fill="#172033">PermissionAccessUseCase</text>
+<text x="814" y="566" font-size="12.8" fill="#26364a">- userRepository: UserAccountRepository</text>
+<text x="814" y="587" font-size="12.8" fill="#26364a">- roleGrantRepository: RoleGrantRepository</text>
+<text x="814" y="608" font-size="12.8" fill="#26364a">- roleRepository: RoleRepository</text>
+<text x="814" y="629" font-size="12.8" fill="#26364a">- rolePermissionRepository: RolePermissionRepository</text>
+<text x="814" y="650" font-size="12.8" fill="#26364a">- permissionCatalogRepository: PermissionCatalogRepository</text>
+<text x="814" y="671" font-size="12.8" fill="#26364a">- clock: Clock</text>
+<text x="814" y="710" font-size="12.8" fill="#26364a">+ permissions(Long, String): Set&lt;Long&gt;</text>
+<text x="814" y="731" font-size="12.8" fill="#26364a">+ hasPermission(Long, String, Long): boolean</text>
+<rect x="800" y="1120" width="520" height="127" rx="7" fill="#ffffff" stroke="#a17a2c" stroke-width="1.8"/>
+<path d="M807,1120 H1313 Q1320,1120 1320,1127 V1184 H800 V1127 Q800,1120 807,1120 Z" fill="#fffaf0" stroke="#a17a2c" stroke-width="1.8"/>
+<line x1="800" y1="1208" x2="1320" y2="1208" stroke="#a17a2c" stroke-width="1.2"/>
+<text x="1060.0" y="1142" text-anchor="middle" font-size="12.5" font-style="italic" fill="#5a6678">«utility service»</text>
+<text x="1060.0" y="1165" text-anchor="middle" font-size="16.5" font-weight="700" fill="#172033">PermissionResolver</text>
+<text x="814" y="1230" font-size="12.8" fill="#26364a">+ resolve(List&lt;RoleGrant&gt;, Map&lt;Long, Role&gt;, ...): Set&lt;Long&gt;</text>
+<rect x="1380" y="1120" width="480" height="148" rx="7" fill="#ffffff" stroke="#a17a2c" stroke-width="1.8"/>
+<path d="M1387,1120 H1853 Q1860,1120 1860,1127 V1184 H1380 V1127 Q1380,1120 1387,1120 Z" fill="#fffaf0" stroke="#a17a2c" stroke-width="1.8"/>
+<line x1="1380" y1="1208" x2="1860" y2="1208" stroke="#a17a2c" stroke-width="1.2"/>
+<text x="1620.0" y="1142" text-anchor="middle" font-size="12.5" font-style="italic" fill="#5a6678">«utility service»</text>
+<text x="1620.0" y="1165" text-anchor="middle" font-size="16.5" font-weight="700" fill="#172033">RoleHierarchy</text>
+<text x="1394" y="1230" font-size="12.8" fill="#26364a">+ activeRoleIds(Set&lt;Long&gt;, Function&lt;...&gt;): Set&lt;Long&gt;</text>
+<text x="1394" y="1251" font-size="12.8" fill="#26364a">+ ensureNoCycle(Long, Long, Function&lt;...&gt;): void</text>
+<rect x="1245.6" y="397" width="168.79999999999998" height="18" rx="3" fill="#fff" opacity="0.96"/><text x="1330" y="410" text-anchor="middle" font-size="12" fill="#1f4e8c">permissionAccessUseCase</text><rect x="606.5600000000001" y="544" width="136.87999999999997" height="18" rx="3" fill="#fff" opacity="0.96"/><text x="675" y="557" text-anchor="middle" font-size="12" fill="#1f4e8c">roleGrantRepository</text><rect x="609.5600000000001" y="699" width="100.87999999999998" height="18" rx="3" fill="#fff" opacity="0.96"/><text x="660" y="712" text-anchor="middle" font-size="12" fill="#1f4e8c">roleRepository</text><rect x="1613.1200000000001" y="554" width="103.75999999999998" height="18" rx="3" fill="#fff" opacity="0.96"/><text x="1665" y="567" text-anchor="middle" font-size="12" fill="#1f4e8c">userRepository</text><rect x="1580.6" y="664" width="168.8" height="18" rx="3" fill="#fff" opacity="0.96"/><text x="1665" y="677" text-anchor="middle" font-size="12" fill="#1f4e8c">rolePermissionRepository</text><rect x="585.16" y="905" width="189.68000000000004" height="18" rx="3" fill="#fff" opacity="0.96"/><text x="680" y="918" text-anchor="middle" font-size="12" fill="#1f4e8c">permissionCatalogRepository</text><rect x="1675.04" y="935" width="39.92" height="18" rx="3" fill="#fff" opacity="0.96"/><text x="1695" y="948" text-anchor="middle" font-size="12" fill="#1f4e8c">clock</text>
+<line x1="42" y1="1476" x2="2358" y2="1476" stroke="#d9e2ec"/><text x="42" y="1497" font-size="12" fill="#5a6678">PermissionResolver 与 RoleHierarchy 仅接收已读取的事实并做静态纯计算；数据库、映射和时钟注入均通过端口隔离。</text>
+</svg>

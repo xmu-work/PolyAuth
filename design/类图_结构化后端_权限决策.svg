@@ -1,0 +1,142 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2280" height="1510" viewBox="0 0 2280 1510" font-family="Microsoft YaHei, Noto Sans CJK SC, SimHei, sans-serif">
+<defs>
+  <marker id="open-arrow" markerWidth="10" markerHeight="10" refX="9" refY="4" orient="auto" markerUnits="strokeWidth">
+    <path d="M0,0 L9,4 L0,8" fill="none" stroke="#415269" stroke-width="1.6"/>
+  </marker>
+  <marker id="filled-arrow" markerWidth="10" markerHeight="10" refX="9" refY="4" orient="auto" markerUnits="strokeWidth">
+    <path d="M0,0 L9,4 L0,8 Z" fill="#27364a"/>
+  </marker>
+  <marker id="hollow-triangle" markerWidth="13" markerHeight="12" refX="11" refY="5" orient="auto" markerUnits="strokeWidth">
+    <path d="M0,0 L12,5 L0,10 Z" fill="#fff" stroke="#415269" stroke-width="1.4"/>
+  </marker>
+</defs>
+<rect width="2280" height="1510" fill="#fff"/>
+<text x="1140" y="38" text-anchor="middle" font-size="25" font-weight="700" fill="#172033">结构化后端 · 权限决策类图</text>
+<text x="42" y="74" font-size="13.5" fill="#5a6678">以 DecisionService（PDP）为中心，调用方在四周，四个 Repository 在下方形成单条判定链。</text>
+<path d="M330.0,322.0 L330.0,470.0 L820.0,470.0 L820.0,570.0" fill="none" stroke="#415269" stroke-width="1.7" marker-end="url(#open-arrow)"/>
+<path d="M1020.0,417.0 L1020.0,570.0" fill="none" stroke="#415269" stroke-width="1.7" marker-end="url(#open-arrow)"/>
+<path d="M1730.0,301.0 L1730.0,500.0 L1460.0,500.0 L1460.0,570.0" fill="none" stroke="#415269" stroke-width="1.7" marker-end="url(#open-arrow)"/>
+<path d="M620.0,740.0 L760.0,740.0" fill="none" stroke="#415269" stroke-width="1.7" marker-end="url(#open-arrow)"/>
+<path d="M1690.0,750.0 L1460.0,750.0" fill="none" stroke="#415269" stroke-width="1.7" marker-end="url(#open-arrow)"/>
+<path d="M880.0,845.0 L880.0,1030.0 L300.0,1030.0 L300.0,1235.0" fill="none" stroke="#415269" stroke-width="1.7" marker-end="url(#open-arrow)"/>
+<path d="M980.0,845.0 L980.0,1110.0 L820.0,1110.0 L820.0,1235.0" fill="none" stroke="#415269" stroke-width="1.7" marker-end="url(#open-arrow)"/>
+<path d="M1080.0,845.0 L1080.0,1150.0 L1360.0,1150.0 L1360.0,1235.0" fill="none" stroke="#415269" stroke-width="1.7" marker-end="url(#open-arrow)"/>
+<path d="M1260.0,845.0 L1260.0,1040.0 L1960.0,1040.0 L1960.0,1235.0" fill="none" stroke="#415269" stroke-width="1.7" marker-end="url(#open-arrow)"/>
+<rect x="90" y="110" width="500" height="226" rx="7" fill="#ffffff" stroke="#6b5b95" stroke-width="1.8"/>
+<path d="M97,110 H583 Q590,110 590,117 V174 H90 V117 Q90,110 97,110 Z" fill="#f5f1fb" stroke="#6b5b95" stroke-width="1.8"/>
+<line x1="90" y1="276" x2="590" y2="276" stroke="#6b5b95" stroke-width="1.2"/>
+<text x="340.0" y="132" text-anchor="middle" font-size="12.5" font-style="italic" fill="#5a6678">«component»</text>
+<text x="340.0" y="155" text-anchor="middle" font-size="16.5" font-weight="700" fill="#172033">AuthInterceptor</text>
+<text x="104" y="196" font-size="12.8" fill="#26364a">- authService: AuthService</text>
+<text x="104" y="217" font-size="12.8" fill="#26364a">- apiService: ApiService</text>
+<text x="104" y="238" font-size="12.8" fill="#26364a">- decisionService: DecisionService</text>
+<text x="104" y="259" font-size="12.8" fill="#26364a">- logService: LogService</text>
+<text x="104" y="298" font-size="12.8" fill="#26364a">+ preHandle(...): boolean</text>
+<text x="104" y="319" font-size="12.8" fill="#26364a">+ afterCompletion(...): void</text>
+<rect x="720" y="100" width="620" height="331" rx="7" fill="#ffffff" stroke="#6b5b95" stroke-width="1.8"/>
+<path d="M727,100 H1333 Q1340,100 1340,107 V164 H720 V107 Q720,100 727,100 Z" fill="#f5f1fb" stroke="#6b5b95" stroke-width="1.8"/>
+<line x1="720" y1="329" x2="1340" y2="329" stroke="#6b5b95" stroke-width="1.2"/>
+<text x="1030.0" y="122" text-anchor="middle" font-size="12.5" font-style="italic" fill="#5a6678">«service»</text>
+<text x="1030.0" y="145" text-anchor="middle" font-size="16.5" font-weight="700" fill="#172033">IdentityService</text>
+<text x="734" y="186" font-size="12.8" fill="#26364a">- userRepository: IamUserRepository</text>
+<text x="734" y="207" font-size="12.8" fill="#26364a">- orgRepository: IamOrgRepository</text>
+<text x="734" y="228" font-size="12.8" fill="#26364a">- apiRepository: IamApiRepository</text>
+<text x="734" y="249" font-size="12.8" fill="#26364a">- systemRepository: IamSystemRepository</text>
+<text x="734" y="270" font-size="12.8" fill="#26364a">- permissionRepository: IamPermissionRepository</text>
+<text x="734" y="291" font-size="12.8" fill="#26364a">- decisionService: DecisionService</text>
+<text x="734" y="312" font-size="12.8" fill="#26364a">- cryptoComponent: CryptoComponent</text>
+<text x="734" y="351" font-size="12.8" fill="#26364a">+ getCurrentUser(Long, String): IdentityProfile</text>
+<text x="734" y="372" font-size="12.8" fill="#26364a">+ hasPermissionCode(Long, String, String): boolean</text>
+<text x="734" y="393" font-size="12.8" fill="#26364a">+ hasApiOperation(Long, String, String): boolean</text>
+<text x="734" y="414" font-size="12.8" fill="#26364a">+ pageDepartments(...): IdentityPageSlice</text>
+<rect x="1480" y="110" width="500" height="205" rx="7" fill="#ffffff" stroke="#6b5b95" stroke-width="1.8"/>
+<path d="M1487,110 H1973 Q1980,110 1980,117 V174 H1480 V117 Q1480,110 1487,110 Z" fill="#f5f1fb" stroke="#6b5b95" stroke-width="1.8"/>
+<line x1="1480" y1="234" x2="1980" y2="234" stroke="#6b5b95" stroke-width="1.2"/>
+<text x="1730.0" y="132" text-anchor="middle" font-size="12.5" font-style="italic" fill="#5a6678">«controller»</text>
+<text x="1730.0" y="155" text-anchor="middle" font-size="16.5" font-weight="700" fill="#172033">OpenApiController</text>
+<text x="1494" y="196" font-size="12.8" fill="#26364a">- decisionService: DecisionService</text>
+<text x="1494" y="217" font-size="12.8" fill="#26364a">- dataPermissionService: DataPermissionService</text>
+<text x="1494" y="256" font-size="12.8" fill="#26364a">+ authorizeResource(...): Result&lt;ResourceAuthorizationVO&gt;</text>
+<text x="1494" y="277" font-size="12.8" fill="#26364a">+ permissions(...): Result&lt;Set&lt;Long&gt;&gt;</text>
+<text x="1494" y="298" font-size="12.8" fill="#26364a">+ dataScopes(...): Result&lt;List&lt;...&gt;&gt;</text>
+<rect x="100" y="620" width="520" height="289" rx="7" fill="#ffffff" stroke="#6b5b95" stroke-width="1.8"/>
+<path d="M107,620 H613 Q620,620 620,627 V684 H100 V627 Q100,620 107,620 Z" fill="#f5f1fb" stroke="#6b5b95" stroke-width="1.8"/>
+<line x1="100" y1="828" x2="620" y2="828" stroke="#6b5b95" stroke-width="1.2"/>
+<text x="360.0" y="642" text-anchor="middle" font-size="12.5" font-style="italic" fill="#5a6678">«service»</text>
+<text x="360.0" y="665" text-anchor="middle" font-size="16.5" font-weight="700" fill="#172033">DataPermissionService</text>
+<text x="114" y="706" font-size="12.8" fill="#26364a">- decisionService: DecisionService</text>
+<text x="114" y="727" font-size="12.8" fill="#26364a">- apiService: ApiService</text>
+<text x="114" y="748" font-size="12.8" fill="#26364a">- roleDataScopeRepository: IamRoleDataScopeRepository</text>
+<text x="114" y="769" font-size="12.8" fill="#26364a">- roleRepository: IamRoleRepository</text>
+<text x="114" y="790" font-size="12.8" fill="#26364a">- orgRepository: IamOrgRepository</text>
+<text x="114" y="811" font-size="12.8" fill="#26364a">- userRoleRepository: IamUserRoleRepository</text>
+<text x="114" y="850" font-size="12.8" fill="#26364a">+ authorize(...): ResourceDecision</text>
+<text x="114" y="871" font-size="12.8" fill="#26364a">+ getEffectiveDataScopes(Long, String): List&lt;...&gt;</text>
+<text x="114" y="892" font-size="12.8" fill="#26364a">- matches(...): boolean</text>
+<rect x="1690" y="620" width="520" height="373" rx="7" fill="#ffffff" stroke="#6b5b95" stroke-width="1.8"/>
+<path d="M1697,620 H2203 Q2210,620 2210,627 V684 H1690 V627 Q1690,620 1697,620 Z" fill="#f5f1fb" stroke="#6b5b95" stroke-width="1.8"/>
+<line x1="1690" y1="891" x2="2210" y2="891" stroke="#6b5b95" stroke-width="1.2"/>
+<text x="1950.0" y="642" text-anchor="middle" font-size="12.5" font-style="italic" fill="#5a6678">«service»</text>
+<text x="1950.0" y="665" text-anchor="middle" font-size="16.5" font-weight="700" fill="#172033">RoleService</text>
+<text x="1704" y="706" font-size="12.8" fill="#26364a">- roleRepository: IamRoleRepository</text>
+<text x="1704" y="727" font-size="12.8" fill="#26364a">- userRepository: IamUserRepository</text>
+<text x="1704" y="748" font-size="12.8" fill="#26364a">- userRoleRepository: IamUserRoleRepository</text>
+<text x="1704" y="769" font-size="12.8" fill="#26364a">- permissionRepository: IamPermissionRepository</text>
+<text x="1704" y="790" font-size="12.8" fill="#26364a">- rolePermissionRepository: IamRolePermissionRepository</text>
+<text x="1704" y="811" font-size="12.8" fill="#26364a">- roleExclusionRepository: IamRoleExclusionRepository</text>
+<text x="1704" y="832" font-size="12.8" fill="#26364a">- decisionService: DecisionService</text>
+<text x="1704" y="853" font-size="12.8" fill="#26364a">- logService: LogService</text>
+<text x="1704" y="874" font-size="12.8" fill="#26364a">- lockExecutor: BusinessLockExecutor</text>
+<text x="1704" y="913" font-size="12.8" fill="#26364a">+ grantRole(...): IamUserRole</text>
+<text x="1704" y="934" font-size="12.8" fill="#26364a">+ checkGrantBoundary(Long, Long)</text>
+<text x="1704" y="955" font-size="12.8" fill="#26364a">+ bindRolePermissions(...): void</text>
+<text x="1704" y="976" font-size="12.8" fill="#26364a">+ collectRolePermissionIds(Long)</text>
+<rect x="760" y="570" width="700" height="289" rx="7" fill="#ffffff" stroke="#1f4e8c" stroke-width="1.8"/>
+<path d="M767,570 H1453 Q1460,570 1460,577 V634 H760 V577 Q760,570 767,570 Z" fill="#e8f1fc" stroke="#1f4e8c" stroke-width="1.8"/>
+<line x1="760" y1="736" x2="1460" y2="736" stroke="#1f4e8c" stroke-width="1.2"/>
+<text x="1110.0" y="592" text-anchor="middle" font-size="12.5" font-style="italic" fill="#5a6678">«service»</text>
+<text x="1110.0" y="615" text-anchor="middle" font-size="16.5" font-weight="700" fill="#172033">DecisionService</text>
+<text x="774" y="656" font-size="12.8" fill="#26364a">- userRepository: IamUserRepository</text>
+<text x="774" y="677" font-size="12.8" fill="#26364a">- userRoleRepository: IamUserRoleRepository</text>
+<text x="774" y="698" font-size="12.8" fill="#26364a">- roleRepository: IamRoleRepository</text>
+<text x="774" y="719" font-size="12.8" fill="#26364a">- rolePermissionRepository: IamRolePermissionRepository</text>
+<text x="774" y="758" font-size="12.8" fill="#26364a">+ hasPermission(Long, String, Long): boolean</text>
+<text x="774" y="779" font-size="12.8" fill="#26364a">+ getUserPermissions(Long, String): Set&lt;Long&gt;</text>
+<text x="774" y="800" font-size="12.8" fill="#26364a">+ getUserRoleCodes(Long): Set&lt;String&gt;</text>
+<text x="774" y="821" font-size="12.8" fill="#26364a">- activeRoleIds(Long): Set&lt;Long&gt;</text>
+<text x="774" y="842" font-size="12.8" fill="#26364a">- collectActiveRolesWithAncestors(Set&lt;Long&gt;): Set&lt;Long&gt;</text>
+<rect x="80" y="1235" width="440" height="169" rx="7" fill="#ffffff" stroke="#3d7a57" stroke-width="1.8"/>
+<path d="M87,1235 H513 Q520,1235 520,1242 V1299 H80 V1242 Q80,1235 87,1235 Z" fill="#eef7f1" stroke="#3d7a57" stroke-width="1.8"/>
+<line x1="80" y1="1323" x2="520" y2="1323" stroke="#3d7a57" stroke-width="1.2"/>
+<text x="300.0" y="1257" text-anchor="middle" font-size="12.5" font-style="italic" fill="#5a6678">«interface»</text>
+<text x="300.0" y="1280" text-anchor="middle" font-size="16.5" font-weight="700" fill="#172033">IamUserRepository</text>
+<text x="94" y="1345" font-size="12.8" fill="#26364a">+ findById(Long): Optional&lt;IamUser&gt;</text>
+<text x="94" y="1366" font-size="12.8" fill="#26364a">+ findByUserNo(String): Optional&lt;IamUser&gt;</text>
+<text x="94" y="1387" font-size="12.8" fill="#26364a">+ save(IamUser): IamUser</text>
+<rect x="600" y="1235" width="460" height="169" rx="7" fill="#ffffff" stroke="#3d7a57" stroke-width="1.8"/>
+<path d="M607,1235 H1053 Q1060,1235 1060,1242 V1299 H600 V1242 Q600,1235 607,1235 Z" fill="#eef7f1" stroke="#3d7a57" stroke-width="1.8"/>
+<line x1="600" y1="1323" x2="1060" y2="1323" stroke="#3d7a57" stroke-width="1.2"/>
+<text x="830.0" y="1257" text-anchor="middle" font-size="12.5" font-style="italic" fill="#5a6678">«interface»</text>
+<text x="830.0" y="1280" text-anchor="middle" font-size="16.5" font-weight="700" fill="#172033">IamUserRoleRepository</text>
+<text x="614" y="1345" font-size="12.8" fill="#26364a">+ findByUserIdAndStatus(Long, String): List&lt;IamUserRole&gt;</text>
+<text x="614" y="1366" font-size="12.8" fill="#26364a">+ findByUserIdAndRoleId(Long, Long): Optional&lt;IamUserRole&gt;</text>
+<text x="614" y="1387" font-size="12.8" fill="#26364a">+ save(IamUserRole): IamUserRole</text>
+<rect x="1140" y="1235" width="460" height="169" rx="7" fill="#ffffff" stroke="#3d7a57" stroke-width="1.8"/>
+<path d="M1147,1235 H1593 Q1600,1235 1600,1242 V1299 H1140 V1242 Q1140,1235 1147,1235 Z" fill="#eef7f1" stroke="#3d7a57" stroke-width="1.8"/>
+<line x1="1140" y1="1323" x2="1600" y2="1323" stroke="#3d7a57" stroke-width="1.2"/>
+<text x="1370.0" y="1257" text-anchor="middle" font-size="12.5" font-style="italic" fill="#5a6678">«interface»</text>
+<text x="1370.0" y="1280" text-anchor="middle" font-size="16.5" font-weight="700" fill="#172033">IamRoleRepository</text>
+<text x="1154" y="1345" font-size="12.8" fill="#26364a">+ findAllById(Iterable&lt;Long&gt;): List&lt;IamRole&gt;</text>
+<text x="1154" y="1366" font-size="12.8" fill="#26364a">+ findByRoleCode(String): Optional&lt;IamRole&gt;</text>
+<text x="1154" y="1387" font-size="12.8" fill="#26364a">+ save(IamRole): IamRole</text>
+<rect x="1740" y="1235" width="460" height="169" rx="7" fill="#ffffff" stroke="#3d7a57" stroke-width="1.8"/>
+<path d="M1747,1235 H2193 Q2200,1235 2200,1242 V1299 H1740 V1242 Q1740,1235 1747,1235 Z" fill="#eef7f1" stroke="#3d7a57" stroke-width="1.8"/>
+<line x1="1740" y1="1323" x2="2200" y2="1323" stroke="#3d7a57" stroke-width="1.2"/>
+<text x="1970.0" y="1257" text-anchor="middle" font-size="12.5" font-style="italic" fill="#5a6678">«interface»</text>
+<text x="1970.0" y="1280" text-anchor="middle" font-size="16.5" font-weight="700" fill="#172033">IamRolePermissionRepository</text>
+<text x="1754" y="1345" font-size="12.8" fill="#26364a">+ findGrantedPermissions(Collection&lt;Long&gt;, String): List&lt;...&gt;</text>
+<text x="1754" y="1366" font-size="12.8" fill="#26364a">+ findByRoleId(Long): List&lt;IamRolePermission&gt;</text>
+<text x="1754" y="1387" font-size="12.8" fill="#26364a">+ save(IamRolePermission): IamRolePermission</text>
+<rect x="532.52" y="445" width="104.95999999999997" height="18" rx="3" fill="#fff" opacity="0.96"/><text x="585" y="458" text-anchor="middle" font-size="12" fill="#1f4e8c">decisionService</text><rect x="1027.52" y="487" width="104.95999999999997" height="18" rx="3" fill="#fff" opacity="0.96"/><text x="1080" y="500" text-anchor="middle" font-size="12" fill="#1f4e8c">decisionService</text><rect x="1547.52" y="475" width="104.95999999999997" height="18" rx="3" fill="#fff" opacity="0.96"/><text x="1600" y="488" text-anchor="middle" font-size="12" fill="#1f4e8c">decisionService</text><rect x="637.52" y="714" width="104.95999999999997" height="18" rx="3" fill="#fff" opacity="0.96"/><text x="690" y="727" text-anchor="middle" font-size="12" fill="#1f4e8c">decisionService</text><rect x="1522.52" y="724" width="104.95999999999997" height="18" rx="3" fill="#fff" opacity="0.96"/><text x="1575" y="737" text-anchor="middle" font-size="12" fill="#1f4e8c">decisionService</text><rect x="518.12" y="1005" width="103.75999999999998" height="18" rx="3" fill="#fff" opacity="0.96"/><text x="570" y="1018" text-anchor="middle" font-size="12" fill="#1f4e8c">userRepository</text><rect x="785.0400000000001" y="1085" width="129.91999999999996" height="18" rx="3" fill="#fff" opacity="0.96"/><text x="850" y="1098" text-anchor="middle" font-size="12" fill="#1f4e8c">userRoleRepository</text><rect x="1199.56" y="1125" width="100.87999999999998" height="18" rx="3" fill="#fff" opacity="0.96"/><text x="1250" y="1138" text-anchor="middle" font-size="12" fill="#1f4e8c">roleRepository</text><rect x="1625.6" y="1015" width="168.8" height="18" rx="3" fill="#fff" opacity="0.96"/><text x="1710" y="1028" text-anchor="middle" font-size="12" fill="#1f4e8c">rolePermissionRepository</text>
+<line x1="42" y1="1476" x2="2238" y2="1476" stroke="#d9e2ec"/><text x="42" y="1497" font-size="12" fill="#5a6678">判定链：用户状态 → 有效期内的用户角色 → 启用角色及父角色 → 角色权限候选（系统/操作过滤）→ 权限 ID 集合。</text>
+</svg>
