@@ -1,4 +1,4 @@
-# RBAC 当前阶段部署手册：4 台 + SWR + 先跑后端
+# PolyAuth 当前阶段部署手册：4 台 + SWR + 先跑后端
 
 这是**当前阶段的操作手册**。目标形态（8 台、含前端）见 `DEPLOYMENT_SWARM.md`；systemd 裸机方案见 `DEPLOYMENT_8_NODES.md`（暂不使用）。服务器：`manage`、`compiler`、`course-node1`、`course-node2`，Swarm 集群已建好。
 
@@ -58,7 +58,7 @@ git pull                                  # 拉取 main 最新代码
 
 export JAVA_HOME=$HOME/jdk-21.0.2
 $HOME/apache-maven-3.9.16/bin/mvn -B -DskipTests package
-cp target/iam-platform-1.0.0-SNAPSHOT.jar app.jar
+cp structured-backend/target/polyauth-structured-backend-1.0.0-SNAPSHOT.jar app.jar
 
 docker build -f deploy/swarm/Dockerfile.app-prebuilt -t swr.cn-north-4.myhuaweicloud.com/ooad-mytx/iam-app:1.0.1 .
 docker push swr.cn-north-4.myhuaweicloud.com/ooad-mytx/iam-app:1.0.1
@@ -181,7 +181,7 @@ watch docker stack ps iam
 
 ```bash
 # Windows 本机
-scp ~/RBAC/src/main/resources/db/{schema.sql,seed.sql} root@<node1的IP>:/tmp/
+scp ~/PolyAuth/db/{schema.sql,seed.sql} root@<node1的IP>:/tmp/
 ```
 
 ```bash

@@ -54,3 +54,7 @@ export function revokeRole(userId: number, roleId: number): Promise<void> {
 export function listUserRoles(userId: number): Promise<UserRole[]> {
   return get<UserRole[]>('/roles/assignments', { userId })
 }
+
+export function listRoleAssignments(roleId: number): Promise<UserRole[]> {
+  return get<UserRole[]>(`/roles/${roleId}/assignments`)
+}

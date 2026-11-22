@@ -1,24 +1,37 @@
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
+import { reactive, ref, watch } from 'vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessage } from 'element-plus'
-import { bindApiToPermission, createApi } from '@/api/system.api'
+import { createApi } from '@/api/system.api'
 import { ADMIN_ACTION_PERMISSIONS as FP } from '@/constants/permissions'
 import { toFieldErrors } from '@/utils/formErrors'
 import type { System } from '@/types/system.types'
 
-const props = defineProps<{ systems: System[] }>()
+const props = defineProps<{
+  systems: System[]
+  selectedSystemId?: number | null
+}>()
+const emit = defineEmits<{ created: [] }>()
 const formRef = ref<FormInstance>()
 const submitting = ref(false)
 const serverErrors = ref<Record<string, string>>({})
 const form = reactive({
   systemId: undefined as number | undefined,
-  permissionId: undefined as number | undefined,
   apiCode: '',
   apiName: '',
   apiPath: '',
   httpMethod: 'GET',
 })
+
+watch(
+  () => props.selectedSystemId,
+  (systemId) => {
+    if (systemId !== null && systemId !== undefined) {
+      form.systemId = systemId
+    }
+  },
+  { immediate: true },
+)
 
 const rules: FormRules = {
   systemId: [{ required: true, message: '请选择所属系统', trigger: 'change' }],
@@ -34,21 +47,19 @@ async function submit(): Promise<void> {
   submitting.value = true
   serverErrors.value = {}
   try {
-    const api = await createApi({
+    await createApi({
       systemId: form.systemId as number,
       apiCode: form.apiCode.trim(),
       apiName: form.apiName.trim(),
       apiPath: form.apiPath.trim(),
       httpMethod: form.httpMethod,
     })
-    if (form.permissionId !== undefined) {
-      await bindApiToPermission(form.permissionId, api.id)
-    }
     ElMessage.success(`API「${form.apiName.trim()}」登记成功`)
     form.apiCode = ''
     form.apiName = ''
     form.apiPath = ''
     formRef.value?.clearValidate()
+    emit('created')
   } catch (error) {
     serverErrors.value = toFieldErrors(error)
   } finally {
@@ -67,28 +78,53 @@ async function submit(): Promise<void> {
     </template>
     <el-form ref="formRef" :model="form" :rules="rules" label-position="top">
       <el-form-item label="所属系统" prop="systemId">
-        <el-select v-model="form.systemId" placeholder="请选择系统" style="width: 100%">
+        <el-select
+          v-model="form.systemId"
+          data-testid="api-system-select"
+          :disabled="selectedSystemId !== null && selectedSystemId !== undefined"
+          placeholder="请选择系统"
+          style="width: 100%"
+        >
           <el-option v-for="item in props.systems" :key="item.id" :label="item.systemName" :value="item.id" />
         </el-select>
       </el-form-item>
-      <el-form-item label="所属权限 ID（选填，登记后绑定）">
-        <el-input-number v-model="form.permissionId" :min="1" :precision="0" style="width: 100%" />
-      </el-form-item>
       <el-form-item label="API 编码" prop="apiCode" :error="serverErrors.apiCode">
-        <el-input v-model="form.apiCode" maxlength="64" placeholder="如 CONTRACT_EXPORT" />
+        <el-input
+          v-model="form.apiCode"
+          data-testid="api-code"
+          maxlength="64"
+          placeholder="如 CONTRACT_EXPORT"
+        />
       </el-form-item>
       <el-form-item label="API 名称" prop="apiName" :error="serverErrors.apiName">
-        <el-input v-model="form.apiName" maxlength="128" placeholder="如 导出合同" />
+        <el-input
+          v-model="form.apiName"
+          data-testid="api-name"
+          maxlength="128"
+          placeholder="如 导出合同"
+        />
       </el-form-item>
       <el-form-item label="Controller 映射模板" prop="apiPath" :error="serverErrors.apiPath">
-        <el-input v-model="form.apiPath" maxlength="255" placeholder="如 /contracts/{contractId}" />
+        <el-input
+          v-model="form.apiPath"
+          data-testid="api-path"
+          maxlength="255"
+          placeholder="如 /contracts/{contractId}"
+        />
       </el-form-item>
       <el-form-item label="HTTP 方法" prop="httpMethod">
         <el-select v-model="form.httpMethod" style="width: 100%">
           <el-option v-for="method in ['GET', 'POST', 'PUT', 'DELETE', 'PATCH']" :key="method" :label="method" :value="method" />
         </el-select>
       </el-form-item>
-      <el-button v-perm="FP.API_CREATE" type="primary" :loading="submitting" style="width: 100%" @click="submit">
+      <el-button
+        v-perm="FP.API_CREATE"
+        data-testid="create-api"
+        type="primary"
+        :loading="submitting"
+        style="width: 100%"
+        @click="submit"
+      >
         登记 API
       </el-button>
     </el-form>

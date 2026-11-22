@@ -1,15 +1,17 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Expand, Fold, SwitchButton } from '@element-plus/icons-vue'
+import { Expand, Fold, Lock, SwitchButton } from '@element-plus/icons-vue'
 import { resetAccessState } from '@/router/access'
 import { useAppStore } from '@/stores/app.store'
 import { useAuthStore } from '@/stores/auth.store'
+import ChangePasswordDialog from './ChangePasswordDialog.vue'
 
 const router = useRouter()
 const appStore = useAppStore()
 const authStore = useAuthStore()
+const changePasswordVisible = ref(false)
 
 const displayName = computed(() => authStore.displayName || '当前用户')
 
@@ -34,6 +36,16 @@ async function logout(): Promise<void> {
     await router.replace('/login')
   }
 }
+
+async function handlePasswordChanged(): Promise<void> {
+  authStore.clearSession()
+  resetAccessState()
+  appStore.resetTabs()
+  await router.replace({
+    name: 'LoginPage',
+    query: { reason: '密码已修改，请使用新密码重新登录' },
+  })
+}
 </script>
 
 <template>
@@ -57,9 +69,21 @@ async function logout(): Promise<void> {
         <span class="app-header__avatar">{{ displayName.slice(0, 1) }}</span>
         <span class="app-header__name">{{ displayName }}</span>
       </div>
+      <el-button
+        data-testid="open-change-password"
+        text
+        :icon="Lock"
+        @click="changePasswordVisible = true"
+      >
+        修改密码
+      </el-button>
       <el-button text :icon="SwitchButton" @click="logout">退出</el-button>
     </div>
   </div>
+  <ChangePasswordDialog
+    v-model="changePasswordVisible"
+    @success="handlePasswordChanged"
+  />
 </template>
 
 <style scoped>

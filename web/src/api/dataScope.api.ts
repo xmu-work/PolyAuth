@@ -1,4 +1,6 @@
 import { deleteForm, get, postForm } from '@/utils/request'
+import { getOrgTree } from '@/api/org.api'
+import type { Org } from '@/types/org.types'
 import type {
   DataScope,
   DataScopeCreatePayload,
@@ -32,4 +34,10 @@ export function bindRoleDataScope(
 /** 回收角色数据范围。 */
 export function revokeRoleDataScope(roleId: number, bindingId: number): Promise<void> {
   return deleteForm<void>(`/roles/${roleId}/data-scopes/${bindingId}`)
+}
+
+export async function listDataScopeOrganizations(): Promise<Org[]> {
+  const roots = await getOrgTree()
+  const subtrees = await Promise.all(roots.map((root) => getOrgTree(root.id)))
+  return [...new Map(subtrees.flat().map((org) => [org.id, org])).values()]
 }

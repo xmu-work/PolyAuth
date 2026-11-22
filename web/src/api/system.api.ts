@@ -1,4 +1,4 @@
-import { deleteJson, get, postForm, postJson } from '@/utils/request'
+import { deleteForm, deleteJson, get, postForm, postJson } from '@/utils/request'
 import type {
   Api,
   ApiCreatePayload,
@@ -36,6 +36,17 @@ export function createApi(payload: ApiCreatePayload): Promise<Api> {
 
 export function bindApiToPermission(permissionId: number, apiId: number): Promise<Api> {
   return postForm<Api>(`/permissions/${permissionId}/apis/${apiId}`)
+}
+
+export function getPermissionApis(permissionId: number): Promise<Api[]> {
+  return get<Api[]>(`/permissions/${permissionId}/apis`)
+}
+
+export function unbindApiFromPermission(
+  permissionId: number,
+  apiId: number,
+): Promise<void> {
+  return deleteForm<void>(`/permissions/${permissionId}/apis/${apiId}`)
 }
 
 export function bindRolePermissions(payload: RolePermissionBindPayload): Promise<void> {

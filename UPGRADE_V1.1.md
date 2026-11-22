@@ -13,7 +13,7 @@
 | 超级管理员绑定 | 25 条 | 30 条 |
 | 组织 | 0 条（admin 的 `org_id=1` 悬空） | 2 条（1 总公司、2 信息中心） |
 
-数据变更只有 `src/main/resources/db/upgrade_v1.1_org.sql`：全部 `INSERT IGNORE`，可重复执行。本地已在 MySQL 8.0 上验证：旧 schema + 旧 seed 执行升级脚本（两次）后，功能点、角色绑定、组织三张表的数据与全新 `schema.sql + seed.sql` 逐行一致。
+数据变更只有 `db/upgrade_v1.1_org.sql`：全部 `INSERT IGNORE`，可重复执行。本地已在 MySQL 8.0 上验证：旧 schema + 旧 seed 执行升级脚本（两次）后，功能点、角色绑定、组织三张表的数据与全新 `schema.sql + seed.sql` 逐行一致。
 
 审计日志接口（`AuditController`）新版本仍未实现，升级后访问审计页面依然 500，不属于本次范围。
 
@@ -43,7 +43,7 @@ git log --oneline -1                          # 应为合入本文的那次提�
 
 export JAVA_HOME=$HOME/jdk-21.0.2
 $HOME/apache-maven-3.9.16/bin/mvn -B package  # 带测试构建：72 个测试应全部通过，不依赖数据库
-cp target/iam-platform-1.0.0-SNAPSHOT.jar app.jar
+cp structured-backend/target/polyauth-structured-backend-1.0.0-SNAPSHOT.jar app.jar
 
 REG=swr.cn-north-4.myhuaweicloud.com/ooad-mytx
 docker build -f deploy/swarm/Dockerfile.app-prebuilt -t $REG/iam-app:1.0.1 .
@@ -55,7 +55,7 @@ docker push $REG/iam-app:1.0.1
 旧版应用不读取新增的这几行数据，所以先改数据、后换镜像也不影响线上。
 
 ```bash
-# 从 compiler 转传：scp ~/RBAC/src/main/resources/db/upgrade_v1.1_org.sql <course-node1>:/tmp/
+# 从 compiler 转传：scp ~/PolyAuth/db/upgrade_v1.1_org.sql <course-node1>:/tmp/
 CID=$(docker ps -qf name=iam_mysql)
 docker exec -i "$CID" sh -c 'exec mysql -uroot -p"$(cat /run/secrets/mysql_root_password)" --default-character-set=utf8mb4 iam_platform' \
   < /tmp/upgrade_v1.1_org.sql

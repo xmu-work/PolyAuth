@@ -1,4 +1,4 @@
-# RBAC 后端栈（当前 4 台阶段用）
+# PolyAuth 结构化后端栈（当前 4 台阶段用）
 # 只部署 mysql / redis / app，先把后端跑起来；前端 web 镜像就绪后改用 iam-stack.yml（含前端）。
 # 用法：在 manage 上，cd deploy/swarm && docker stack deploy -c iam-stack-backend.yml --with-registry-auth iam
 # 镜像地址：SWR 组织名 ooad-mytx，region cn-north-4。
@@ -102,9 +102,9 @@ services:
       SPRING_DATA_REDIS_HOST: redis
       SPRING_DATA_REDIS_PORT: "6379"
       SPRING_DATA_REDIS_TIMEOUT: "3000ms"
-      LOGGING_LEVEL_COM_IAM_PLATFORM_INTERFACES: DEBUG
-      LOGGING_LEVEL_COM_IAM_PLATFORM_SERVICE: DEBUG
-      LOGGING_LEVEL_COM_IAM_PLATFORM_INFRASTRUCTURE: DEBUG
+      LOGGING_LEVEL_COM_POLYAUTH_STRUCTURED_INTERFACES: DEBUG
+      LOGGING_LEVEL_COM_POLYAUTH_STRUCTURED_APPLICATION: DEBUG
+      LOGGING_LEVEL_COM_POLYAUTH_STRUCTURED_INFRASTRUCTURE: DEBUG
       TZ: Asia/Shanghai
     secrets:
       - jwt_secret

@@ -8,9 +8,16 @@ import { ADMIN_ACTION_PERMISSIONS as FP } from '@/constants/permissions'
 import { dateTimeColumnFormatter } from '@/utils/time'
 
 /** 接入系统列表卡片（契约 8.7）：系统登记入口；系统编辑/停用 [缺] 端点 */
-const props = defineProps<{ reloadSignal: number }>()
+const props = defineProps<{
+  reloadSignal: number
+  selectedSystemId: number | null
+}>()
 
-const emit = defineEmits<{ create: []; loaded: [systems: System[]] }>()
+const emit = defineEmits<{
+  create: []
+  loaded: [systems: System[]]
+  select: [systemId: number]
+}>()
 
 const { dictLabel, commonStatusOptions } = useDict()
 
@@ -39,6 +46,12 @@ watch(
   () => props.reloadSignal,
   () => void load(),
 )
+
+function handleCurrentChange(system: System | null): void {
+  if (system) {
+    emit('select', system.id)
+  }
+}
 </script>
 
 <template>
@@ -64,7 +77,15 @@ watch(
     >
       <el-button size="small" type="primary" @click="load">重试</el-button>
     </el-alert>
-    <el-table v-else v-loading="loading" :data="systems">
+    <el-table
+      v-else
+      v-loading="loading"
+      :data="systems"
+      row-key="id"
+      highlight-current-row
+      :current-row-key="selectedSystemId ?? undefined"
+      @current-change="handleCurrentChange"
+    >
       <el-table-column prop="systemCode" label="系统编码" min-width="110" />
       <el-table-column prop="systemName" label="系统名称" min-width="170" />
       <el-table-column label="描述" min-width="280" show-overflow-tooltip>

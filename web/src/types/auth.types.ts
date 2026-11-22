@@ -15,3 +15,8 @@ export interface LoginResponse {
   displayName: string
   accountStatus: AccountStatusCode
 }
+
+export interface ChangePasswordPayload {
+  oldPassword: string
+  newPassword: string
+}

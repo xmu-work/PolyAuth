@@ -5,12 +5,12 @@ import { Plus } from '@element-plus/icons-vue'
 import {
   bindRoleDataScope,
   createDataScope,
+  listDataScopeOrganizations,
   listDataScopes,
   listRoleDataScopes,
   revokeRoleDataScope,
 } from '@/api/dataScope.api'
 import { listRoles } from '@/api/role.api'
-import { getOrgTree } from '@/api/org.api'
 import { useDict } from '@/composables/useDict'
 import {
   DataScopeType,
@@ -90,7 +90,7 @@ async function loadBaseData(): Promise<void> {
     const [scopeList, roleList, orgList] = await Promise.all([
       listDataScopes(),
       listRoles(),
-      getOrgTree(1),
+      listDataScopeOrganizations(),
     ])
     dictionaries.value = scopeList
     roles.value = roleList

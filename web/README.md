@@ -4,7 +4,7 @@
 
 ## 技术栈
 
-Vue 3（仅 `<script setup>`）+ TypeScript(strict) + Vite 5 + Pinia + Vue Router 4 + Element Plus + Axios + pnpm
+Vue 3（仅 `<script setup>`）+ TypeScript(strict) + Vite 5 + Pinia + Vue Router 4 + Element Plus + Axios + pnpm + Vitest
 
 ## 常用命令
 
@@ -12,6 +12,7 @@ Vue 3（仅 `<script setup>`）+ TypeScript(strict) + Vite 5 + Pinia + Vue Route
 pnpm install      # 安装依赖（lock 文件入库）
 pnpm dev          # 启动开发服务（默认 5173，请求代理到真实后端）
 pnpm build        # vue-tsc 类型检查 + 生产构建
+pnpm test         # Vitest 组件与 API 契约测试
 pnpm typecheck    # 仅类型检查
 pnpm lint         # ESLint + Stylelint
 ```
@@ -23,6 +24,9 @@ pnpm lint         # ESLint + Stylelint
 - 主布局、顶栏、面包屑、多页签、403/404/500 页面
 - Pinia 状态层、Axios 契约封装、完整 API/类型目录、分页组合式函数与字典 Store
 - 组织、用户、角色、授权、功能权限、统一日志等页面全部连接真实后端
+- 功能权限页提供可浏览权限树、父权限选择、完整操作码和角色权限批量授权
+- API 独立登记、权限映射查询、已有 API 映射与解除映射
+- 顶栏自助修改密码、角色成员查看与动态组织范围加载
 
 ## 后端联调
 

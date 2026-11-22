@@ -1,10 +1,14 @@
-# 统一应用软件权限管理系统（IAM）
+# PolyAuth：多系统统一权限管理平台
 
-基于 RBAC3 模型的企业统一身份与**功能权限 + 数据权限**管理平台。系统集中管理多系统、前端菜单/按钮权限、后端 API、账号、组织、角色、角色继承、角色互斥、数据范围与审计，并通过 OpenAPI 为接入系统提供联合鉴权。
+PolyAuth 是面向多业务系统的统一身份与 RBAC3 权限平台，集中管理系统、前端菜单/按钮权限、后端 API、账号、组织、角色继承、角色互斥、数据范围和审计。项目采用 Maven 多模块，同时维护**结构化后端**与**面向对象后端**，通过共享 HTTP 契约验证外部行为等价。
 
 ## 项目边界
 
-本项目实现课程要求的 RBAC3 核心能力。
+本项目实现课程要求的 RBAC3 核心能力，并持续迁移为可独立运行的双后端系统。
+
+- `structured-backend`：保留完整管理能力，按“校验 → 处理 → 持久化”组织 Service。
+- `oop-backend`：当前完成本地认证、角色生命周期、角色授权、权限解析和默认拒绝的 OOP 纵向切片，继续扩展组织、数据权限和系统管理。
+- 两套后端不互相依赖，不共享业务实现；共享数据库基线、API 路径、错误码和黑盒契约测试。
 
 - “能访问哪个菜单、页面和按钮”由角色与前端权限树决定；“能调用哪个后端 API”再由 API 到权限的映射独立校验。
 - “能查看哪个分公司、部门、项目或本人的数据”由角色数据范围与目标组织/项目/用户联合判定。
@@ -17,7 +21,7 @@
 
 | 类别 | 技术 |
 | --- | --- |
-| 后端 | Java 17、Spring Boot 3.4.5 |
+| 双后端 | Java 17、Spring Boot 3.4.5、Maven 多模块 |
 | 持久层 | Spring Data JPA、MySQL 8.0 |
 | 缓存与幂等 | Redis、Spring Data Redis |
 | 安全 | JWT、PBKDF2、AES-256-GCM、HMAC-SHA256 |
@@ -28,6 +32,8 @@
 | 前端 | Vue 3、TypeScript、Vite、Pinia、Element Plus |
 
 ## 已实现能力
+
+以下为结构化后端的完整能力基线；OOP 后端当前实现的纵向切片在“架构”和“验证状态”中单独说明。
 
 ### 身份认证与账号
 
@@ -82,31 +88,43 @@
 ## 架构
 
 ```text
-┌─────────────────────────────────────────────────┐
-│ web：Vue 管理后台                               │
-├─────────────────────────────────────────────────┤
-│ interfaces：REST Controller / Filter / Advice   │
-├─────────────────────────────────────────────────┤
-│ application：认证、账号、组织、角色、授权、PDP │
-├─────────────────────────────────────────────────┤
-│ infrastructure：JPA、Redis、Crypto、Cache       │
-└─────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────┐
+│ web：Vue 管理后台，只依赖统一 HTTP API             │
+├────────────────────────────────────────────────────┤
+│ contract-tests：共享黑盒场景、HTTP 客户端、fixture │
+├──────────────────────────────┬─────────────────────┤
+│ structured-backend           │ oop-backend         │
+│ interfaces → application     │ interfaces          │
+│              → infrastructure│   → application     │
+│                              │       → domain      │
+│                              │ infrastructure      │
+│                              │   → domain ports    │
+└──────────────────────────────┴─────────────────────┘
 ```
 
 核心目录：
 
 ```text
-RBAC/
-├── src/main/java/com/iam/platform/
-│   ├── interfaces/        REST 接口、认证鉴权、请求追踪与幂等
-│   ├── application/       业务服务与功能权限决策
-│   ├── common/            统一响应、异常、枚举
-│   └── infrastructure/    JPA、Redis、缓存、加解密
-├── src/main/resources/db/ schema.sql、seed.sql
-├── src/test/java/         后端测试
-├── web/                   Vue 管理后台
-└── design/                详细设计与接口设计材料
+PolyAuth/
+├── pom.xml                       Maven 聚合与共享版本
+├── structured-backend/           完整结构化实现，端口 8080
+├── oop-backend/                  独立 OOP 实现，端口 8081
+├── contract-tests/               不依赖生产类的 HTTP 契约
+├── db/                           共享 schema、seed 与升级脚本
+├── web/                          Vue 管理后台
+├── design/                       详细设计与接口材料
+└── scripts/                      双后端契约验证脚本
 ```
+
+OOP 分层约束：
+
+```text
+interface → application/command/usecase → domain/model/service/repository
+                      ↘ application/port
+infrastructure → domain + application/port
+```
+
+`domain` 与 `application` 不引用 JPA Entity、Spring Data Repository、Redis 或 infrastructure。
 
 数据库核心模型为：
 
@@ -132,13 +150,16 @@ RBAC/
 
 ```bash
 mysql -u root -p -e "CREATE DATABASE iam_platform DEFAULT CHARSET utf8mb4 COLLATE utf8mb4_general_ci;"
-mysql -u root -p iam_platform < src/main/resources/db/schema.sql
-mysql -u root -p iam_platform < src/main/resources/db/seed.sql
+mysql -u root -p -e "CREATE DATABASE iam_platform_oop DEFAULT CHARSET utf8mb4 COLLATE utf8mb4_general_ci;"
+mysql -u root -p iam_platform < db/schema.sql
+mysql -u root -p iam_platform < db/seed.sql
+mysql -u root -p iam_platform_oop < db/schema.sql
+mysql -u root -p iam_platform_oop < db/seed.sql
 ```
 
-已部署 RBAC0/RBAC1 数据库升级时，先执行 `src/main/resources/db/rbac3_upgrade.sql`，再重启应用。
+已部署 RBAC0/RBAC1 数据库升级时，先执行 `db/rbac3_upgrade.sql`，再重启应用。
 
-已初始化数据库接入课程项目管理系统时，再执行 `src/main/resources/db/identity_course_upgrade.sql`。
+已初始化数据库接入课程项目管理系统时，再执行 `db/identity_course_upgrade.sql`。
 该脚本幂等登记 `course-project-management` 系统、`teacher / student / admin` 角色和 `TEC` 权限。
 
 初始化管理员为 `admin / Admin@123`。该密码仅用于本地初始化，部署前必须修改。
@@ -150,7 +171,7 @@ MySQL 建议设置 `default-time-zone = '+08:00'`；`seed.sql` 已在会话级�
 | 变量 | 默认值或用途 |
 | --- | --- |
 | `DB_HOST` / `DB_PORT` | MySQL 地址与端口 |
-| `DB_NAME` | 默认 `iam_platform` |
+| `DB_NAME` | 结构化默认 `iam_platform`，OOP 默认 `iam_platform_oop` |
 | `DB_USERNAME` / `DB_PASSWORD` | 数据库账号与密码 |
 | `DB_SSL` | MySQL SSL 开关，默认 `false` |
 | `REDIS_HOST` / `REDIS_PORT` | Redis 地址与端口 |
@@ -164,12 +185,25 @@ MySQL 建议设置 `default-time-zone = '+08:00'`；`seed.sql` 已在会话级�
 ### 后端
 
 ```bash
-mvn clean test
-mvn clean package -DskipTests
-java -jar target/iam-platform-1.0.0-SNAPSHOT.jar
+.\mvnw.cmd clean test
+.\mvnw.cmd -pl structured-backend spring-boot:run
 ```
 
-后端默认地址：`http://localhost:8080/api/v1`。
+结构化后端地址：`http://localhost:8080/api/v1`。
+
+OOP 后端启动：
+
+```bash
+.\mvnw.cmd -pl oop-backend spring-boot:run
+```
+
+OOP 后端地址：`http://localhost:8081/api/v1`。两套数据库使用同一 schema 和 seed，但建议使用独立库，避免并行验证时互相修改数据。
+
+双后端契约验证：
+
+```powershell
+.\scripts\run-dual-contracts.ps1
+```
 
 ### 前端
 
@@ -244,6 +278,12 @@ pnpm build
 
 ## 验证状态
 
-后端共 120 项测试全部通过，覆盖 CloneFactory 编译期映射、8 个统一身份契约、JWT `sub/aud`、账号、组织、角色继承/互斥/分配、数据权限联合决策、临时授权到期回收、权限树、API 映射、统一日志、输入校验、并发冲突、请求追踪和幂等；前端通过 `pnpm typecheck`、`pnpm build` 和 `pnpm lint`。
+结构化后端 120 项测试通过，覆盖 CloneFactory、统一身份、JWT、账号、组织、角色继承/互斥、数据权限、权限树、日志、校验和幂等。OOP 后端 22 项测试通过，覆盖角色不变量、继承展开、授权有效期、权限解析、用例编排、本地认证、JPA Adapter 和完整容器装配。
+
+前端 19 项 Vitest 测试通过，`pnpm typecheck`、`pnpm build` 和 `pnpm lint` 均通过。
+
+`contract-tests` 共 6 个共享黑盒场景；未指定 `contract.baseUrl` 时会明确跳过，不伪造通过。要确认两套实现等价，必须分别启动 8080、8081 并执行双后端契约脚本。
+
+当前 OOP 尚未迁移组织管理、数据权限、角色互斥、系统/API 管理、完整统一身份查询和管理端审计查询，因此不能标记为全功能等价；迁移状态见 `contract-tests/README.md`。
 
 `design/` 目录保留课程详细设计材料；功能范围以本 README 和当前代码为准。

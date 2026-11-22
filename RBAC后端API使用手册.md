@@ -20,7 +20,7 @@
 | 功能范围 | RBAC3：用户—角色—功能/数据授权、角色继承与互斥、五类数据范围、联合鉴权与永久审计 |
 | 资料优先级 | 当前方法实现与测试 > 当前方法签名 > 设计说明；发生冲突时本手册解释实际行为 |
 
-**适用边界：**“已实现”指存在业务实现，仍依赖正确的数据库、初始化数据与运行配置。已部署数据库需执行 `src/main/resources/db/rbac3_upgrade.sql`。
+**适用边界：**“已实现”指存在业务实现，仍依赖正确的数据库、初始化数据与运行配置。已部署数据库需执行 `db/rbac3_upgrade.sql`。
 
 下方提供目录和每个接口的稳定编号 A01～A34。浏览器版本可搜索路径、参数名或错误码；Markdown 版本可作为后续维护源文件。
 
@@ -1848,7 +1848,7 @@ unset ACCESS_TOKEN ADMIN_PASSWORD LOGIN_BODY
 | 权限过滤和集合返回 | `application/decision/DecisionService.java`、`IdentityService.java` |
 | 响应字段和空值规则 | `common/result/Result.java`、`PageResult.java`、`application/auth/LoginResponse.java`、`application/account/UserView.java`、各返回实体 |
 | 全部错误与状态映射 | `common/enums/ErrorCode.java`、`common/exception/GlobalExceptionHandler.java` |
-| 字段存储长度、唯一约束和初始权限 | `src/main/resources/db/schema.sql`、`seed.sql` |
+| 字段存储长度、唯一约束和初始权限 | `db/schema.sql`、`db/seed.sql` |
 | 端口、前缀、令牌有效期与时间配置 | `src/main/resources/application.yml` |
 
 以上 Java 路径均相对于 `src/main/java/com/iam/platform/`。本手册代码基准已固定；后续接口发生变更时，应同时更新参数、返回字段、错误码、权限登记、请求示例和验证记录，而不能只改索引表。

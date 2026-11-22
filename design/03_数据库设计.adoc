@@ -7,8 +7,8 @@
 | 文档版本 | V2.0
 | 修订说明 | 将“前端菜单/按钮权限”和“后端 API”拆分为独立实体；删除角色互斥；统一角色能力边界
 | 目标数据库 | MySQL 8.0 / InnoDB / utf8mb4
-| 建表脚本 | `src/main/resources/db/schema.sql`
-| 初始化数据 | `src/main/resources/db/seed.sql`
+| 建表脚本 | `db/schema.sql`
+| 初始化数据 | `db/seed.sql`
 | 核心 E-R 图 | `design/ER图.png`，说明见 `05_ER图实体说明.adoc`
 |===
 
@@ -209,4 +209,4 @@ HTTP 请求
 * `idx_log_time`、`idx_log_user`、`idx_log_type_time`、`idx_log_system`、`idx_log_request` 支撑常用筛选。
 * 权限类型、API HTTP 方法、组织类型、组织层级和授权动作同时由数据库 `CHECK` 约束兜底。
 
-完整 DDL、索引与外键以 `src/main/resources/db/schema.sql` 为唯一实现口径。
+完整 DDL、索引与外键以 `db/schema.sql` 为唯一实现口径。

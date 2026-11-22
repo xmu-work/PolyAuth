@@ -1,0 +1,51 @@
+server:
+  port: 8081
+  servlet:
+    context-path: /api/v1
+
+spring:
+  application:
+    name: polyauth-oop
+  datasource:
+    type: com.alibaba.druid.pool.DruidDataSource
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:iam_platform_oop}?useUnicode=true&characterEncoding=UTF-8&useSSL=${DB_SSL:false}&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:root}
+    druid:
+      initial-size: 2
+      min-idle: 2
+      max-active: 10
+      max-wait: 60000
+      stat-view-servlet:
+        enabled: false
+  jpa:
+    hibernate:
+      ddl-auto: none
+    open-in-view: false
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.MySQLDialect
+  jackson:
+    time-zone: Asia/Shanghai
+    date-format: yyyy-MM-dd HH:mm:ss
+    serialization:
+      write-dates-as-timestamps: false
+
+jwt:
+  secret: ${JWT_SECRET:polyauth-secret-key-please-change-in-production-2026}
+  access-token-expire: 7200
+  issuer: polyauth
+
+crypto:
+  aes-key: ${AES_KEY:iam-aes-256-key-please-change-in-production}
+  hmac-key: ${HMAC_KEY:iam-hmac-key-please-change-in-production}
+
+logging:
+  level:
+    root: INFO
+    com.polyauth.oop.interfaces: DEBUG
+    com.polyauth.oop.application: DEBUG
+    com.polyauth.oop.infrastructure: DEBUG

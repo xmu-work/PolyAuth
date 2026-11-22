@@ -22,7 +22,7 @@ export interface SystemCreatePayload {
 export interface Permission {
   id: number
   systemId: number
-  parentId?: number
+  parentId?: number | null
   permissionCode: string
   permissionName: string
   permissionType: 'MENU' | 'BUTTON'
@@ -37,7 +37,7 @@ export interface Permission {
 
 export interface PermissionCreatePayload {
   systemId: number
-  parentId?: number
+  parentId?: number | null
   permissionCode: string
   permissionName: string
   permissionType: 'MENU' | 'BUTTON'
@@ -50,7 +50,7 @@ export interface PermissionCreatePayload {
 export interface Api {
   id: number
   systemId: number
-  permissionId?: number
+  permissionId?: number | null
   apiCode: string
   apiName: string
   apiPath: string

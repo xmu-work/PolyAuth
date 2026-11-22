@@ -118,7 +118,7 @@
 RBAC0 后端是一个 Spring Boot 应用，分为三层加一个公共包，依赖方向自上而下：
 
 ----
-com.iam.platform
+com.polyauth.structured
 ├── interfaces        接口层：接收 HTTP 请求、认证鉴权拦截、参数转换
 │   ├── admin         管理端 Controller（Auth / User / Role / System / Org / Audit）
 │   ├── openapi       开放鉴权接口（OpenApiController）
