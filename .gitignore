@@ -107,3 +107,6 @@ application-prod.yml
 # 本地 API 手册网页导出与验证资料，仅提交 Markdown 正文
 /API使用手册/
 /RBAC后端API使用手册.html
+
+# 本地生成的 Apifox 导入用 OpenAPI 文档
+/docs/apifox/polyauth.openapi.json
