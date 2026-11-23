@@ -179,9 +179,16 @@ public class AuthenticationUseCase {
     }
 
     /**
-     * 自助修改当前账号密码。
+     * 校验原密码与新密码强度、更新密码并吊销全部旧令牌。
      */
     public void changePassword(Long userId, String oldPassword, String newPassword) {
+        if (oldPassword == null || oldPassword.isBlank()
+                || newPassword == null || newPassword.isBlank()) {
+            throw new UseCaseException(
+                    ApplicationErrorCode.PARAM_INVALID, "原密码和新密码不能为空");
+        }
+        validatePasswordStrength(newPassword);
+
         UserAccount user = userRepository.findById(userId)
                 .filter(item -> !item.deleted())
                 .orElseThrow(() -> new UseCaseException(
@@ -190,13 +197,21 @@ public class AuthenticationUseCase {
             throw new UseCaseException(
                     ApplicationErrorCode.PARAM_INVALID, "原密码不正确");
         }
-        if (newPassword == null || newPassword.isBlank()) {
-            throw new UseCaseException(
-                    ApplicationErrorCode.PARAM_INVALID, "新密码不能为空");
-        }
+        Instant now = clock.instant();
         userRepository.save(user.changePassword(
                 accountCrypto.hashPassword(newPassword), userId,
-                LocalDateTime.ofInstant(clock.instant(), clock.getZone())));
+                LocalDateTime.ofInstant(now, clock.getZone())));
+        tokenRepository.revokeAllForUser(userId, now);
+    }
+
+    private void validatePasswordStrength(String password) {
+        boolean strong = password.length() >= 8 && password.length() <= 64
+                && password.matches(".*[A-Za-z].*") && password.matches(".*\\d.*");
+        if (!strong) {
+            throw new UseCaseException(
+                    ApplicationErrorCode.PARAM_INVALID,
+                    "密码需为 8-64 位并同时包含字母和数字");
+        }
     }
 
     private void validateAccount(UserAccount user) {

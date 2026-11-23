@@ -32,6 +32,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -101,6 +102,36 @@ class AuthenticationUseCaseTest {
                 .isInstanceOf(UseCaseException.class)
                 .extracting(error -> ((UseCaseException) error).errorCode())
                 .isEqualTo(ApplicationErrorCode.UNAUTHENTICATED);
+    }
+
+    @Test
+    void changePasswordRejectsWeakPassword() {
+        assertThatThrownBy(() -> useCase.changePassword(1L, "Admin@123", "12345678"))
+                .isInstanceOf(UseCaseException.class)
+                .extracting(error -> ((UseCaseException) error).errorCode())
+                .isEqualTo(ApplicationErrorCode.PARAM_INVALID);
+        assertThatThrownBy(() -> useCase.changePassword(1L, "Admin@123", "short1"))
+                .isInstanceOf(UseCaseException.class)
+                .extracting(error -> ((UseCaseException) error).errorCode())
+                .isEqualTo(ApplicationErrorCode.PARAM_INVALID);
+
+        verify(userRepository, never()).save(any());
+        verify(tokenRepository, never()).revokeAllForUser(any(), any());
+    }
+
+    @Test
+    void changePasswordUpdatesHashAndRevokesAllTokens() {
+        UserAccount user = activeUser();
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(passwordVerifier.verify("Admin@123", "hash")).thenReturn(true);
+        when(accountCrypto.hashPassword("NewPass123")).thenReturn("new-hash");
+
+        useCase.changePassword(1L, "Admin@123", "NewPass123");
+
+        ArgumentCaptor<UserAccount> saved = ArgumentCaptor.forClass(UserAccount.class);
+        verify(userRepository).save(saved.capture());
+        assertThat(saved.getValue().passwordHash()).isEqualTo("new-hash");
+        verify(tokenRepository).revokeAllForUser(1L, CLOCK.instant());
     }
 
     private static UserAccount activeUser() {
