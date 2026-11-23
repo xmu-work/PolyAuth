@@ -19,7 +19,9 @@
 
 # Log files
 *.log
+*.log.gz
 logs/
+test-logs/
 
 # Virtual machine crash logs
 hs_err_pid*
@@ -103,6 +105,11 @@ application-prod.yml
 *.bak
 *.swp
 *~
+*.tar
+*.dump
+*.dumpstream
+.pnpm-store/
+node_modules/
 
 # 本地 API 手册网页导出与验证资料，仅提交 Markdown 正文
 /API使用手册/
