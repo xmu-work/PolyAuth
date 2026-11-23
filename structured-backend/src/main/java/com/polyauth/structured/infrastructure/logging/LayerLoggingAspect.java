@@ -26,7 +26,7 @@ public class LayerLoggingAspect {
      * @return 原方法返回值
      * @throws Throwable 原方法异常
      */
-    @Around("execution(* com.polyauth.structured.interfaces..*(..))"
+    @Around("execution(* com.polyauth.structured.interfaces..*Controller.*(..))"
             + " || execution(* com.polyauth.structured.application..*(..))"
             + " || execution(* com.polyauth.structured.infrastructure..*(..))")
     public Object logLayer(ProceedingJoinPoint joinPoint) throws Throwable {
