@@ -18,6 +18,8 @@ import jakarta.validation.constraints.Size;
 import jakarta.validation.Valid;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -39,6 +41,9 @@ import org.springframework.web.bind.annotation.RestController;
 @Validated
 @RequiredArgsConstructor
 public class IdentityAuthController {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(IdentityAuthController.class);
+    private static final int MAX_LOG_VALUE_LENGTH = 128;
 
     private final IdentityService identityService;
     private final AuthService authService;
@@ -88,8 +93,10 @@ public class IdentityAuthController {
             String systemCode,
             @PathVariable
             String permission) {
-        return new PermissionCheckVO(
-                identityService.hasPermissionCode(userId, systemCode, permission));
+        boolean allowed = identityService.hasPermissionCode(userId, systemCode, permission);
+        LOGGER.info("permission-check system={} userId={} permission={} allowed={}",
+                sanitizeLogValue(systemCode), userId, sanitizeLogValue(permission), allowed);
+        return new PermissionCheckVO(allowed);
     }
 
     /**
@@ -165,5 +172,18 @@ public class IdentityAuthController {
             @Size(min = 1, max = 64)
             String userId) {
         return IdentityUserVO.from(identityService.lookupUser(operatorId, systemCode, userId));
+    }
+
+    private String sanitizeLogValue(String value) {
+        if (value == null || value.isBlank()) {
+            return "-";
+        }
+        String sanitized = value.replace('\r', '_').replace('\n', '_').replace('\t', ' ').trim();
+        if (sanitized.isEmpty()) {
+            return "-";
+        }
+        return sanitized.length() <= MAX_LOG_VALUE_LENGTH
+                ? sanitized
+                : sanitized.substring(0, MAX_LOG_VALUE_LENGTH);
     }
 }
