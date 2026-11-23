@@ -106,9 +106,13 @@ services:
       LOGGING_LEVEL_COM_POLYAUTH_STRUCTURED_INTERFACES: DEBUG
       LOGGING_LEVEL_COM_POLYAUTH_STRUCTURED_APPLICATION: DEBUG
       LOGGING_LEVEL_COM_POLYAUTH_STRUCTURED_INFRASTRUCTURE: DEBUG
+      LOG_PATH: "/app/logs"
       CORS_ALLOWED_ORIGINS: "${CORS_ALLOWED_ORIGINS:-*}"
       JWT_ISSUER: "${JWT_ISSUER:-polyauth}"
       TZ: Asia/Shanghai
+    # 如需将容器内滚动日志直落宿主机目录，请先在所有 role=app 节点预建目录并授权 uid=10001 后再取消下方注释：
+    # volumes:
+    #   - /srv/iam/logs/app:/app/logs
     secrets:
       - jwt_secret
       - crypto_aes_key
@@ -164,9 +168,13 @@ services:
       LOGGING_LEVEL_COM_POLYAUTH_OOP_INTERFACES: DEBUG
       LOGGING_LEVEL_COM_POLYAUTH_OOP_APPLICATION: DEBUG
       LOGGING_LEVEL_COM_POLYAUTH_OOP_INFRASTRUCTURE: DEBUG
+      LOG_PATH: "/app/logs"
       CORS_ALLOWED_ORIGINS: "${CORS_ALLOWED_ORIGINS:-*}"
       JWT_ISSUER: "${JWT_ISSUER:-polyauth}"
       TZ: Asia/Shanghai
+    # 如需将 OOP 滚动日志直落宿主机目录，请先在 role=oop 节点预建目录并授权 uid=10001 后再取消下方注释：
+    # volumes:
+    #   - /srv/iam/logs/oop:/app/logs
     secrets:
       - jwt_secret
       - crypto_aes_key
@@ -200,6 +208,8 @@ services:
     networks:
       iam-net:
         aliases: [web]
+    environment:
+      API_UPSTREAM: "${API_UPSTREAM:-http://app:8080}"
     ports:
       # host 模式：80 只发布在 3 台 manager 上，保留真实客户端 IP
       - target: 80

@@ -256,25 +256,41 @@ http://<oop-01-IP>:8082/api/v1
 
 ## 8. 菜单切换与 Logback 验收
 
-登录后依次点击左侧菜单。每次切换菜单，前端都会调用：
+登录后通过左侧菜单、顶部标签页或浏览器前进/后退切换任意业务菜单（含切回「首页」）时，前端全局路由守卫都会先调用：
 
 ```text
 GET /api/v1/auth/permissions/{permissionCode}
 ```
 
-后端认证拦截器记录请求审计，`LayerLoggingAspect` 记录 API 层日志。在 manager 上执行：
+后端由 `RequestIdFilter`（`INFO` HTTP 摘要）、`IdentityAuthController.checkPermission`（`INFO` 菜单权限码判定）与 `LayerLoggingAspect`（按目标类记录分层调用耗时）产出 Logback 日志，并同时写入控制台与滚动日志文件（`/app/logs/polyauth-structured.log` / `/app/logs/polyauth-oop.log`）。
+
+- **多副本聚合查看**（推荐在 Manager 节点执行，勿只看单台 App 节点的 `docker logs`）：
 
 ```bash
-docker service logs iam_app --tail 200 | grep -E '/auth/permissions|LayerLoggingAspect'
+docker service logs -f iam_app --tail 100 | grep -E 'permission-check|/auth/permissions|http method='
 ```
 
-应看到类似内容：
+预期可看到类似内容：
 
 ```text
-[requestId=...] ...IdentityAuthController - layer=api ... method=checkPermission
+[requestId=...] c.p.s.i.identity.IdentityAuthController - permission-check system=ADMIN userId=1 permission=MENU_HOME allowed=true
+[requestId=...] c.p.s.interfaces.RequestIdFilter - http method=GET uri=/api/v1/auth/permissions/MENU_HOME status=200 elapsedMs=3 user=admin system=ADMIN
 ```
 
-如果老师要求把日志保存为文件，当前 `logback-spring.xml` 只配置 ConsoleAppender，应使用 `docker service logs` 展示；不要误称容器内存在独立日志文件。
+- **查看容器内持久化滚动日志文件**：
+
+```bash
+docker exec "$(docker ps -qf name=iam_app | head -n 1)" tail -n 100 /app/logs/polyauth-structured.log
+```
+
+- **切换前端至 OOP 后端验收 `iam_oop` 日志**（无需重打前端镜像）：
+
+```bash
+docker service update --env-add API_UPSTREAM=http://oop:8080 iam_web
+docker service logs -f iam_oop --tail 100 | grep -E 'permission-check|/auth/permissions|http method='
+# 验收后切回结构化后端：
+docker service update --env-add API_UPSTREAM=http://app:8080 iam_web
+```
 
 ## 9. 更新和安全清理
 

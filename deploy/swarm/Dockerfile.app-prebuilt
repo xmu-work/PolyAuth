@@ -12,9 +12,12 @@ COPY deploy/swarm/entrypoint.sh /app/entrypoint.sh
 COPY app.jar /app/app.jar
 RUN sed -i 's/\r$//' /app/entrypoint.sh \
  && chmod 0755 /app/entrypoint.sh \
+ && apk add --no-cache curl tzdata \
  && addgroup -S -g 10001 iam \
  && adduser -S -u 10001 -G iam iam \
+ && mkdir -p /app/logs \
  && chown -R iam:iam /app
+ENV LOG_PATH=/app/logs
 USER 10001
 EXPOSE 8080 8081
 ENTRYPOINT ["/app/entrypoint.sh"]
