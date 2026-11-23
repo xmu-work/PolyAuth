@@ -84,7 +84,7 @@ public class AuthService {
             IamUser user = userRepository.findByUserNo(request.getUsername())
                     .filter(u -> u.getIsDeleted() == 0)
                     .filter(u -> cryptoComponent.verifyPassword(request.getPassword(), u.getPasswordHash()))
-                    .orElseThrow(() -> new BusinessException(ErrorCode.UNAUTHENTICATED, "账号或密码错误"));
+                    .orElseThrow(() -> new BusinessException(ErrorCode.UNAUTHENTICATED, "账号或密码错误。"));
 
             validateAccountStatus(user.getAccountStatus());
 

@@ -1,0 +1,30 @@
+# 与课程项目管理系统（course-project-mgt）联调时的 Swarm 覆盖配置。
+# 将 IAM 后端（app / oop）同时接入课程栈使用的外部 javaee-proxy 网络，
+# 便于课程后端通过 http://polyauth-app:8080/api/v1 或 http://polyauth-oop:8080/api/v1 内网直连。
+#
+# 用法：
+#   docker network inspect javaee-proxy >/dev/null 2>&1 || \
+#     docker network create --driver overlay --attachable javaee-proxy
+#   export CORS_ALLOWED_ORIGINS="http://<课程前端地址>"   # 或保留默认 *
+#   docker stack deploy -c iam-stack.yml -c iam-course-integration.override.yml --with-registry-auth iam
+
+version: "3.8"
+
+networks:
+  javaee-proxy:
+    external: true
+
+services:
+  app:
+    networks:
+      iam-net:
+        aliases: [app]
+      javaee-proxy:
+        aliases: [polyauth-app]
+
+  oop:
+    networks:
+      iam-net:
+        aliases: [oop]
+      javaee-proxy:
+        aliases: [polyauth-oop]

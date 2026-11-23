@@ -35,7 +35,7 @@ public class GlobalExceptionHandler {
         if (isIdentityRequest(request)) {
             return ResponseEntity.status(ec.getHttpStatus())
                     .body(new IdentityErrorResponse(
-                            identityCode(ec, request), identityMessage(ec, ex.getMessage())));
+                            identityCode(ec, request), identityMessage(ec, ex.getMessage(), request)));
         }
         return ResponseEntity.status(ec.getHttpStatus()).body(Result.fail(ex.getCode(), ex.getMessage()));
     }
@@ -189,7 +189,11 @@ public class GlobalExceptionHandler {
         return identityIndex < 0 ? "" : uri.substring(identityIndex);
     }
 
-    private String identityMessage(ErrorCode errorCode, String fallback) {
+    private String identityMessage(ErrorCode errorCode, String fallback, HttpServletRequest request) {
+        if (errorCode == ErrorCode.UNAUTHENTICATED
+                && identityPath(request).startsWith("/auth/login")) {
+            return (fallback == null || fallback.isBlank()) ? "账号或密码错误。" : fallback;
+        }
         return switch (errorCode) {
             case UNAUTHENTICATED, TOKEN_INVALID, TOKEN_EXPIRED, TOKEN_REVOKED -> "请先登录";
             case SERVICE_UNAVAILABLE -> "统一身份认证暂时不可用，请稍后重试。";

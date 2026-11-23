@@ -42,7 +42,7 @@ public class GlobalExceptionHandler {
             return ResponseEntity.status(code.httpStatus())
                     .body(new IdentityErrorResponse(
                             identityCode(code, request),
-                            identityMessage(code, exception.getMessage())));
+                            identityMessage(code, exception.getMessage(), request)));
         }
         return ResponseEntity.status(code.httpStatus())
                 .body(ApiResult.fail(code.code(), exception.getMessage()));
@@ -229,7 +229,12 @@ public class GlobalExceptionHandler {
         return identityIndex < 0 ? "" : uri.substring(identityIndex);
     }
 
-    private String identityMessage(ApplicationErrorCode code, String fallback) {
+    private String identityMessage(ApplicationErrorCode code, String fallback,
+                                   HttpServletRequest request) {
+        if (code == ApplicationErrorCode.UNAUTHENTICATED
+                && identityPath(request).startsWith("/auth/login")) {
+            return (fallback == null || fallback.isBlank()) ? "账号或密码错误。" : fallback;
+        }
         return switch (code) {
             case UNAUTHENTICATED, TOKEN_INVALID, TOKEN_EXPIRED, TOKEN_REVOKED -> "请先登录";
             default -> fallback;

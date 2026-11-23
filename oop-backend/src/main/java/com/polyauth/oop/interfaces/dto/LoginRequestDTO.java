@@ -11,10 +11,10 @@ import java.util.List;
  */
 public record LoginRequestDTO(
         @NotBlank
-        @Size(max = 32)
+        @Size(max = 128)
         String username,
         @NotBlank
-        @Size(max = 64)
+        @Size(max = 256)
         String password,
         @NotEmpty
         List<@NotBlank String> systems) {

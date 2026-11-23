@@ -91,7 +91,7 @@ public class AuthenticationUseCase {
                     .filter(candidate -> passwordVerifier.verify(
                             command.password(), candidate.passwordHash()))
                     .orElseThrow(() -> new UseCaseException(
-                            ApplicationErrorCode.UNAUTHENTICATED, "账号或密码错误"));
+                            ApplicationErrorCode.UNAUTHENTICATED, "账号或密码错误。"));
             validateAccount(user);
 
             AccessTokenIssuer.IssuedToken issued =
