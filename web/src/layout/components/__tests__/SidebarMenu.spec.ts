@@ -23,16 +23,17 @@ vi.mock('@/api', () => ({
   },
 }))
 
-describe('FR-38 菜单切换权限校验日志', () => {
+describe('FR-38 侧栏菜单导航委托路由守卫', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
     testContext.push.mockReset()
+    testContext.push.mockResolvedValue(undefined)
     testContext.checkPermission.mockReset()
-    testContext.checkPermission.mockResolvedValue(true)
+    testContext.currentPath = '/home'
     usePermissionStore().setPermissions(Object.values(ADMIN_MENU_PERMISSIONS))
   })
 
-  it('FR-38 点击菜单后先请求后端权限校验再跳转', async () => {
+  it('点击其他菜单时委托 router.push 跳转且不在组件内重复直调 checkPermission', async () => {
     const wrapper = mount(SidebarMenu, {
       global: {
         plugins: [ElementPlus],
@@ -47,28 +48,27 @@ describe('FR-38 菜单切换权限校验日志', () => {
     await organizationItem?.trigger('click')
     await flushPromises()
 
-    expect(testContext.checkPermission).toHaveBeenCalledWith('MENU_ORGANIZATION')
+    expect(testContext.push).toHaveBeenCalledTimes(1)
     expect(testContext.push).toHaveBeenCalledWith('/organization')
+    expect(testContext.checkPermission).not.toHaveBeenCalled()
   })
 
-  it('FR-38 后端拒绝菜单权限时跳转无权限页', async () => {
-    testContext.checkPermission.mockResolvedValue(false)
+  it('点击当前所在菜单时不重复触发路由跳转', async () => {
     const wrapper = mount(SidebarMenu, {
       global: {
         plugins: [ElementPlus],
       },
     })
 
-    const organizationItem = wrapper
+    const homeItem = wrapper
       .findAll('.el-menu-item')
-      .find((item) => item.text().includes('组织管理'))
+      .find((item) => item.text().includes('首页'))
 
-    expect(organizationItem).toBeDefined()
-    await organizationItem?.trigger('click')
+    expect(homeItem).toBeDefined()
+    await homeItem?.trigger('click')
     await flushPromises()
 
-    expect(testContext.checkPermission).toHaveBeenCalledWith('MENU_ORGANIZATION')
-    expect(testContext.push).toHaveBeenCalledWith('/403')
-    expect(testContext.push).not.toHaveBeenCalledWith('/organization')
+    expect(testContext.push).not.toHaveBeenCalled()
+    expect(testContext.checkPermission).not.toHaveBeenCalled()
   })
 })

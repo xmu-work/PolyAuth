@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
+import { authApi } from '@/api'
 import { allBusinessPaths } from './business-routes'
 import { ensureAccessReady, isAccessReady, installBusinessRoutes } from './access'
 import { useAppStore } from '@/stores/app.store'
@@ -46,7 +47,7 @@ export function installRouterGuards(): void {
   }
   guardsInstalled = true
 
-  router.beforeEach(async (to) => {
+  router.beforeEach(async (to, from) => {
     const authStore = useAuthStore()
     authStore.restore()
     const requestedBusinessPath =
@@ -94,6 +95,18 @@ export function installRouterGuards(): void {
     if (to.meta.permissionId !== undefined) {
       if (!permissionStore.canAccess(to.meta.permissionId)) {
         return { name: 'ForbiddenPage', replace: true }
+      }
+    }
+
+    // 统一在路由守卫校验菜单权限码，覆盖侧栏、顶栏 Tab 与历史导航并避免重复请求。
+    if (to.meta.permissionCode !== undefined && (to.path !== from.path || !from.name)) {
+      try {
+        const allowed = await authApi.checkPermission(to.meta.permissionCode)
+        if (!allowed) {
+          return { name: 'ForbiddenPage', replace: true }
+        }
+      } catch {
+        return false
       }
     }
 
