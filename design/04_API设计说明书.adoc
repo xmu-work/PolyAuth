@@ -57,7 +57,7 @@
 Authorization: Bearer <accessToken>
 ----
 
-认证成功后，结构化后端执行以下默认拒绝流程：
+认证成功后，双后端均执行以下默认拒绝流程：
 
 . 以 Controller 路径模板和 HTTP 方法查询 `iam_api`。
 . 检查 API 是否映射到前端权限。

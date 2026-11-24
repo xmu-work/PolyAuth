@@ -277,7 +277,7 @@ OOP 后端实现第 2、5 节列出的全部 52 个功能权限端点，路径�
 - `domain/repository` 只使用领域对象和 JDK 容器。
 - JPA Entity、Mapper 和 Adapter 位于 `infrastructure/persistence`。
 
-端点集合由 `oop-backend` 的 `ApiParityContractTest` 静态校验；16 个共享 HTTP
+端点集合由 `oop-backend` 的 `ApiParityContractTest` 静态校验；19 个共享 HTTP
 场景由 [contract-tests/README.md](contract-tests/README.md) 说明。
 
 ## 7. 错误码
