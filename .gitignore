@@ -117,3 +117,7 @@ node_modules/
 
 # 本地生成的 Apifox 导入用 OpenAPI 文档
 /docs/apifox/polyauth.openapi.json
+
+# 本地答辩问答，不提交到远端仓库
+/design/*答辩*.md
+
