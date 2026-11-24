@@ -809,7 +809,7 @@ image::模块结构图_RBAC0.png[RBAC0 模块结构图,width=100%]
 
 == 9 关键包图、类图与顺序图
 
-本章图中的类名、字段、方法、消息顺序和异常路径均来自当前 `structured-backend/`、`oop-backend/` 与 `web/` 实现。SVG 是可编辑源图，PNG 是文档插图；两种格式由同一脚本同步生成。
+本章图中的类名、字段、方法、消息顺序和异常路径均来自当前 `structured-backend/`、`oop-backend/` 与 `web/` 实现。`RBAC_UML.drawio` 是包含全部页面、可直接编辑的多页源图；SVG 由 Draw.io 导出并保留矢量结构，PNG 是文档插图。
 
 === 9.1 双后端包图
 
@@ -861,10 +861,13 @@ image::顺序图_结构化后端_角色权限授予.png[结构化后端角色权
 
 === 9.5 面向对象后端顺序图
 
-权限查询图展示 `AuthController → OperationAccessUseCase → PermissionAccessUseCase → Repository` 的依赖方向。`PermissionResolver` 与 `RoleHierarchy` 的 lifeline 使用 `«MetaClass»` 标识静态方法调用。
+权限查询主图展示 `AuthController → OperationAccessUseCase → OperationCatalogRepository → PermissionAccessUseCase` 的依赖方向，并进入 `PermissionResolver` 与 `RoleHierarchy`。为避免十一个 lifeline 被压进一张超宽图，仓储读取与静态计算细部单独成图。
 
 .面向对象后端按 operationId 查询权限
 image::顺序图_面向对象后端_权限查询.png[面向对象后端权限查询顺序图,width=100%]
+
+.面向对象后端权限决议细部
+image::顺序图_面向对象后端_权限决议细部.png[面向对象后端权限决议细部顺序图,width=100%]
 
 === 9.6 API 与 GRASP 原则对照
 
@@ -970,15 +973,15 @@ python3 dfd1.py ../dfd_1级.svg && ./render.sh ../dfd_1级.svg ../数据流图_1
 
 其余图分别对应 `dfd0.py`、`dfd2_p2.py`、`dfd2_p3.py`、`structure.py`。`render.sh` 用本机 Chrome 按 2 倍分辨率导出 PNG。
 
-类图与顺序图由 `build_uml.py` 统一生成 SVG 和 2 倍 PNG：
+类图与顺序图的 Draw.io 多页源文件由自包含的 `build_drawio_uml.py` 生成。类图记录已校核的类、成员和关联定义；顺序图按当前 Java 调用链重新建模：
 
 [source,bash]
 ----
 cd design/diagram-src
-python build_uml.py
+python build_drawio_uml.py
 ----
 
-生成前会检查类框重叠、连线穿框、类成员溢出、lifeline 文本溢出，以及同步/回复箭头与 execution specification 的连接位置。`build_uml.py` 依赖 PATH 中的 `rsvg-convert`。
+脚本输出 `../RBAC_UML.drawio`，生成前检查类框重叠、连线穿框、类成员宽度、lifeline 框重叠，以及同步/回复箭头与 execution specification 的连接位置。随后在 Draw.io 内置编辑器中通过 Draw.io MCP 按页导出 SVG 与 PNG；图源中同一个 MCP 文档共包含 9 页。
 
 双后端包图由 `package_diagram.py` 生成，输出 `../包图_双后端.svg` 和 `../包图_双后端.png`：
 
