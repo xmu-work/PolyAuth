@@ -85,13 +85,13 @@ docker login swr.cn-north-4.myhuaweicloud.com
 ```bash
 export REG=swr.cn-north-4.myhuaweicloud.com/ooad-mytx
 
-docker build -f deploy/swarm/Dockerfile.app -t "$REG/iam-app:1.0.1" .
-docker build -f deploy/swarm/Dockerfile.oop -t "$REG/iam-oop-app:1.0.1" .
-docker build -f deploy/swarm/Dockerfile.web -t "$REG/iam-web:1.0.1" .
+docker build -f deploy/swarm/Dockerfile.app -t "$REG/iam-app:1.0.4" .
+docker build -f deploy/swarm/Dockerfile.oop -t "$REG/iam-oop-app:1.0.5" .
+docker build -f deploy/swarm/Dockerfile.web -t "$REG/iam-web:1.0.2" .
 
-docker push "$REG/iam-app:1.0.1"
-docker push "$REG/iam-oop-app:1.0.1"
-docker push "$REG/iam-web:1.0.1"
+docker push "$REG/iam-app:1.0.4"
+docker push "$REG/iam-oop-app:1.0.5"
+docker push "$REG/iam-web:1.0.2"
 ```
 
 MySQL 和 Redis 基础镜像也应转推到同一 SWR 组织，避免集群节点访问 Docker Hub：
@@ -170,20 +170,15 @@ docker stack ps iam
 
 如果 `iam_app` 出现两个 Pending，检查是否有且只有三台节点带 `role=app`；如果 `iam_oop` Pending，检查 `oop-01` 的 `role=oop` 标签；如果 `iam_web` 不足三副本，检查三台 manager 是否都能拉取私有镜像。
 
-## 6. 初始化两个数据库
+## 6. 初始化数据库
+
+结构化后端与 OOP 后端共用同一个数据库 `iam_platform`（`iam_mysql` 已通过环境变量 `MYSQL_DATABASE=iam_platform` 与 `MYSQL_USER=iam_app` 自动建库并授权 `iam_app`）。
 
 在 `data-01` 上找到 MySQL 容器：
 
 ```bash
 CID="$(docker ps -qf name=iam_mysql)"
 echo "$CID"
-```
-
-创建 OOP 数据库并授予应用账号权限：
-
-```bash
-docker exec "$CID" sh -c \
-  'mysql -uroot -p"$(cat /run/secrets/mysql_root_password)" -e "CREATE DATABASE IF NOT EXISTS iam_platform_oop DEFAULT CHARSET utf8mb4 COLLATE utf8mb4_general_ci; GRANT ALL PRIVILEGES ON iam_platform_oop.* TO '\''iam_app'\''@'\''%'\''; FLUSH PRIVILEGES;"'
 ```
 
 从仓库所在机器把 SQL 文件传到 `data-01`：
@@ -199,7 +194,7 @@ docker cp /tmp/schema.sql "$CID:/tmp/schema.sql"
 docker cp /tmp/seed.sql "$CID:/tmp/seed.sql"
 ```
 
-初始化结构化数据库：
+初始化业务数据库 `iam_platform`：
 
 ```bash
 docker exec "$CID" sh -c \
@@ -207,16 +202,6 @@ docker exec "$CID" sh -c \
 
 docker exec "$CID" sh -c \
   'mysql -uroot -p"$(cat /run/secrets/mysql_root_password)" --default-character-set=utf8mb4 iam_platform < /tmp/seed.sql'
-```
-
-初始化 OOP 数据库：
-
-```bash
-docker exec "$CID" sh -c \
-  'mysql -uroot -p"$(cat /run/secrets/mysql_root_password)" --default-character-set=utf8mb4 iam_platform_oop < /tmp/schema.sql'
-
-docker exec "$CID" sh -c \
-  'mysql -uroot -p"$(cat /run/secrets/mysql_root_password)" --default-character-set=utf8mb4 iam_platform_oop < /tmp/seed.sql'
 ```
 
 若当前数据库已有数据，不要重复执行全量 `schema.sql`；应改用对应的幂等升级脚本。
@@ -297,9 +282,9 @@ docker service update --env-add API_UPSTREAM=http://app:8080 iam_web
 滚动更新前端或后端：
 
 ```bash
-docker service update --image "$REG/iam-app:1.0.1" iam_app
-docker service update --image "$REG/iam-oop-app:1.0.1" iam_oop
-docker service update --image "$REG/iam-web:1.0.1" iam_web
+docker service update --image "$REG/iam-app:1.0.4" iam_app
+docker service update --image "$REG/iam-oop-app:1.0.5" iam_oop
+docker service update --image "$REG/iam-web:1.0.2" iam_web
 ```
 
 常用排障：

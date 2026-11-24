@@ -85,7 +85,7 @@ services:
       retries: 5
 
   app:
-    image: swr.cn-north-4.myhuaweicloud.com/ooad-mytx/iam-app:1.0.1
+    image: swr.cn-north-4.myhuaweicloud.com/ooad-mytx/iam-app:1.0.4
     networks:
       iam-net:
         aliases: [app]
@@ -144,7 +144,7 @@ services:
       start_period: 120s
 
   oop:
-    image: swr.cn-north-4.myhuaweicloud.com/ooad-mytx/iam-oop-app:1.0.1
+    image: swr.cn-north-4.myhuaweicloud.com/ooad-mytx/iam-oop-app:1.0.5
     networks:
       iam-net:
         aliases: [oop]
@@ -159,7 +159,7 @@ services:
       MANAGEMENT_SERVER_PORT: "8082"
       MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: "health,info"
       MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS: "never"
-      SPRING_DATASOURCE_URL: "jdbc:mysql://mysql:3306/iam_platform_oop?useUnicode=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true"
+      SPRING_DATASOURCE_URL: "jdbc:mysql://mysql:3306/iam_platform?useUnicode=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true"
       SPRING_DATASOURCE_USERNAME: iam_app
       SPRING_DATASOURCE_DRUID_INITIAL_SIZE: "2"
       SPRING_DATASOURCE_DRUID_MIN_IDLE: "2"
@@ -204,7 +204,7 @@ services:
       start_period: 120s
 
   web:
-    image: swr.cn-north-4.myhuaweicloud.com/ooad-mytx/iam-web:1.0.1
+    image: swr.cn-north-4.myhuaweicloud.com/ooad-mytx/iam-web:1.0.2
     networks:
       iam-net:
         aliases: [web]

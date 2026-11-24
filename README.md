@@ -147,11 +147,8 @@ infrastructure → domain + application/port
 
 ```bash
 mysql -u root -p -e "CREATE DATABASE iam_platform DEFAULT CHARSET utf8mb4 COLLATE utf8mb4_general_ci;"
-mysql -u root -p -e "CREATE DATABASE iam_platform_oop DEFAULT CHARSET utf8mb4 COLLATE utf8mb4_general_ci;"
 mysql -u root -p iam_platform < db/schema.sql
 mysql -u root -p iam_platform < db/seed.sql
-mysql -u root -p iam_platform_oop < db/schema.sql
-mysql -u root -p iam_platform_oop < db/seed.sql
 ```
 
 已部署 RBAC0/RBAC1 数据库升级时，先执行 `db/rbac3_upgrade.sql`，再重启应用。
@@ -168,7 +165,7 @@ MySQL 建议设置 `default-time-zone = '+08:00'`；`seed.sql` 已在会话级�
 | 变量 | 默认值或用途 |
 | --- | --- |
 | `DB_HOST` / `DB_PORT` | MySQL 地址与端口 |
-| `DB_NAME` | 结构化默认 `iam_platform`，OOP 默认 `iam_platform_oop` |
+| `DB_NAME` | 数据库名，结构化与 OOP 后端默认共用 `iam_platform` |
 | `DB_USERNAME` / `DB_PASSWORD` | 数据库账号与密码 |
 | `DB_SSL` | MySQL SSL 开关，默认 `false` |
 | `REDIS_HOST` / `REDIS_PORT` | Redis 地址与端口 |
@@ -194,7 +191,7 @@ OOP 后端启动：
 .\mvnw.cmd -pl oop-backend spring-boot:run
 ```
 
-OOP 后端地址：`http://localhost:8081/api/v1`。两套数据库使用同一 schema 和 seed，但建议使用独立库，避免并行验证时互相修改数据。
+OOP 后端地址：`http://localhost:8081/api/v1`。两套后端默认共用 `iam_platform` 数据库（共享同一 schema 和数据；前端或调用方在同一时刻仅接入一套后端）。
 
 双后端契约验证：
 
@@ -281,7 +278,7 @@ pnpm build
 
 `contract-tests` 共 19 个共享黑盒场景；未指定 `contract.baseUrl` 时会明确跳过，不伪造通过。要确认两套实现等价，必须分别启动 8080、8081 并执行双后端契约脚本。
 
-OOP 已注册与结构化后端相同的 52 个功能权限端点，已下线能力端点明确不存在。真实双后端契约仍需在 8080 和 8081 同时运行并连接各自数据库后执行，不能用自动跳过结果替代联调结论。
+OOP 已注册与结构化后端相同的 52 个功能权限端点，已下线能力端点明确不存在。真实双后端契约仍需在 8080 和 8081 同时运行并连接数据库后执行，不能用自动跳过结果替代联调结论。
 
 `design/` 目录保留课程详细设计材料；功能范围以本 README、当前代码和
 [RBAC后端API使用手册.md](RBAC后端API使用手册.md) 为准。

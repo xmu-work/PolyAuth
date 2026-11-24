@@ -45,4 +45,4 @@ infrastructure
 .\mvnw.cmd -pl oop-backend spring-boot:run
 ```
 
-数据库默认名 `iam_platform_oop`，可执行根目录 `db/schema.sql` 与 `db/seed.sql` 初始化。
+数据库默认名 `iam_platform`（与结构化后端共用同一数据库），可执行根目录 `db/schema.sql` 与 `db/seed.sql` 初始化。

@@ -25,7 +25,7 @@ services:
         aliases: [mysql]
 
   app:
-    image: ${IAM_APP_IMAGE:-swr.cn-north-4.myhuaweicloud.com/ooad-mytx/iam-app:1.0.2}
+    image: ${IAM_APP_IMAGE:-swr.cn-north-4.myhuaweicloud.com/ooad-mytx/iam-app:1.0.4}
     networks:
       iam-net:
         aliases: [app]
@@ -33,7 +33,7 @@ services:
         aliases: [polyauth-app]
 
   oop:
-    image: ${IAM_OOP_IMAGE:-swr.cn-north-4.myhuaweicloud.com/ooad-mytx/iam-oop-app:1.0.2}
+    image: ${IAM_OOP_IMAGE:-swr.cn-north-4.myhuaweicloud.com/ooad-mytx/iam-oop-app:1.0.5}
     networks:
       iam-net:
         aliases: [oop]

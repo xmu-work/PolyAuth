@@ -35,7 +35,7 @@ export CORS_ALLOWED_ORIGINS="http://<课程前端域名或IP>"
 
 ## 3. 数据库初始化与 10000 员工批量授角
 
-在 IAM 数据库（结构化后端为 `iam_platform`，OOP 后端为 `iam_platform_oop`）依次执行：
+在双后端共用的 IAM 数据库 `iam_platform` 中依次执行（仅需执行一次）：
 
 1. 全新库先执行 `db/schema.sql` 与 `db/seed.sql`；已有库跳过。
 2. 执行幂等升级脚本 `db/identity_course_upgrade.sql`：
