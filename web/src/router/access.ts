@@ -1,5 +1,9 @@
 import type { Router } from 'vue-router'
-import { BUSINESS_LAYOUT_ROUTE_NAME, createBusinessRoute } from './business-routes'
+import {
+  BUSINESS_LAYOUT_ROUTE_NAME,
+  createBusinessRoute,
+  hasAccessibleBusinessRoute,
+} from './business-routes'
 import { useAuthStore } from '@/stores/auth.store'
 import { usePermissionStore } from '@/stores/permission.store'
 
@@ -62,6 +66,29 @@ export async function ensureAccessReady(router: Router): Promise<void> {
   } finally {
     bootstrapPromise = null
   }
+}
+
+/** 登录后立即拉取管理后台权限并确认至少存在一个可访问菜单。 */
+export async function prepareAccessAfterLogin(router: Router): Promise<boolean> {
+  routerInstance = router
+  const authStore = useAuthStore()
+  const permissionStore = usePermissionStore()
+  if (!authStore.hasValidSession || authStore.userId === null) {
+    removeBusinessRoute(router)
+    accessReady = false
+    return false
+  }
+
+  await permissionStore.fetchPermissions(authStore.userId)
+  if (!hasAccessibleBusinessRoute(permissionStore.permissionIds)) {
+    removeBusinessRoute(router)
+    accessReady = false
+    return false
+  }
+
+  installBusinessRoutes(router)
+  accessReady = true
+  return true
 }
 
 /** 手动或轮询刷新权限；返回权限集合是否发生变化。 */
