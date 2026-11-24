@@ -8,14 +8,17 @@ import com.polyauth.oop.interfaces.common.ApiResult;
 import com.polyauth.oop.interfaces.common.IdentityErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
+import org.springframework.context.MessageSourceResolvable;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.Set;
@@ -111,6 +114,23 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * 转换 Spring MVC 方法参数校验异常。
+     */
+    @ExceptionHandler(HandlerMethodValidationException.class)
+    public ResponseEntity<?> handleMethodValidation(
+            HandlerMethodValidationException exception,
+            HttpServletRequest request) {
+        String message = exception.getAllErrors().stream()
+                .map(MessageSourceResolvable::getDefaultMessage)
+                .filter(item -> item != null && !item.isBlank())
+                .collect(Collectors.joining("; "));
+        if (message.isBlank()) {
+            message = exception.getMessage();
+        }
+        return badRequest(message, request);
+    }
+
+    /**
      * 转换常见客户端参数错误。
      */
     @ExceptionHandler({
@@ -150,7 +170,8 @@ public class GlobalExceptionHandler {
                     .body(new IdentityErrorResponse("CONFLICT", "数据已被他人修改，请刷新后重试"));
         }
         return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(ApiResult.fail(3008, "数据已被他人修改，请刷新后重试"));
+                .body(ApiResult.fail(ApplicationErrorCode.LOCK_ACQUIRE_FAILED.code(),
+                        "数据已被他人修改，请刷新后重试"));
     }
 
     /**
@@ -164,7 +185,23 @@ public class GlobalExceptionHandler {
                     .body(new IdentityErrorResponse("NOT_FOUND", "资源不存在"));
         }
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(ApiResult.fail(1005, "资源不存在"));
+                .body(ApiResult.fail(ApplicationErrorCode.RESOURCE_NOT_FOUND.code(), "资源不存在"));
+    }
+
+    /**
+     * 将路径存在但 HTTP 方法不匹配的请求稳定翻译为 405，避免落入 500。
+     */
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<?> handleMethodNotAllowed(
+            HttpRequestMethodNotSupportedException exception,
+            HttpServletRequest request) {
+        if (isIdentityRequest(request)) {
+            return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED)
+                    .body(new IdentityErrorResponse("METHOD_NOT_ALLOWED", "HTTP 方法不允许"));
+        }
+        return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED)
+                .body(ApiResult.fail(ApplicationErrorCode.METHOD_NOT_ALLOWED.code(),
+                        "HTTP 方法不允许"));
     }
 
     /**
@@ -178,7 +215,8 @@ public class GlobalExceptionHandler {
                     .body(new IdentityErrorResponse("INTERNAL_ERROR", "服务器内部错误"));
         }
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(ApiResult.fail(5000, "服务器内部错误"));
+                .body(ApiResult.fail(ApplicationErrorCode.INTERNAL_ERROR.code(),
+                        "服务器内部错误"));
     }
 
     private ResponseEntity<?> badRequest(String message, HttpServletRequest request) {
@@ -220,6 +258,7 @@ public class GlobalExceptionHandler {
             case ACCOUNT_SEALED, ACCOUNT_DISABLED, NO_FUNCTION_PERM -> "FORBIDDEN";
             case RESOURCE_NOT_FOUND -> "NOT_FOUND";
             case PARAM_INVALID -> "BAD_REQUEST";
+            case SERVICE_UNAVAILABLE -> "IDENTITY_SERVICE_UNAVAILABLE";
             default -> "INTERNAL_ERROR";
         };
     }
@@ -238,6 +277,7 @@ public class GlobalExceptionHandler {
         }
         return switch (code) {
             case UNAUTHENTICATED, TOKEN_INVALID, TOKEN_EXPIRED, TOKEN_REVOKED -> "请先登录";
+            case SERVICE_UNAVAILABLE -> "统一身份认证暂时不可用，请稍后重试。";
             default -> fallback;
         };
     }

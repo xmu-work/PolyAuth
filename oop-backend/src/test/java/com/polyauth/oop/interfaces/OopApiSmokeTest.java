@@ -291,6 +291,17 @@ class OopApiSmokeTest {
     }
 
     @Test
+    @DisplayName("HTTP 方法不匹配返回 405/1006")
+    void wrongHttpMethodReturnsMethodNotAllowed() {
+        ResponseEntity<Map> response = rest.exchange(
+                "/systems/1", HttpMethod.POST,
+                authorized(), Map.class);
+
+        assertThat(response.getStatusCode().value()).isEqualTo(405);
+        assertThat(response.getBody().get("code")).isEqualTo(1006);
+    }
+
+    @Test
     @DisplayName("FR-45 外部统一身份审计日志写入幂等且查询不混入访问日志")
     void externalAuditLogsSupportIdempotentWriteAndFilteredQuery() {
         String requestId = UUID.randomUUID().toString();
