@@ -97,6 +97,10 @@ export function visibleBusinessRoutes(permissionIds: ReadonlySet<number>): Route
   })
 }
 
+export function hasAccessibleBusinessRoute(permissionIds: ReadonlySet<number>): boolean {
+  return visibleBusinessRoutes(permissionIds).length > 0
+}
+
 export function createBusinessRoute(permissionIds: ReadonlySet<number>): RouteRecordRaw | null {
   const children = visibleBusinessRoutes(permissionIds)
   if (children.length === 0) {
