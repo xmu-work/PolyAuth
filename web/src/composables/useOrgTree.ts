@@ -7,6 +7,9 @@ export interface TreeNodeLike {
   level: number
   data: Partial<OrgTreeNode>
   parent?: TreeNodeLike | null
+  isLeaf?: boolean
+  loaded?: boolean
+  childNodes?: TreeNodeLike[]
 }
 
 export type OrgTreeNode = Omit<Org, 'children'>
