@@ -8,6 +8,7 @@ import com.polyauth.oop.infrastructure.persistence.repository.ApiJpaRepository;
 import com.polyauth.oop.infrastructure.persistence.repository.SystemJpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.Locale;
 import java.util.Optional;
 
 /**
@@ -30,11 +31,13 @@ public class JpaOperationCatalogRepositoryAdapter implements OperationCatalogRep
 
     @Override
     public Optional<ApiPermissionLookup> findByRequest(
-            String systemCode, String apiPath, String httpMethod) {
-        return activeSystem(systemCode)
-                .flatMap(system -> apiRepository
-                        .findBySystemIdAndApiPathAndHttpMethodAndIsDeleted(
-                                system.getId(), apiPath, httpMethod, 0))
+            String apiPath, String httpMethod) {
+        if (httpMethod == null || httpMethod.isBlank()) {
+            return Optional.empty();
+        }
+        return apiRepository
+                .findByApiPathAndHttpMethodAndIsDeleted(
+                        apiPath, httpMethod.toUpperCase(Locale.ROOT), 0)
                 .filter(api -> "ACTIVE".equals(api.getStatus()))
                 .map(this::lookup);
     }

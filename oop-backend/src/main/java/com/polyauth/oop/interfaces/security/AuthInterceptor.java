@@ -78,7 +78,7 @@ public class AuthInterceptor implements HandlerInterceptor {
                         ApplicationErrorCode.NO_FUNCTION_PERM, "无法定位接口登记，默认拒绝");
             }
             operationAccessUseCase.requireRequest(
-                    principal.userId(), principal.systemCode(), pattern, request.getMethod());
+                    principal.userId(), pattern, request.getMethod());
             return true;
         } catch (RuntimeException exception) {
             recordAudit(request, response, exception);
