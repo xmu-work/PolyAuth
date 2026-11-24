@@ -29,7 +29,8 @@ public class GlobalExceptionHandler {
 
     private static final Set<String> IDENTITY_PATH_PREFIXES = Set.of(
             "/auth/login", "/auth/logout", "/auth/me", "/auth/permissions/",
-            "/auth/departments", "/auth/api-permissions/", "/auth/users/");
+            "/auth/departments", "/auth/api-permissions/", "/auth/users/",
+            "/auth/audit-logs");
 
     /**
      * 转换应用用例异常。

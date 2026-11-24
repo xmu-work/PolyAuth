@@ -13,7 +13,7 @@
 | 实现 | 默认地址 | 功能范围 |
 |---|---|---|
 | 结构化后端 | `http://localhost:8080/api/v1` | RBAC3 管理能力与完整统一身份接口 |
-| OOP 后端 | `http://localhost:8081/api/v1` | 与结构化后端相同的 50 个功能权限端点 |
+| OOP 后端 | `http://localhost:8081/api/v1` | 与结构化后端相同的 52 个功能权限端点 |
 
 两套后端使用相同的上下文路径 `/api/v1`，完整请求地址需要再加表中的相对路径，
 例如 `/api/v1/users`。两套后端使用相同的外部 API 契约：
@@ -35,7 +35,7 @@
 
 ## 2. 统一身份外部契约
 
-课程项目管理系统使用的 8 个接口以
+课程项目管理系统使用的 10 个接口以
 [design/07_统一身份外部契约.md](design/07_统一身份外部契约.md) 为唯一契约：
 
 | 方法 | 路径 | 说明 | OOP |
@@ -48,8 +48,10 @@
 | GET | `/auth/api-permissions/{operationId}` | 按 API operationId 判断调用权限 | 支持 |
 | GET | `/auth/departments/{departmentId}/users` | 部门用户分页 | 支持 |
 | GET | `/auth/users/{userId}` | 按统一身份用户标识查询用户 | 支持 |
+| GET | `/auth/audit-logs` | 分页查询外部业务审计日志 | 支持 |
+| POST | `/auth/audit-logs` | 按 `requestId` 幂等写入外部业务审计日志 | 支持 |
 
-这 8 个接口成功时直接返回业务对象，不使用管理端 `Result` 包装。失败时返回：
+这 10 个接口成功时直接返回业务对象，不使用管理端 `Result` 包装。失败时返回：
 
 ```json
 {
@@ -64,7 +66,7 @@
 
 ## 3. 通用响应与认证
 
-除统一身份 8 个接口外，后端使用统一响应包：
+除统一身份 10 个接口外，后端使用统一响应包：
 
 ```json
 {
@@ -266,7 +268,7 @@ VIEW_EDIT_APPROVE, VIEW_ADD_EDIT, VIEW_EDIT_EXPORT, VIEW_SELF, VIEW_EDIT_SELF
 
 ## 6. OOP 后端接口覆盖
 
-OOP 后端实现第 2、5 节列出的全部 50 个功能权限端点，路径、HTTP 方法、请求参数、
+OOP 后端实现第 2、5 节列出的全部 52 个功能权限端点，路径、HTTP 方法、请求参数、
 响应结构和业务码与结构化后端一致。内部实现不同：
 
 - Controller 将 HTTP DTO 转为应用 Command，并只返回 VO 或外部契约 record。
@@ -275,7 +277,7 @@ OOP 后端实现第 2、5 节列出的全部 50 个功能权限端点，路径�
 - `domain/repository` 只使用领域对象和 JDK 容器。
 - JPA Entity、Mapper 和 Adapter 位于 `infrastructure/persistence`。
 
-端点集合由 `oop-backend` 的 `ApiParityContractTest` 静态校验；15 个共享 HTTP
+端点集合由 `oop-backend` 的 `ApiParityContractTest` 静态校验；16 个共享 HTTP
 场景由 [contract-tests/README.md](contract-tests/README.md) 说明。
 
 ## 7. 错误码

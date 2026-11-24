@@ -7,6 +7,8 @@ import com.polyauth.structured.application.auth.AuthService;
 import com.polyauth.structured.application.auth.AuthenticatedSession;
 import com.polyauth.structured.application.auth.LoginResponse;
 import com.polyauth.structured.application.decision.DecisionService;
+import com.polyauth.structured.application.identity.IdentityAuditActorData;
+import com.polyauth.structured.application.identity.IdentityAuditLogData;
 import com.polyauth.structured.application.identity.IdentityProfile;
 import com.polyauth.structured.application.identity.IdentityDepartmentData;
 import com.polyauth.structured.application.identity.IdentityDepartmentUserData;
@@ -35,7 +37,10 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -270,6 +275,83 @@ class ApiControllerTest {
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.code").value("API_OPERATION_NOT_FOUND"))
                 .andExpect(jsonPath("$.message").value("没有找到对应的 API 操作。"));
+    }
+
+    @Test
+    @DisplayName("FR-45 统一身份审计日志查询与写入遵循外部契约且使用字符串错误码")
+    void identityAuditLogsQueryAndWriteFollowContract() throws Exception {
+        OffsetDateTime at = OffsetDateTime.of(2026, 11, 24, 22, 10, 0, 0, ZoneOffset.ofHours(8));
+        IdentityAuditLogData entry = new IdentityAuditLogData(
+                88L,
+                at,
+                new IdentityAuditActorData(1L, "薛峰", List.of("admin", "teacher"), false),
+                "score_changed",
+                "1-01 星火队",
+                Map.of("score", 80),
+                Map.of("score", 92),
+                null,
+                "cpm-course-12",
+                null);
+        when(identityService.pageAuditLogs(
+                eq(1L), eq("course-project-management"), eq("薛"), isNull(), eq("星火"),
+                any(), any(), eq(1), eq(100)))
+                .thenReturn(new IdentityPageSlice<>(1L, List.of(entry)));
+        when(identityService.writeAuditLog(
+                eq(1L), eq("course-project-management"), eq("req-1"), eq("score_changed"),
+                eq("course"), eq("cpm-course-12"), eq("1-01 星火队"), any(), any(), any()))
+                .thenReturn(entry);
+
+        mvc.perform(get("/auth/audit-logs").header("Authorization", AUTH)
+                        .param("actor", "薛")
+                        .param("target", "星火")
+                        .param("page", "1")
+                        .param("pageSize", "100"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.page").value(1))
+                .andExpect(jsonPath("$.pageSize").value(100))
+                .andExpect(jsonPath("$.total").value(1))
+                .andExpect(jsonPath("$.items[0].id").value(88))
+                .andExpect(jsonPath("$.items[0].actor.name").value("薛峰"))
+                .andExpect(jsonPath("$.items[0].courseId").value("cpm-course-12"))
+                .andExpect(jsonPath("$.data").doesNotExist());
+
+        mvc.perform(post("/auth/audit-logs").header("Authorization", AUTH)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "requestId": "req-1",
+                                  "type": "score_changed",
+                                  "objectType": "course",
+                                  "objectId": "cpm-course-12",
+                                  "target": "1-01 星火队",
+                                  "before": {"score": 80},
+                                  "after": {"score": 92}
+                                }
+                                """))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").value(88))
+                .andExpect(jsonPath("$.type").value("score_changed"))
+                .andExpect(jsonPath("$.data").doesNotExist());
+
+        mvc.perform(get("/auth/audit-logs"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("UNAUTHORIZED"));
+
+        mvc.perform(post("/auth/audit-logs").header("Authorization", AUTH)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"requestId\":\"\",\"type\":\"score_changed\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("BAD_REQUEST"));
+
+        when(identityService.pageAuditLogs(
+                eq(1L), eq("course-project-management"), isNull(), isNull(), isNull(),
+                isNull(), isNull(), eq(1), eq(20)))
+                .thenThrow(new BusinessException(ErrorCode.NO_FUNCTION_PERM, "你没有查看课程日志的权限。"));
+
+        mvc.perform(get("/auth/audit-logs").header("Authorization", AUTH))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"))
+                .andExpect(jsonPath("$.message").value("你没有查看课程日志的权限。"));
     }
 
     @Test

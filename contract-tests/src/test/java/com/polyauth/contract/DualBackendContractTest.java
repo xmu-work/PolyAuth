@@ -214,6 +214,46 @@ class DualBackendContractTest {
         assertThat(data.path("list").isArray()).isTrue();
     }
 
+    @Test
+    @DisplayName("FR-45 双后端均支持统一身份外部审计日志幂等写入与查询")
+    void externalAuditLogWriteAndQueryWorkIdempotently() throws Exception {
+        String requestId = UUID.randomUUID().toString();
+        String target = "契约审计-" + requestId.substring(0, 8);
+        String payload = """
+                {
+                  "requestId": "%s",
+                  "type": "score_changed",
+                  "objectType": "class",
+                  "objectId": "cpm-class-99",
+                  "target": "%s",
+                  "before": {"score": 75},
+                  "after": {"score": 90}
+                }
+                """.formatted(requestId, target);
+
+        ContractHttpClient.Response first = client.postJson("/auth/audit-logs", token, payload);
+        ContractHttpClient.Response replay = client.postJson("/auth/audit-logs", token, payload);
+
+        assertThat(first.status()).isEqualTo(201);
+        assertThat(replay.status()).isEqualTo(201);
+        long logId = client.json(first).path("id").asLong();
+        assertThat(logId).isPositive();
+        assertThat(client.json(replay).path("id").asLong()).isEqualTo(logId);
+        assertThat(client.json(first).path("classId").asText()).isEqualTo("cpm-class-99");
+
+        ContractHttpClient.Response query = client.get(
+                "/auth/audit-logs?target=" + target + "&page=1&pageSize=20", token);
+        assertThat(query.status()).isEqualTo(200);
+        JsonNode body = client.json(query);
+        assertThat(body.path("total").asLong()).isEqualTo(1L);
+        assertThat(body.path("items")).hasSize(1);
+        JsonNode item = body.path("items").get(0);
+        assertThat(item.path("id").asLong()).isEqualTo(logId);
+        assertThat(item.path("at").asText()).isNotBlank();
+        assertThat(item.path("actor").path("id").asLong()).isPositive();
+        assertThat(item.path("actor").path("deleted").asBoolean()).isFalse();
+    }
+
     private static Map<String, String> roleForm(String code, String name) {
         Map<String, String> form = new LinkedHashMap<>();
         form.put("roleCode", code);

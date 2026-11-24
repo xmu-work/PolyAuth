@@ -5,7 +5,10 @@ import com.polyauth.structured.application.auth.LoginRequest;
 import com.polyauth.structured.application.auth.LoginResponse;
 import com.polyauth.structured.application.identity.IdentityService;
 import com.polyauth.structured.interfaces.AuthInterceptor;
+import com.polyauth.structured.interfaces.identity.dto.IdentityAuditWriteRequest;
 import com.polyauth.structured.interfaces.identity.vo.ApiAuthorityCheckVO;
+import com.polyauth.structured.interfaces.identity.vo.IdentityAuditLogPageVO;
+import com.polyauth.structured.interfaces.identity.vo.IdentityAuditLogVO;
 import com.polyauth.structured.interfaces.identity.vo.IdentityCurrentUserVO;
 import com.polyauth.structured.interfaces.identity.vo.IdentityDepartmentPageVO;
 import com.polyauth.structured.interfaces.identity.vo.IdentityDepartmentUserPageVO;
@@ -20,6 +23,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -32,6 +36,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.time.OffsetDateTime;
 
 /**
  * 面向外部业务系统的统一身份鉴权契约控制器。
@@ -172,6 +178,69 @@ public class IdentityAuthController {
             @Size(min = 1, max = 64)
             String userId) {
         return IdentityUserVO.from(identityService.lookupUser(operatorId, systemCode, userId));
+    }
+
+    /**
+     * 按操作人、操作对象和时间范围分页查询外部业务系统统一身份审计日志。
+     */
+    @GetMapping("/audit-logs")
+    public IdentityAuditLogPageVO auditLogs(
+            @RequestAttribute(AuthInterceptor.ATTR_USER_ID)
+            Long operatorId,
+            @RequestAttribute(AuthInterceptor.ATTR_SYSTEM_CODE)
+            String systemCode,
+            @RequestParam(required = false)
+            @Size(max = 128)
+            String actor,
+            @RequestParam(required = false)
+            @Positive
+            Long actorId,
+            @RequestParam(required = false)
+            @Size(max = 500)
+            String target,
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+            OffsetDateTime from,
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+            OffsetDateTime to,
+            @RequestParam(defaultValue = "1")
+            @Min(1)
+            int page,
+            @RequestParam(defaultValue = "20")
+            @Min(1)
+            @Max(100)
+            int pageSize) {
+        return IdentityAuditLogPageVO.from(page, pageSize,
+                identityService.pageAuditLogs(
+                        operatorId, systemCode, actor, actorId, target, from, to, page, pageSize));
+    }
+
+    /**
+     * 按幂等键写入外部业务系统统一身份审计日志。
+     */
+    @PostMapping("/audit-logs")
+    @ResponseStatus(HttpStatus.CREATED)
+    public IdentityAuditLogVO writeAuditLog(
+            @RequestAttribute(AuthInterceptor.ATTR_USER_ID)
+            Long userId,
+            @RequestAttribute(AuthInterceptor.ATTR_SYSTEM_CODE)
+            String systemCode,
+            @Valid
+            @RequestBody
+            IdentityAuditWriteRequest request,
+            HttpServletRequest servletRequest) {
+        return IdentityAuditLogVO.from(identityService.writeAuditLog(
+                userId,
+                systemCode,
+                request.requestId(),
+                request.type(),
+                request.objectType(),
+                request.objectId(),
+                request.target(),
+                request.before(),
+                request.after(),
+                servletRequest.getRemoteAddr()));
     }
 
     private String sanitizeLogValue(String value) {
