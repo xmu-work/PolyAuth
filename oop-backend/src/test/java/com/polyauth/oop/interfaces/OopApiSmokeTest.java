@@ -10,6 +10,7 @@ import com.polyauth.oop.infrastructure.persistence.entity.RolePermissionEntity;
 import com.polyauth.oop.infrastructure.persistence.entity.SystemEntity;
 import com.polyauth.oop.infrastructure.persistence.entity.UserAccountEntity;
 import com.polyauth.oop.infrastructure.persistence.repository.ApiJpaRepository;
+import com.polyauth.oop.infrastructure.persistence.repository.AuditLogJpaRepository;
 import com.polyauth.oop.infrastructure.persistence.repository.OrganizationJpaRepository;
 import com.polyauth.oop.infrastructure.persistence.repository.PermissionJpaRepository;
 import com.polyauth.oop.infrastructure.persistence.repository.RoleGrantJpaRepository;
@@ -31,8 +32,10 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -88,12 +91,16 @@ class OopApiSmokeTest {
     @Autowired
     private TokenJpaRepository tokens;
 
+    @Autowired
+    private AuditLogJpaRepository auditLogs;
+
     private Long organizationId;
     private Long userId;
     private String token;
 
     @BeforeEach
     void seed() {
+        auditLogs.deleteAll();
         tokens.deleteAll();
         roleGrants.deleteAll();
         rolePermissions.deleteAll();
@@ -281,6 +288,77 @@ class OopApiSmokeTest {
 
         assertThat(after.getStatusCode().value()).isEqualTo(401);
         assertThat(after.getBody().get("code")).isEqualTo("UNAUTHORIZED");
+    }
+
+    @Test
+    @DisplayName("FR-45 外部统一身份审计日志写入幂等且查询不混入访问日志")
+    void externalAuditLogsSupportIdempotentWriteAndFilteredQuery() {
+        String requestId = UUID.randomUUID().toString();
+        Map<String, Object> body = Map.of(
+                "requestId", requestId,
+                "type", "roster_changed",
+                "objectType", "class",
+                "objectId", "cpm-class-123",
+                "target", "导入学生名单",
+                "before", Map.of("imported", 0),
+                "after", Map.of("imported", 12));
+
+        ResponseEntity<Map> created = rest.exchange(
+                "/auth/audit-logs",
+                HttpMethod.POST,
+                authorizedJson(body),
+                Map.class);
+        ResponseEntity<Map> replayed = rest.exchange(
+                "/auth/audit-logs",
+                HttpMethod.POST,
+                authorizedJson(body),
+                Map.class);
+
+        assertThat(created.getStatusCode().value()).isEqualTo(201);
+        assertThat(replayed.getStatusCode().value()).isEqualTo(201);
+        assertThat(replayed.getBody().get("id")).isEqualTo(created.getBody().get("id"));
+        assertThat(created.getBody().get("classId")).isEqualTo("cpm-class-123");
+
+        ResponseEntity<Map> page = rest.exchange(
+                "/auth/audit-logs?page=1&pageSize=100",
+                HttpMethod.GET,
+                authorized(),
+                Map.class);
+
+        assertThat(page.getStatusCode().value()).isEqualTo(200);
+        assertThat(((Number) page.getBody().get("total")).longValue()).isEqualTo(1L);
+        List<?> items = (List<?>) page.getBody().get("items");
+        assertThat(items).hasSize(1);
+        Map<?, ?> first = (Map<?, ?>) items.get(0);
+        assertThat(first.get("id")).isEqualTo(created.getBody().get("id"));
+        assertThat(first.get("type")).isEqualTo("roster_changed");
+        assertThat(first.get("target")).isEqualTo("导入学生名单");
+        assertThat(OffsetDateTime.parse(String.valueOf(first.get("at")))).isNotNull();
+        Map<?, ?> actor = (Map<?, ?>) first.get("actor");
+        assertThat(((Number) actor.get("id")).longValue()).isEqualTo(userId);
+        assertThat(actor.get("name")).isEqualTo("管理员");
+        assertThat((List<?>) actor.get("roles")).asString().contains("admin");
+        assertThat(actor.get("deleted")).isEqualTo(false);
+
+        ResponseEntity<Map> unauthenticated = rest.getForEntity("/auth/audit-logs", Map.class);
+        assertThat(unauthenticated.getStatusCode().value()).isEqualTo(401);
+        assertThat(unauthenticated.getBody().get("code")).isEqualTo("UNAUTHORIZED");
+
+        ResponseEntity<Map> invalid = rest.exchange(
+                "/auth/audit-logs",
+                HttpMethod.POST,
+                authorizedJson(Map.of("requestId", "", "type", "roster_changed")),
+                Map.class);
+        assertThat(invalid.getStatusCode().value()).isEqualTo(400);
+        assertThat(invalid.getBody().get("code")).isEqualTo("BAD_REQUEST");
+    }
+
+    private HttpEntity<Map<String, Object>> authorizedJson(Map<String, Object> body) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(token);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setAccept(List.of(MediaType.APPLICATION_JSON));
+        return new HttpEntity<>(body, headers);
     }
 
     private void registerApi(Long systemId, Long permissionId, String code,

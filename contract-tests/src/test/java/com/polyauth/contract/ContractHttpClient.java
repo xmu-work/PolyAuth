@@ -67,6 +67,10 @@ final class ContractHttpClient {
         return send("PUT", path, token, json, "application/json");
     }
 
+    Response postJson(String path, String token, String json) throws Exception {
+        return send("POST", path, token, json, "application/json");
+    }
+
     JsonNode json(Response response) throws Exception {
         return objectMapper.readTree(response.body());
     }

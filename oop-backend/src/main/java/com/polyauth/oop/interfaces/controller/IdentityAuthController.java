@@ -1,23 +1,34 @@
 package com.polyauth.oop.interfaces.controller;
 
+import com.polyauth.oop.application.result.IdentityAuditLog;
 import com.polyauth.oop.application.result.IdentityDepartment;
 import com.polyauth.oop.application.result.IdentityDepartmentUser;
 import com.polyauth.oop.application.usecase.IdentityAccessUseCase;
+import com.polyauth.oop.interfaces.dto.IdentityAuditWriteDTO;
 import com.polyauth.oop.interfaces.security.AuthInterceptor;
 import com.polyauth.oop.interfaces.vo.IdentityVOs;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestAttribute;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.time.OffsetDateTime;
 
 /**
  * 统一身份完整查询契约 HTTP 适配器。
@@ -116,6 +127,69 @@ public class IdentityAuthController {
             String userId) {
         return IdentityVOs.User.from(
                 useCase.lookupUser(operatorId, systemCode, userId));
+    }
+
+    /**
+     * 按操作人、操作对象与时间窗口分页查询外部业务统一身份审计日志。
+     */
+    @GetMapping("/audit-logs")
+    public IdentityVOs.AuditLogPage auditLogs(
+            @RequestAttribute(AuthInterceptor.ATTR_USER_ID)
+            Long operatorId,
+            @RequestAttribute(AuthInterceptor.ATTR_SYSTEM_CODE)
+            String systemCode,
+            @RequestParam(required = false)
+            @Size(max = 128)
+            String actor,
+            @RequestParam(required = false)
+            @Positive
+            Long actorId,
+            @RequestParam(required = false)
+            @Size(max = 500)
+            String target,
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+            OffsetDateTime from,
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+            OffsetDateTime to,
+            @RequestParam(defaultValue = "1")
+            @Min(1)
+            int page,
+            @RequestParam(defaultValue = "20")
+            @Min(1)
+            @Max(100)
+            int pageSize) {
+        IdentityAccessUseCase.PageSlice<IdentityAuditLog> result = useCase.queryAuditLogs(
+                operatorId, systemCode, actor, actorId, target, from, to, page, pageSize);
+        return IdentityVOs.AuditLogPage.from(page, pageSize, result);
+    }
+
+    /**
+     * 按幂等键写入外部业务统一身份审计日志。
+     */
+    @PostMapping("/audit-logs")
+    @ResponseStatus(HttpStatus.CREATED)
+    public IdentityVOs.AuditLog writeAuditLog(
+            @RequestAttribute(AuthInterceptor.ATTR_USER_ID)
+            Long userId,
+            @RequestAttribute(AuthInterceptor.ATTR_SYSTEM_CODE)
+            String systemCode,
+            @Valid
+            @RequestBody
+            IdentityAuditWriteDTO request,
+            HttpServletRequest servletRequest) {
+        return IdentityVOs.AuditLog.from(useCase.writeAuditLog(
+                userId,
+                systemCode,
+                request.requestId(),
+                request.type(),
+                request.objectType(),
+                request.objectId(),
+                request.target(),
+                request.before(),
+                request.after(),
+                servletRequest.getRemoteAddr()));
     }
 
     private String sanitizeLogValue(String value) {

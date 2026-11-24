@@ -1,11 +1,16 @@
 package com.polyauth.oop.interfaces.vo;
 
+import com.polyauth.oop.application.result.IdentityAuditActor;
+import com.polyauth.oop.application.result.IdentityAuditLog;
 import com.polyauth.oop.application.result.IdentityDepartment;
 import com.polyauth.oop.application.result.IdentityDepartmentUser;
 import com.polyauth.oop.application.result.IdentityProfile;
 import com.polyauth.oop.application.result.IdentityUser;
+import com.polyauth.oop.application.usecase.IdentityAccessUseCase;
 
+import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 统一身份契约的响应视图集合。
@@ -53,6 +58,52 @@ public final class IdentityVOs {
     public record User(String userId, String no, String name) {
         public static User from(IdentityUser user) {
             return new User(user.userId(), user.no(), user.name());
+        }
+    }
+
+    public record AuditActor(Long id, String name, List<String> roles, boolean deleted) {
+        public static AuditActor from(IdentityAuditActor actor) {
+            if (actor == null) {
+                return null;
+            }
+            return new AuditActor(actor.id(), actor.name(), actor.roles(), actor.deleted());
+        }
+    }
+
+    public record AuditLog(
+            Long id,
+            OffsetDateTime at,
+            AuditActor actor,
+            String type,
+            String target,
+            Map<String, Object> before,
+            Map<String, Object> after,
+            String termId,
+            String courseId,
+            String classId) {
+
+        public static AuditLog from(IdentityAuditLog log) {
+            return new AuditLog(
+                    log.id(),
+                    log.at(),
+                    AuditActor.from(log.actor()),
+                    log.type(),
+                    log.target(),
+                    log.before(),
+                    log.after(),
+                    log.termId(),
+                    log.courseId(),
+                    log.classId());
+        }
+    }
+
+    public record AuditLogPage(int page, int pageSize, long total, List<AuditLog> items) {
+        public static AuditLogPage from(
+                int page,
+                int pageSize,
+                IdentityAccessUseCase.PageSlice<IdentityAuditLog> slice) {
+            return new AuditLogPage(page, pageSize, slice.total(),
+                    slice.items().stream().map(AuditLog::from).toList());
         }
     }
 }

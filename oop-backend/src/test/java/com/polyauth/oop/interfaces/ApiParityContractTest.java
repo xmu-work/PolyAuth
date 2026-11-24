@@ -29,6 +29,8 @@ class ApiParityContractTest {
             "GET /apis/{apiId}",
             "POST /apis",
             "GET /auth/api-permissions/{operationId}",
+            "GET /auth/audit-logs",
+            "POST /auth/audit-logs",
             "GET /auth/departments",
             "GET /auth/departments/{departmentId}/users",
             "POST /auth/login",

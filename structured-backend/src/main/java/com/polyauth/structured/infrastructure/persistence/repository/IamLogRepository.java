@@ -9,10 +9,13 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface IamLogRepository extends JpaRepository<IamLog, Long>, JpaSpecificationExecutor<IamLog> {
     List<IamLog> findByOperateTimeBetween(LocalDateTime start, LocalDateTime end);
     List<IamLog> findByUserId(Long userId);
     Page<IamLog> findByUserId(Long userId, Pageable pageable);
+    Optional<IamLog> findFirstBySystemCodeAndDecisionIdAndRequestId(
+            String systemCode, String decisionId, String requestId);
 }
