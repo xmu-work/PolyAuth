@@ -85,7 +85,7 @@ services:
       retries: 5
 
   app:
-    image: swr.cn-north-4.myhuaweicloud.com/ooad-mytx/iam-app:1.0.1
+    image: swr.cn-north-4.myhuaweicloud.com/ooad-mytx/iam-app:1.0.4
     networks:
       iam-net:
         aliases: [app]

@@ -85,7 +85,7 @@ services:
       retries: 5
 
   app:
-    image: swr.cn-north-4.myhuaweicloud.com/ooad-mytx/iam-app:1.0.1
+    image: swr.cn-north-4.myhuaweicloud.com/ooad-mytx/iam-app:1.0.4
     networks:
       iam-net:
         aliases: [app]
@@ -144,7 +144,7 @@ services:
       start_period: 120s
 
   oop:
-    image: swr.cn-north-4.myhuaweicloud.com/ooad-mytx/iam-oop-app:1.0.1
+    image: swr.cn-north-4.myhuaweicloud.com/ooad-mytx/iam-oop-app:1.0.5
     networks:
       iam-net:
         aliases: [oop]
@@ -204,7 +204,7 @@ services:
       start_period: 120s
 
   web:
-    image: swr.cn-north-4.myhuaweicloud.com/ooad-mytx/iam-web:1.0.1
+    image: swr.cn-north-4.myhuaweicloud.com/ooad-mytx/iam-web:1.0.2
     networks:
       iam-net:
         aliases: [web]
