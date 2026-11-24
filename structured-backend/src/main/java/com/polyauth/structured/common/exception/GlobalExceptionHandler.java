@@ -5,6 +5,7 @@ import com.polyauth.structured.common.result.Result;
 import com.polyauth.structured.interfaces.identity.vo.IdentityErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
+import org.springframework.context.MessageSourceResolvable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindException;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 
 import java.util.stream.Collectors;
 import java.util.Set;
@@ -68,6 +70,21 @@ public class GlobalExceptionHandler {
         String msg = ex.getConstraintViolations().stream()
                 .map(v -> v.getPropertyPath() + ": " + v.getMessage())
                 .collect(Collectors.joining("; "));
+        if (isIdentityRequest(request)) {
+            return ResponseEntity.badRequest().body(new IdentityErrorResponse("BAD_REQUEST", msg));
+        }
+        return ResponseEntity.badRequest().body(Result.fail(ErrorCode.PARAM_INVALID, msg));
+    }
+
+    @ExceptionHandler(HandlerMethodValidationException.class)
+    public ResponseEntity<?> handleMethodValidation(HandlerMethodValidationException ex, HttpServletRequest request) {
+        String msg = ex.getAllErrors().stream()
+                .map(MessageSourceResolvable::getDefaultMessage)
+                .filter(item -> item != null && !item.isBlank())
+                .collect(Collectors.joining("; "));
+        if (msg.isBlank()) {
+            msg = ex.getMessage();
+        }
         if (isIdentityRequest(request)) {
             return ResponseEntity.badRequest().body(new IdentityErrorResponse("BAD_REQUEST", msg));
         }

@@ -53,14 +53,16 @@ final class ContractHttpClient {
         return send("GET", path, token, null, null);
     }
 
+    Response postEmpty(String path, String token) throws Exception {
+        return send("POST", path, token, null, null);
+    }
+
     Response postForm(String path, String token, Map<String, String> form) throws Exception {
-        StringJoiner query = new StringJoiner("&");
-        for (Map.Entry<String, String> entry : form.entrySet()) {
-            if (entry.getValue() != null) {
-                query.add(encode(entry.getKey()) + "=" + encode(entry.getValue()));
-            }
-        }
-        return send("POST", path + "?" + query, token, null, null);
+        return send("POST", withQuery(path, form), token, null, null);
+    }
+
+    Response putForm(String path, String token, Map<String, String> form) throws Exception {
+        return send("PUT", withQuery(path, form), token, null, null);
     }
 
     Response putJson(String path, String token, String json) throws Exception {
@@ -94,13 +96,28 @@ final class ContractHttpClient {
                     ? HttpRequest.BodyPublishers.noBody()
                     : HttpRequest.BodyPublishers.ofString(body, StandardCharsets.UTF_8));
         } else if ("PUT".equals(method)) {
-            builder.PUT(HttpRequest.BodyPublishers.ofString(body, StandardCharsets.UTF_8));
+            builder.PUT(body == null
+                    ? HttpRequest.BodyPublishers.noBody()
+                    : HttpRequest.BodyPublishers.ofString(body, StandardCharsets.UTF_8));
         } else {
             throw new IllegalArgumentException("不支持的 HTTP 方法: " + method);
         }
         HttpResponse<String> response = client.send(
                 builder.build(), HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
         return new Response(response.statusCode(), response.body());
+    }
+
+    private String withQuery(String path, Map<String, String> form) {
+        if (form == null || form.isEmpty()) {
+            return path;
+        }
+        StringJoiner query = new StringJoiner("&");
+        for (Map.Entry<String, String> entry : form.entrySet()) {
+            if (entry.getValue() != null) {
+                query.add(encode(entry.getKey()) + "=" + encode(entry.getValue()));
+            }
+        }
+        return query.length() == 0 ? path : path + "?" + query;
     }
 
     private String encode(String value) {

@@ -8,7 +8,7 @@ import java.util.Optional;
 public interface OperationCatalogRepository {
 
     Optional<ApiPermissionLookup> findByRequest(
-            String systemCode, String apiPath, String httpMethod);
+            String apiPath, String httpMethod);
 
     Optional<ApiPermissionLookup> findByOperation(
             String systemCode, String operationId);

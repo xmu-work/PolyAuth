@@ -23,7 +23,7 @@ public class LocalReplayGuard implements ReplayGuard {
     public boolean tryUse(String appId, String nonce) {
         Instant now = Instant.now();
         nonces.entrySet().removeIf(
-                entry -> entry.getValue().isBefore(now.minusSeconds(nonceTtlSeconds)));
+                entry -> !entry.getValue().isAfter(now));
         String key = appId + ":" + nonce;
         Instant expiresAt = now.plusSeconds(nonceTtlSeconds);
         return nonces.putIfAbsent(key, expiresAt) == null;
