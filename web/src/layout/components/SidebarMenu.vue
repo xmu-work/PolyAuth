@@ -14,7 +14,6 @@ import {
 import { visibleBusinessRoutes } from '@/router/business-routes'
 import { useAppStore } from '@/stores/app.store'
 import { usePermissionStore } from '@/stores/permission.store'
-import { authApi } from '@/api'
 
 const route = useRoute()
 const router = useRouter()
@@ -37,26 +36,13 @@ const menuItems = computed(() =>
     path: `/${String(item.path)}`,
     title: String(item.meta?.title ?? ''),
     icon: item.meta?.icon,
-    permissionCode: item.meta?.permissionCode,
   })),
 )
 
-async function navigate(path: string, permissionCode?: string): Promise<void> {
-  if (route.path !== path) {
-    if (permissionCode !== undefined) {
-      const allowed = await authApi.checkPermission(permissionCode)
-      if (!allowed) {
-        await router.push('/403')
-        return
-      }
-    }
-    await router.push(path)
-  }
-}
-
 function selectMenu(path: string): void {
-  const permissionCode = menuItems.value.find((item) => item.path === path)?.permissionCode
-  void navigate(path, permissionCode).catch(() => undefined)
+  if (route.path !== path) {
+    void Promise.resolve(router.push(path)).catch(() => undefined)
+  }
 }
 </script>
 

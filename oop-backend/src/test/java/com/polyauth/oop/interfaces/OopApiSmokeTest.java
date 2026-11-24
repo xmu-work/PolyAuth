@@ -16,6 +16,7 @@ import com.polyauth.oop.infrastructure.persistence.repository.RoleGrantJpaReposi
 import com.polyauth.oop.infrastructure.persistence.repository.RoleJpaRepository;
 import com.polyauth.oop.infrastructure.persistence.repository.RolePermissionJpaRepository;
 import com.polyauth.oop.infrastructure.persistence.repository.SystemJpaRepository;
+import com.polyauth.oop.infrastructure.persistence.repository.TokenJpaRepository;
 import com.polyauth.oop.infrastructure.persistence.repository.UserAccountJpaRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -84,10 +85,16 @@ class OopApiSmokeTest {
     @Autowired
     private RoleGrantJpaRepository roleGrants;
 
+    @Autowired
+    private TokenJpaRepository tokens;
+
+    private Long organizationId;
+    private Long userId;
     private String token;
 
     @BeforeEach
     void seed() {
+        tokens.deleteAll();
         roleGrants.deleteAll();
         rolePermissions.deleteAll();
         apis.deleteAll();
@@ -120,6 +127,7 @@ class OopApiSmokeTest {
         organization.setUpdatedAt(now);
         organization.setVersion(0L);
         organization = organizations.saveAndFlush(organization);
+        organizationId = organization.getId();
 
         UserAccountEntity user = new UserAccountEntity();
         user.setUserNo("admin");
@@ -133,6 +141,7 @@ class OopApiSmokeTest {
         user.setUpdatedAt(now);
         user.setVersion(0L);
         user = users.saveAndFlush(user);
+        userId = user.getId();
 
         PermissionEntity permission = new PermissionEntity();
         permission.setSystemId(system.getId());
@@ -147,18 +156,12 @@ class OopApiSmokeTest {
         permission.setUpdatedAt(now);
         permission = permissions.saveAndFlush(permission);
 
-        ApiEntity api = new ApiEntity();
-        api.setSystemId(system.getId());
-        api.setPermissionId(permission.getId());
-        api.setApiCode("GET_ORGANIZATIONS");
-        api.setApiName("查询组织树");
-        api.setApiPath("/organizations");
-        api.setHttpMethod("GET");
-        api.setStatus("ACTIVE");
-        api.setIsDeleted(0);
-        api.setCreatedAt(now);
-        api.setUpdatedAt(now);
-        apis.saveAndFlush(api);
+        registerApi(system.getId(), permission.getId(),
+                "GET_ORGANIZATIONS", "查询组织树", "/organizations", "GET", now);
+        registerApi(system.getId(), permission.getId(),
+                "UPDATE_ORGANIZATION", "更新组织", "/organizations/{orgId}", "PUT", now);
+        registerApi(system.getId(), permission.getId(),
+                "TRANSFER_USER", "员工调岗", "/users/{userId}/organization", "PUT", now);
 
         RoleEntity role = new RoleEntity();
         role.setRoleCode("SUPER_ADMIN");
@@ -231,6 +234,70 @@ class OopApiSmokeTest {
 
         assertThat(response.getStatusCode().value()).isEqualTo(403);
         assertThat(response.getBody().get("code")).isEqualTo(2007);
+    }
+
+    @Test
+    @DisplayName("组织更新支持 Query/Form 参数绑定")
+    void updateOrganizationAcceptsQueryFormParameters() {
+        ResponseEntity<Map> response = rest.exchange(
+                "/organizations/" + organizationId
+                        + "?orgName=新总公司&sortNo=2&status=ACTIVE",
+                HttpMethod.PUT, authorized(), Map.class);
+
+        assertThat(response.getStatusCode().value()).isEqualTo(200);
+        assertThat(response.getBody().get("code")).isEqualTo(0);
+        Map<?, ?> data = (Map<?, ?>) response.getBody().get("data");
+        assertThat(data.get("orgName")).isEqualTo("新总公司");
+        assertThat(((Number) data.get("sortNo")).intValue()).isEqualTo(2);
+    }
+
+    @Test
+    @DisplayName("员工调岗支持 Query/Form 参数绑定")
+    void transferUserAcceptsQueryFormParameters() {
+        ResponseEntity<Map> response = rest.exchange(
+                "/users/" + userId + "/organization?orgId=" + organizationId
+                        + "&post=架构师",
+                HttpMethod.PUT, authorized(), Map.class);
+
+        assertThat(response.getStatusCode().value()).isEqualTo(200);
+        assertThat(response.getBody().get("code")).isEqualTo(0);
+        Map<?, ?> data = (Map<?, ?>) response.getBody().get("data");
+        assertThat(((Number) data.get("orgId")).longValue()).isEqualTo(organizationId);
+        assertThat(data.get("post")).isEqualTo("架构师");
+    }
+
+    @Test
+    @DisplayName("自助改密成功后会吊销旧访问令牌")
+    void changePasswordRevokesExistingToken() {
+        ResponseEntity<Map> changed = rest.exchange(
+                "/auth/password?oldPassword=Admin@123&newPassword=NewPass123",
+                HttpMethod.PUT, authorized(), Map.class);
+
+        assertThat(changed.getStatusCode().value()).isEqualTo(200);
+        assertThat(changed.getBody().get("code")).isEqualTo(0);
+
+        ResponseEntity<Map> after = rest.exchange(
+                CURRENT_USER_URL, HttpMethod.GET, authorized(), Map.class);
+
+        assertThat(after.getStatusCode().value()).isEqualTo(401);
+        assertThat(after.getBody().get("code")).isEqualTo("UNAUTHORIZED");
+    }
+
+    private void registerApi(Long systemId, Long permissionId, String code,
+                             String name, String path, String method,
+                             LocalDateTime now) {
+        ApiEntity api = new ApiEntity();
+        api.setSystemId(systemId);
+        api.setPermissionId(permissionId);
+        api.setApiCode(code);
+        api.setApiName(name);
+        api.setApiPath(path);
+        api.setHttpMethod(method);
+        api.setStatus("ACTIVE");
+        api.setIsDeleted(0);
+        api.setCreatedAt(now);
+        api.setUpdatedAt(now);
+        apis.saveAndFlush(api);
     }
 
     private HttpEntity<Void> authorized() {

@@ -14,11 +14,11 @@ import java.util.List;
 public class LoginRequest {
 
     @NotBlank
-    @Size(max = 32)
+    @Size(max = 128)
     private String username;
 
     @NotBlank
-    @Size(max = 64)
+    @Size(max = 256)
     private String password;
 
     @NotEmpty

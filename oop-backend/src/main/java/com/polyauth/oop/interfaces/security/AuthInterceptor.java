@@ -9,7 +9,9 @@ import com.polyauth.oop.application.usecase.OperationAccessUseCase;
 import com.polyauth.oop.interfaces.filter.RequestIdFilter;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
+import org.springframework.web.cors.CorsUtils;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.HandlerMapping;
@@ -53,7 +55,9 @@ public class AuthInterceptor implements HandlerInterceptor {
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response,
                              Object handler) {
-        if (!(handler instanceof HandlerMethod)) {
+        if (CorsUtils.isPreFlightRequest(request)
+                || HttpMethod.OPTIONS.matches(request.getMethod())
+                || !(handler instanceof HandlerMethod)) {
             return true;
         }
         try {
@@ -85,6 +89,10 @@ public class AuthInterceptor implements HandlerInterceptor {
     @Override
     public void afterCompletion(HttpServletRequest request, HttpServletResponse response,
                                 Object handler, Exception exception) {
+        if (CorsUtils.isPreFlightRequest(request)
+                || HttpMethod.OPTIONS.matches(request.getMethod())) {
+            return;
+        }
         if (handler instanceof HandlerMethod) {
             recordAudit(request, response, exception);
         }

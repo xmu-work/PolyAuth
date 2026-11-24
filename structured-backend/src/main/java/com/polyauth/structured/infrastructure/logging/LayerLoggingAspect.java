@@ -17,34 +17,65 @@ import org.springframework.stereotype.Component;
 @Component
 public class LayerLoggingAspect {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(LayerLoggingAspect.class);
-
     /**
-     * 记录分层方法开始、正常完成耗时或异常类型。
+     * 记录分层方法开始、正常完成耗时或异常类型，按目标业务类解析 Logger 以便各层级别独立生效。
      *
      * @param joinPoint 被代理方法
      * @return 原方法返回值
      * @throws Throwable 原方法异常
      */
-    @Around("execution(* com.polyauth.structured.interfaces..*(..))"
+    @Around("(execution(* com.polyauth.structured.interfaces..*Controller.*(..))"
             + " || execution(* com.polyauth.structured.application..*(..))"
-            + " || execution(* com.polyauth.structured.infrastructure..*(..))")
+            + " || execution(* com.polyauth.structured.infrastructure..*(..)))"
+            + " && !within(com.polyauth.structured.infrastructure.logging..*)"
+            + " && !within(com.polyauth.structured.infrastructure.scheduling..*)"
+            + " && !within(com.polyauth.structured.application.expiration..*)")
     public Object logLayer(ProceedingJoinPoint joinPoint) throws Throwable {
-        String layer = layerOf(joinPoint.getTarget().getClass().getName());
-        String type = joinPoint.getTarget().getClass().getSimpleName();
+        Class<?> targetType = resolveTargetType(joinPoint);
+        Logger logger = LoggerFactory.getLogger(targetType);
+        String layer = layerOf(targetType.getName());
+        String type = targetType.getSimpleName();
         String method = joinPoint.getSignature().getName();
+        boolean schedulingThread = Thread.currentThread().getName().startsWith("scheduling-");
         long started = System.nanoTime();
-        LOGGER.debug("layer={} class={} method={} phase=start", layer, type, method);
+        if (!schedulingThread && logger.isDebugEnabled()) {
+            logger.debug("layer={} class={} method={} phase=start", layer, type, method);
+        }
         try {
             Object result = joinPoint.proceed();
-            LOGGER.debug("layer={} class={} method={} phase=complete elapsedMs={}",
-                    layer, type, method, elapsedMillis(started));
+            if (!schedulingThread && logger.isDebugEnabled()) {
+                logger.debug("layer={} class={} method={} phase=complete elapsedMs={}",
+                        layer, type, method, elapsedMillis(started));
+            }
             return result;
         } catch (Throwable exception) {
-            LOGGER.warn("layer={} class={} method={} phase=exception elapsedMs={} type={}",
+            logger.warn("layer={} class={} method={} phase=exception elapsedMs={} type={}",
                     layer, type, method, elapsedMillis(started), exception.getClass().getSimpleName());
             throw exception;
         }
+    }
+
+    /**
+     * 解析实际业务类型，优先还原 Spring Data JPA 代理背后的业务接口。
+     */
+    private Class<?> resolveTargetType(ProceedingJoinPoint joinPoint) {
+        Class<?> declaringType = joinPoint.getSignature().getDeclaringType();
+        if (declaringType != null && declaringType.getName().startsWith("com.polyauth.structured.")) {
+            return declaringType;
+        }
+        Object target = joinPoint.getTarget();
+        if (target != null && target.getClass().getName().startsWith("com.polyauth.structured.")) {
+            return target.getClass();
+        }
+        Object proxy = joinPoint.getThis();
+        if (proxy != null) {
+            for (Class<?> iface : proxy.getClass().getInterfaces()) {
+                if (iface.getName().startsWith("com.polyauth.structured.")) {
+                    return iface;
+                }
+            }
+        }
+        return LayerLoggingAspect.class;
     }
 
     /**

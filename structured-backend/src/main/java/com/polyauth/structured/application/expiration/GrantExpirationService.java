@@ -6,6 +6,8 @@ import com.polyauth.structured.infrastructure.persistence.entity.IamUserRole;
 import com.polyauth.structured.infrastructure.persistence.repository.IamUserRoleRepository;
 import com.polyauth.structured.interfaces.RequestIdFilter;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +22,8 @@ import java.util.Map;
 @Service
 @RequiredArgsConstructor
 public class GrantExpirationService {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(GrantExpirationService.class);
 
     private final IamUserRoleRepository userRoleRepository;
     private final LogService logService;
@@ -43,6 +47,7 @@ public class GrantExpirationService {
         }
         if (!userRoles.isEmpty()) {
             userRoleRepository.saveAll(userRoles);
+            LOGGER.info("expired due user-role grants count={}", userRoles.size());
         }
 
         return new ExpirationResult(userRoles.size());

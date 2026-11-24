@@ -78,7 +78,7 @@ PolyAuth 是面向多业务系统的统一身份与功能权限平台，集中�
 - 统一日志分页查询，支持用户、用户名、系统、类型、动作、成功状态和时间范围过滤。
 - 审计日志 CSV 导出，包含公式注入防护；登录成败和只读鉴权请求均留痕。
 - 数据库触发器拒绝修改和删除 `iam_log`，保证只追加。
-- 前端每次菜单切换调用 `GET /auth/permissions/{permission}`，由认证拦截器与 `LayerLoggingAspect` 产生对应后端 Logback 和审计记录。
+- 前端每次通过侧栏、顶栏标签页或浏览器历史切换业务菜单时，路由守卫统一调用 `GET /auth/permissions/{permission}`，后端经 `RequestIdFilter`、`AuthInterceptor`、`IdentityAuthController` 与 `LayerLoggingAspect` 输出包含菜单权限码与请求路径的 Logback 日志（控制台 + 滚动文件）及审计记录。
 - 权限缓存使用版本号失效，不使用 Redis `KEYS` 扫描。
 - 分布式锁使用 owner token 与原子解锁。
 
