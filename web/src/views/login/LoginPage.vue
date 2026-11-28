@@ -4,11 +4,15 @@ import { useRoute, useRouter } from 'vue-router'
 import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessage } from 'element-plus'
 import { Lock, User } from '@element-plus/icons-vue'
+import { prepareAccessAfterLogin, resetAccessState } from '@/router/access'
+import { useAppStore } from '@/stores/app.store'
 import { useAuthStore } from '@/stores/auth.store'
 import { ADMIN_SYSTEM_CODE } from '@/constants'
+import type { BusinessError } from '@/utils/request'
 
 const route = useRoute()
 const router = useRouter()
+const appStore = useAppStore()
 const authStore = useAuthStore()
 const formRef = ref<FormInstance>()
 const submitting = ref(false)
@@ -27,17 +31,39 @@ const statusMessage = computed(() =>
   typeof route.query.reason === 'string' ? route.query.reason : '',
 )
 
+const BLOCKED_REDIRECT_PATHS = new Set(['/login', '/403', '/404', '/500'])
+
+function isBusinessError(error: unknown): error is BusinessError {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'code' in error &&
+    typeof error.code === 'number' &&
+    'message' in error &&
+    typeof error.message === 'string'
+  )
+}
+
 function safeRedirect(): string {
   const redirect = route.query.redirect
-  if (
-    typeof redirect === 'string' &&
-    redirect.startsWith('/') &&
-    !redirect.startsWith('//') &&
-    redirect !== '/login'
-  ) {
-    return redirect
+  if (typeof redirect === 'string' && redirect.startsWith('/') && !redirect.startsWith('//')) {
+    const pathname = redirect.split('?')[0] ?? redirect
+    if (!BLOCKED_REDIRECT_PATHS.has(pathname)) {
+      return redirect
+    }
   }
   return '/'
+}
+
+async function clearFailedLoginSession(): Promise<void> {
+  try {
+    await authStore.logout()
+  } catch {
+    authStore.clearSession()
+  } finally {
+    resetAccessState()
+    appStore.resetTabs()
+  }
 }
 
 async function submit(): Promise<void> {
@@ -56,9 +82,23 @@ async function submit(): Promise<void> {
       password: form.password,
       systems: [ADMIN_SYSTEM_CODE],
     })
+    let hasAccess = false
+    try {
+      hasAccess = await prepareAccessAfterLogin(router)
+    } catch (error) {
+      await clearFailedLoginSession()
+      throw error
+    }
+    if (!hasAccess) {
+      await clearFailedLoginSession()
+      ElMessage.error('当前账号暂无权限管理后台访问权限，请使用管理员账号登录')
+      return
+    }
     await router.replace(safeRedirect())
   } catch (error) {
-    ElMessage.error(error instanceof Error ? error.message : '登录失败')
+    if (!isBusinessError(error)) {
+      ElMessage.error(error instanceof Error ? error.message : '登录失败')
+    }
   } finally {
     submitting.value = false
   }

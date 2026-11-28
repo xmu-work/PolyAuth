@@ -691,4 +691,22 @@ class ApiControllerTest {
                         .param("orgId", "12").param("post", "预算员"))
                 .andExpect(status().isOk());
     }
+
+    @Test
+    @DisplayName("调岗/角色更新正数校验与改密参数校验统一返回 400/1001")
+    void validationConstraintsMatchOopContract() throws Exception {
+        mvc.perform(put("/users/5/organization").header("Authorization", AUTH)
+                        .param("orgId", "0").param("post", "预算员"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value(1001));
+        mvc.perform(put("/roles/3").header("Authorization", AUTH)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"roleName\":\"部门经理\",\"status\":\"ACTIVE\",\"parentId\":0}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value(1001));
+        mvc.perform(put("/auth/password").header("Authorization", AUTH)
+                        .param("oldPassword", " ").param("newPassword", "NewPass123"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value(1001));
+    }
 }

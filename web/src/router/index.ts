@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 import { authApi } from '@/api'
-import { allBusinessPaths } from './business-routes'
+import { allBusinessPaths, hasAccessibleBusinessRoute } from './business-routes'
 import { ensureAccessReady, isAccessReady, installBusinessRoutes } from './access'
 import { useAppStore } from '@/stores/app.store'
 import { useAuthStore } from '@/stores/auth.store'
@@ -54,7 +54,12 @@ export function installRouterGuards(): void {
       to.name === 'NotFoundPage' && (allBusinessPaths.has(to.path) || to.path === '/')
 
     if (to.meta.public === true && !requestedBusinessPath) {
-      if (to.name === 'LoginPage' && authStore.hasValidSession && isAccessReady()) {
+      if (
+        to.name === 'LoginPage' &&
+        authStore.hasValidSession &&
+        isAccessReady() &&
+        hasAccessibleBusinessRoute(usePermissionStore().permissionIds)
+      ) {
         return { path: '/', replace: true }
       }
       return true

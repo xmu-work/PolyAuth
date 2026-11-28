@@ -33,7 +33,8 @@ const ORG_TYPE_TAG: Record<OrgTypeCode, TagType> = {
 
 const treeRef = ref<{ setCurrentKey: (key: number | null) => void }>()
 const treeKey = ref(0)
-const expandedKeys = ref<number[]>([])
+const liveExpandedIds = new Set<number>()
+const initialExpandedKeys = ref<number[]>([])
 const rootCount = ref(-1)
 const initializing = ref(true)
 const rootError = ref<string | null>(null)
@@ -64,23 +65,36 @@ function handleNodeClick(data: OrgTreeNode): void {
 
 /** node-expand / node-collapse 事件签名是 (data, node, instance)，节点对象在第二个参数 */
 function handleNodeExpand(data: unknown, node: TreeNodeLike): void {
-  const id = node.data?.id ?? (data as Partial<OrgTreeNode> | null)?.id
-  if (id !== undefined && !expandedKeys.value.includes(id)) {
-    expandedKeys.value.push(id)
+  if (node.isLeaf || (node.loaded && (node.childNodes?.length ?? 0) === 0)) {
+    return
   }
+  const id = node.data?.id ?? (data as Partial<OrgTreeNode> | null)?.id
+  if (id !== undefined) {
+    liveExpandedIds.add(id)
+  }
+}
+
+function removeSubtreeExpandedIds(node: TreeNodeLike): void {
+  const id = node.data?.id
+  if (id !== undefined) {
+    liveExpandedIds.delete(id)
+  }
+  node.childNodes?.forEach((child) => removeSubtreeExpandedIds(child))
 }
 
 function handleNodeCollapse(data: unknown, node: TreeNodeLike): void {
   const id = node.data?.id ?? (data as Partial<OrgTreeNode> | null)?.id
   if (id !== undefined) {
-    expandedKeys.value = expandedKeys.value.filter((item) => item !== id)
+    liveExpandedIds.delete(id)
   }
+  removeSubtreeExpandedIds(node)
 }
 
 /** 重建树（保留展开与选中），用于新增/移动后的刷新 */
 async function reloadTree(): Promise<void> {
   initializing.value = true
   rootError.value = null
+  initialExpandedKeys.value = Array.from(liveExpandedIds)
   treeKey.value += 1
   await nextTick()
   if (props.selectedOrgId !== null) {
@@ -228,7 +242,7 @@ onBeforeUnmount(() => {
         :draggable="canMoveOrg"
         :load="loadChildren"
         :props="{ label: 'orgName' }"
-        :default-expanded-keys="expandedKeys"
+        :default-expanded-keys="initialExpandedKeys"
         :current-node-key="selectedOrgId ?? undefined"
         :allow-drag="handleAllowDrag"
         :allow-drop="handleAllowDrop"

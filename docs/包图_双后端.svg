@@ -1,108 +1,121 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="2400" height="1500" viewBox="0 0 2400 1500" font-family="PingFang SC,Microsoft YaHei,SimHei,sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" width="2400" height="1440" viewBox="0 0 2400 1440" font-family="PingFang SC,Microsoft YaHei,SimHei,sans-serif">
 <defs><marker id="arr" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L8,3 L0,6 Z" fill="#333"/></marker><marker id="arrb" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L8,3 L0,6 Z" fill="#1f4e8c"/></marker></defs>
-<rect width="2400" height="1500" fill="#ffffff"/>
+<rect width="2400" height="1440" fill="#ffffff"/>
 <text x="1200.0" y="42" text-anchor="middle" font-size="26" font-weight="bold">PolyAuth 后端包图（当前代码依赖）</text>
-<defs><marker id="package-arrow" markerWidth="13" markerHeight="12" refX="11" refY="6" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L12,6 L0,12" fill="#ffffff" stroke="#65768a" stroke-width="1.5"/></marker></defs>
-<text x="1200" y="78" text-anchor="middle" font-size="14" font-weight="normal" fill="#526579">左侧：结构化后端按功能过程分层；右侧：OOP 后端由领域模型和端口隔离基础设施。</text>
-<line x1="1200" y1="110" x2="1200" y2="1430" stroke="#d7e0e9" stroke-width="2"/>
-<text x="600" y="132" text-anchor="middle" font-size="20" font-weight="bold" fill="#1f4e8c">结构化后端 · com.polyauth.structured</text>
-<text x="1800" y="132" text-anchor="middle" font-size="20" font-weight="bold" fill="#1f4e8c">OOP 后端 · com.polyauth.oop</text>
-<path d="M600,350 L600,435" fill="none" stroke="#65768a" stroke-width="1.7" stroke-dasharray="9,6" marker-end="url(#package-arrow)"/>
-<rect x="570" y="384" width="300" height="17.5" fill="#fff" opacity="0.9"/>
-<text x="720" y="397" text-anchor="middle" font-size="12.5" font-weight="normal" fill="#4a5c70">interfaces → application</text>
-<path d="M600,660 L600,760" fill="none" stroke="#65768a" stroke-width="1.7" stroke-dasharray="9,6" marker-end="url(#package-arrow)"/>
-<rect x="562" y="700" width="349" height="17.5" fill="#fff" opacity="0.9"/>
-<text x="737" y="712" text-anchor="middle" font-size="12.5" font-weight="normal" fill="#4a5c70">application → infrastructure</text>
-<path d="M240,1030 L295,1130" fill="none" stroke="#65768a" stroke-width="1.7" stroke-dasharray="9,6" marker-end="url(#package-arrow)"/>
-<rect x="236" y="1078" width="288" height="17.5" fill="#fff" opacity="0.9"/>
-<text x="380" y="1090" text-anchor="middle" font-size="12.5" font-weight="normal" fill="#4a5c70">infrastructure → common</text>
-<path d="M1640,350 L1490,350" fill="none" stroke="#65768a" stroke-width="1.7" stroke-dasharray="9,6" marker-end="url(#package-arrow)"/>
-<rect x="1415" y="312" width="300" height="17.5" fill="#fff" opacity="0.9"/>
-<text x="1565" y="325" text-anchor="middle" font-size="12.5" font-weight="normal" fill="#4a5c70">interfaces → application</text>
-<path d="M1490,670 L1490,785" fill="none" stroke="#65768a" stroke-width="1.7" stroke-dasharray="9,6" marker-end="url(#package-arrow)"/>
-<rect x="1484" y="718" width="251" height="17.5" fill="#fff" opacity="0.9"/>
-<text x="1610" y="730" text-anchor="middle" font-size="12.5" font-weight="normal" fill="#4a5c70">application → domain</text>
-<path d="M1490,1035 L1490,1160" fill="none" stroke="#65768a" stroke-width="1.7" stroke-dasharray="9,6" marker-end="url(#package-arrow)"/>
-<rect x="1494" y="1088" width="361" height="17.5" fill="#fff" opacity="0.9"/>
-<text x="1675" y="1100" text-anchor="middle" font-size="12.5" font-weight="normal" fill="#4a5c70">infrastructure → domain ports</text>
-<path d="M210,190 H346 Q360,190 360,204 V224 H210 Z" fill="#dceaf8" stroke="#29445f" stroke-width="1.6"/>
-<rect x="210" y="224" width="780" height="126" rx="5" fill="#ffffff" stroke="#29445f" stroke-width="1.6"/>
-<text x="285.0" y="213" text-anchor="middle" font-size="15" font-weight="bold" fill="#172033">interfaces</text>
-<rect x="228" y="240" width="744" height="25" rx="4" fill="#f7fafc" stroke="#d5dee8" stroke-width="1"/>
-<text x="241" y="257" font-size="13.5" fill="#25384d">admin：Controller、DTO、VO</text>
-<rect x="228" y="271" width="744" height="25" rx="4" fill="#f7fafc" stroke="#d5dee8" stroke-width="1"/>
-<text x="241" y="288" font-size="13.5" fill="#25384d">identity：统一身份契约</text>
-<rect x="228" y="302" width="744" height="25" rx="4" fill="#f7fafc" stroke="#d5dee8" stroke-width="1"/>
-<text x="241" y="319" font-size="13.5" fill="#25384d">AuthInterceptor、RequestIdFilter</text>
-<path d="M210,435 H358 Q372,435 372,449 V469 H210 Z" fill="#dceaf8" stroke="#29445f" stroke-width="1.6"/>
-<rect x="210" y="469" width="780" height="191" rx="5" fill="#ffffff" stroke="#29445f" stroke-width="1.6"/>
-<text x="291.0" y="458" text-anchor="middle" font-size="15" font-weight="bold" fill="#172033">application</text>
-<rect x="228" y="485" width="744" height="25" rx="4" fill="#f7fafc" stroke="#d5dee8" stroke-width="1"/>
-<text x="241" y="502" font-size="13.5" fill="#25384d">auth / account / organization</text>
-<rect x="228" y="516" width="744" height="25" rx="4" fill="#f7fafc" stroke="#d5dee8" stroke-width="1"/>
-<text x="241" y="533" font-size="13.5" fill="#25384d">role / permission / datascope</text>
-<rect x="228" y="547" width="744" height="25" rx="4" fill="#f7fafc" stroke="#d5dee8" stroke-width="1"/>
-<text x="241" y="564" font-size="13.5" fill="#25384d">decision / identity / log</text>
-<rect x="228" y="578" width="744" height="25" rx="4" fill="#f7fafc" stroke="#d5dee8" stroke-width="1"/>
-<text x="241" y="595" font-size="13.5" fill="#25384d">线性业务过程与事务边界</text>
-<path d="M210,760 H394 Q408,760 408,774 V794 H210 Z" fill="#f8eddc" stroke="#29445f" stroke-width="1.6"/>
-<rect x="210" y="794" width="780" height="236" rx="5" fill="#ffffff" stroke="#29445f" stroke-width="1.6"/>
-<text x="309.0" y="783" text-anchor="middle" font-size="15" font-weight="bold" fill="#172033">infrastructure</text>
-<rect x="228" y="810" width="744" height="25" rx="4" fill="#f7fafc" stroke="#d5dee8" stroke-width="1"/>
-<text x="241" y="827" font-size="13.5" fill="#25384d">persistence.entity：JPA 实体</text>
-<rect x="228" y="841" width="744" height="25" rx="4" fill="#f7fafc" stroke="#d5dee8" stroke-width="1"/>
-<text x="241" y="858" font-size="13.5" fill="#25384d">persistence.repository：Spring Data</text>
-<rect x="228" y="872" width="744" height="25" rx="4" fill="#f7fafc" stroke="#d5dee8" stroke-width="1"/>
-<text x="241" y="889" font-size="13.5" fill="#25384d">cache：Redis、锁、幂等</text>
-<rect x="228" y="903" width="744" height="25" rx="4" fill="#f7fafc" stroke="#d5dee8" stroke-width="1"/>
-<text x="241" y="920" font-size="13.5" fill="#25384d">crypto / logging / scheduling</text>
-<path d="M70,1130 H186 Q200,1130 200,1144 V1164 H70 Z" fill="#eef2f6" stroke="#29445f" stroke-width="1.6"/>
-<rect x="70" y="1164" width="450" height="146" rx="5" fill="#ffffff" stroke="#29445f" stroke-width="1.6"/>
-<text x="135.0" y="1153" text-anchor="middle" font-size="15" font-weight="bold" fill="#172033">common</text>
-<rect x="88" y="1180" width="414" height="25" rx="4" fill="#f7fafc" stroke="#d5dee8" stroke-width="1"/>
-<text x="101" y="1197" font-size="13.5" fill="#25384d">Result / PageResult</text>
-<rect x="88" y="1211" width="414" height="25" rx="4" fill="#f7fafc" stroke="#d5dee8" stroke-width="1"/>
-<text x="101" y="1228" font-size="13.5" fill="#25384d">ErrorCode / BusinessException</text>
-<rect x="88" y="1242" width="414" height="25" rx="4" fill="#f7fafc" stroke="#d5dee8" stroke-width="1"/>
-<text x="101" y="1259" font-size="13.5" fill="#25384d">枚举与公共规则</text>
-<path d="M1370,190 H1506 Q1520,190 1520,204 V224 H1370 Z" fill="#dceaf8" stroke="#29445f" stroke-width="1.6"/>
-<rect x="1370" y="224" width="900" height="126" rx="5" fill="#ffffff" stroke="#29445f" stroke-width="1.6"/>
-<text x="1445.0" y="213" text-anchor="middle" font-size="15" font-weight="bold" fill="#172033">interfaces</text>
-<rect x="1388" y="240" width="864" height="25" rx="4" fill="#f7fafc" stroke="#d5dee8" stroke-width="1"/>
-<text x="1401" y="257" font-size="13.5" fill="#25384d">controller：AuthController、RoleController</text>
-<rect x="1388" y="271" width="864" height="25" rx="4" fill="#f7fafc" stroke="#d5dee8" stroke-width="1"/>
-<text x="1401" y="288" font-size="13.5" fill="#25384d">filter / advice / security</text>
-<path d="M1370,435 H1518 Q1532,435 1532,449 V469 H1370 Z" fill="#dceaf8" stroke="#29445f" stroke-width="1.6"/>
-<rect x="1370" y="469" width="900" height="201" rx="5" fill="#ffffff" stroke="#29445f" stroke-width="1.6"/>
-<text x="1451.0" y="458" text-anchor="middle" font-size="15" font-weight="bold" fill="#172033">application</text>
-<rect x="1388" y="485" width="864" height="25" rx="4" fill="#f7fafc" stroke="#d5dee8" stroke-width="1"/>
-<text x="1401" y="502" font-size="13.5" fill="#25384d">command / result</text>
-<rect x="1388" y="516" width="864" height="25" rx="4" fill="#f7fafc" stroke="#d5dee8" stroke-width="1"/>
-<text x="1401" y="533" font-size="13.5" fill="#25384d">usecase：认证、角色、权限查询</text>
-<rect x="1388" y="547" width="864" height="25" rx="4" fill="#f7fafc" stroke="#d5dee8" stroke-width="1"/>
-<text x="1401" y="564" font-size="13.5" fill="#25384d">port：JWT、密码、审计、加密</text>
-<path d="M1370,785 H1486 Q1500,785 1500,799 V819 H1370 Z" fill="#e3f4e8" stroke="#29445f" stroke-width="1.6"/>
-<rect x="1370" y="819" width="900" height="216" rx="5" fill="#ffffff" stroke="#29445f" stroke-width="1.6"/>
-<text x="1435.0" y="808" text-anchor="middle" font-size="15" font-weight="bold" fill="#172033">domain</text>
-<rect x="1388" y="835" width="864" height="25" rx="4" fill="#f7fafc" stroke="#d5dee8" stroke-width="1"/>
-<text x="1401" y="852" font-size="13.5" fill="#25384d">model：Role、RoleGrant、UserAccount</text>
-<rect x="1388" y="866" width="864" height="25" rx="4" fill="#f7fafc" stroke="#d5dee8" stroke-width="1"/>
-<text x="1401" y="883" font-size="13.5" fill="#25384d">service：RoleHierarchy、PermissionResolver</text>
-<rect x="1388" y="897" width="864" height="25" rx="4" fill="#f7fafc" stroke="#d5dee8" stroke-width="1"/>
-<text x="1401" y="914" font-size="13.5" fill="#25384d">repository：只返回领域对象</text>
-<rect x="1388" y="928" width="864" height="25" rx="4" fill="#f7fafc" stroke="#d5dee8" stroke-width="1"/>
-<text x="1401" y="945" font-size="13.5" fill="#25384d">不依赖 Spring / JPA / interfaces</text>
-<path d="M1370,1160 H1554 Q1568,1160 1568,1174 V1194 H1370 Z" fill="#f8eddc" stroke="#29445f" stroke-width="1.6"/>
-<rect x="1370" y="1194" width="900" height="196" rx="5" fill="#ffffff" stroke="#29445f" stroke-width="1.6"/>
-<text x="1469.0" y="1183" text-anchor="middle" font-size="15" font-weight="bold" fill="#172033">infrastructure</text>
-<rect x="1388" y="1210" width="864" height="25" rx="4" fill="#f7fafc" stroke="#d5dee8" stroke-width="1"/>
-<text x="1401" y="1227" font-size="13.5" fill="#25384d">persistence.entity / mapper / adapter</text>
-<rect x="1388" y="1241" width="864" height="25" rx="4" fill="#f7fafc" stroke="#d5dee8" stroke-width="1"/>
-<text x="1401" y="1258" font-size="13.5" fill="#25384d">crypto：AES、PBKDF2、HMAC</text>
-<rect x="1388" y="1272" width="864" height="25" rx="4" fill="#f7fafc" stroke="#d5dee8" stroke-width="1"/>
-<text x="1401" y="1289" font-size="13.5" fill="#25384d">security：JWT 实现</text>
-<rect x="1388" y="1303" width="864" height="25" rx="4" fill="#f7fafc" stroke="#d5dee8" stroke-width="1"/>
-<text x="1401" y="1320" font-size="13.5" fill="#25384d">实现 application.port 与 domain.repository</text>
-<rect x="70" y="1385" width="2260" height="70" rx="8" fill="#f7fafc" stroke="#cbd7e3" stroke-width="1.2"/>
-<text x="120" y="1416" text-anchor="start" font-size="14" font-weight="normal" fill="#25384d">结构化：interfaces → application → infrastructure，业务规则集中在 Service；OOP：interfaces → application → domain，infrastructure 通过端口实现并反向适配。</text>
-<text x="120" y="1442" text-anchor="start" font-size="13" font-weight="normal" fill="#5a6979">依赖箭头表示编译期 import 方向；OOP 的 domain 不依赖 infrastructure，避免数据库与 JWT 实现反向侵入领域层。</text></svg>
+<defs><marker id="package-arrow" markerWidth="14" markerHeight="14" refX="11" refY="7" orient="auto" markerUnits="userSpaceOnUse"><path d="M2,2 L11,7 L2,12" fill="none" stroke="#5b6f86" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></marker><marker id="package-arrow-dip" markerWidth="14" markerHeight="14" refX="11" refY="7" orient="auto" markerUnits="userSpaceOnUse"><path d="M2,2 L11,7 L2,12" fill="none" stroke="#1d6b52" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+<text x="1200.0" y="78" text-anchor="middle" font-size="14.5" font-weight="normal" fill="#526579">左侧：结构化后端按功能过程分层；右侧：OOP 后端由领域模型与输出端口隔离基础设施（依赖倒置）。</text>
+<line x1="1120" y1="112" x2="1120" y2="1248" stroke="#d7e0e9" stroke-width="2"/>
+<text x="595" y="140" text-anchor="middle" font-size="20" font-weight="bold" fill="#1f4e8c">结构化后端 · com.polyauth.structured</text>
+<text x="1645" y="140" text-anchor="middle" font-size="20" font-weight="bold" fill="#1f4e8c">OOP 后端 · com.polyauth.oop</text>
+<path d="M180,176 H314 Q326,176 326,188 V210 H180 Z" fill="#dceaf8" stroke="#29445f" stroke-width="1.7"/>
+<rect x="180" y="210" width="830" height="130" rx="6" fill="#ffffff" stroke="#29445f" stroke-width="1.7"/>
+<text x="253.0" y="199" text-anchor="middle" font-size="15.5" font-weight="bold" fill="#172033">interfaces</text>
+<rect x="198" y="226" width="794" height="26" rx="4" fill="#f7fafc" stroke="#d5dee8" stroke-width="1"/>
+<text x="210" y="244" font-size="13.5" fill="#25384d">admin：Controller、DTO、VO（认证、账号、组织、角色、权限、接口、系统、日志）</text>
+<rect x="198" y="259" width="794" height="26" rx="4" fill="#f7fafc" stroke="#d5dee8" stroke-width="1"/>
+<text x="210" y="277" font-size="13.5" fill="#25384d">identity / openapi：统一身份契约与开放接口入口</text>
+<rect x="198" y="292" width="794" height="26" rx="4" fill="#f7fafc" stroke="#d5dee8" stroke-width="1"/>
+<text x="210" y="310" font-size="13.5" fill="#25384d">AuthInterceptor、OpenApiAuthInterceptor、IdempotencyFilter、RequestIdFilter</text>
+<path d="M180,434 H325 Q337,434 337,446 V468 H180 Z" fill="#dceaf8" stroke="#29445f" stroke-width="1.7"/>
+<rect x="180" y="468" width="830" height="164" rx="6" fill="#ffffff" stroke="#29445f" stroke-width="1.7"/>
+<text x="258.5" y="457" text-anchor="middle" font-size="15.5" font-weight="bold" fill="#172033">application</text>
+<rect x="198" y="484" width="794" height="26" rx="4" fill="#f7fafc" stroke="#d5dee8" stroke-width="1"/>
+<text x="210" y="502" font-size="13.5" fill="#25384d">auth / account / organization：认证会话、账号与组织过程</text>
+<rect x="198" y="517" width="794" height="26" rx="4" fill="#f7fafc" stroke="#d5dee8" stroke-width="1"/>
+<text x="210" y="535" font-size="13.5" fill="#25384d">role / permission / api / system：角色、权限、接口与系统管理</text>
+<rect x="198" y="550" width="794" height="26" rx="4" fill="#f7fafc" stroke="#d5dee8" stroke-width="1"/>
+<text x="210" y="568" font-size="13.5" fill="#25384d">decision / identity / openapi / log：鉴权决策、统一身份与审计日志</text>
+<rect x="198" y="583" width="794" height="26" rx="4" fill="#f7fafc" stroke="#d5dee8" stroke-width="1"/>
+<text x="210" y="601" font-size="13.5" fill="#25384d">expiration / idempotency：过期清理与幂等控制（线性过程与事务边界）</text>
+<path d="M180,726 H358 Q370,726 370,738 V760 H180 Z" fill="#f8eddc" stroke="#29445f" stroke-width="1.7"/>
+<rect x="180" y="760" width="830" height="164" rx="6" fill="#ffffff" stroke="#29445f" stroke-width="1.7"/>
+<text x="275.0" y="749" text-anchor="middle" font-size="15.5" font-weight="bold" fill="#172033">infrastructure</text>
+<rect x="198" y="776" width="794" height="26" rx="4" fill="#f7fafc" stroke="#d5dee8" stroke-width="1"/>
+<text x="210" y="794" font-size="13.5" fill="#25384d">persistence.entity：JPA 数据库实体（IamUser、IamRole 等）</text>
+<rect x="198" y="809" width="794" height="26" rx="4" fill="#f7fafc" stroke="#d5dee8" stroke-width="1"/>
+<text x="210" y="827" font-size="13.5" fill="#25384d">persistence.repository：Spring Data JPA 仓储接口</text>
+<rect x="198" y="842" width="794" height="26" rx="4" fill="#f7fafc" stroke="#d5dee8" stroke-width="1"/>
+<text x="210" y="860" font-size="13.5" fill="#25384d">cache：Redis 权限缓存、业务锁、幂等与防重放</text>
+<rect x="198" y="875" width="794" height="26" rx="4" fill="#f7fafc" stroke="#d5dee8" stroke-width="1"/>
+<text x="210" y="893" font-size="13.5" fill="#25384d">crypto / logging / scheduling：加解密、切面日志与定时过期任务</text>
+<path d="M180,1024 H304 Q316,1024 316,1036 V1058 H180 Z" fill="#eef2f6" stroke="#29445f" stroke-width="1.7"/>
+<rect x="180" y="1058" width="830" height="164" rx="6" fill="#ffffff" stroke="#29445f" stroke-width="1.7"/>
+<text x="248.0" y="1047" text-anchor="middle" font-size="15.5" font-weight="bold" fill="#172033">common</text>
+<rect x="198" y="1074" width="794" height="26" rx="4" fill="#f7fafc" stroke="#d5dee8" stroke-width="1"/>
+<text x="210" y="1092" font-size="13.5" fill="#25384d">result：Result / PageResult 统一响应包装</text>
+<rect x="198" y="1107" width="794" height="26" rx="4" fill="#f7fafc" stroke="#d5dee8" stroke-width="1"/>
+<text x="210" y="1125" font-size="13.5" fill="#25384d">exception：BusinessException / GlobalExceptionHandler</text>
+<rect x="198" y="1140" width="794" height="26" rx="4" fill="#f7fafc" stroke="#d5dee8" stroke-width="1"/>
+<text x="210" y="1158" font-size="13.5" fill="#25384d">enums：ErrorCode、AccountStatus、OrgType、RoleType、OperationAction</text>
+<rect x="198" y="1173" width="794" height="26" rx="4" fill="#f7fafc" stroke="#d5dee8" stroke-width="1"/>
+<text x="210" y="1191" font-size="13.5" fill="#25384d">公共契约与基础规则（被 interfaces / application / infrastructure 共用）</text>
+<path d="M1230,176 H1364 Q1376,176 1376,188 V210 H1230 Z" fill="#dceaf8" stroke="#29445f" stroke-width="1.7"/>
+<rect x="1230" y="210" width="830" height="130" rx="6" fill="#ffffff" stroke="#29445f" stroke-width="1.7"/>
+<text x="1303.0" y="199" text-anchor="middle" font-size="15.5" font-weight="bold" fill="#172033">interfaces</text>
+<rect x="1248" y="226" width="794" height="26" rx="4" fill="#f7fafc" stroke="#d5dee8" stroke-width="1"/>
+<text x="1260" y="244" font-size="13.5" fill="#25384d">controller：AuthController、RoleController、IdentityAuthController 等</text>
+<rect x="1248" y="259" width="794" height="26" rx="4" fill="#f7fafc" stroke="#d5dee8" stroke-width="1"/>
+<text x="1260" y="277" font-size="13.5" fill="#25384d">dto / vo / common / openapi：入参 DTO、响应 VO 与统一错误结构</text>
+<rect x="1248" y="292" width="794" height="26" rx="4" fill="#f7fafc" stroke="#d5dee8" stroke-width="1"/>
+<text x="1260" y="310" font-size="13.5" fill="#25384d">filter / advice / security：拦截器、全局异常处理与幂等过滤</text>
+<path d="M1230,434 H1375 Q1387,434 1387,446 V468 H1230 Z" fill="#dceaf8" stroke="#29445f" stroke-width="1.7"/>
+<rect x="1230" y="468" width="830" height="164" rx="6" fill="#ffffff" stroke="#29445f" stroke-width="1.7"/>
+<text x="1308.5" y="457" text-anchor="middle" font-size="15.5" font-weight="bold" fill="#172033">application</text>
+<rect x="1248" y="484" width="794" height="26" rx="4" fill="#f7fafc" stroke="#d5dee8" stroke-width="1"/>
+<text x="1260" y="502" font-size="13.5" fill="#25384d">command / result / exception：用例命令、结果模型与应用错误码</text>
+<rect x="1248" y="517" width="794" height="26" rx="4" fill="#f7fafc" stroke="#d5dee8" stroke-width="1"/>
+<text x="1260" y="535" font-size="13.5" fill="#25384d">usecase：认证、角色、账号、组织、权限查询与统一身份编排</text>
+<rect x="1248" y="550" width="794" height="26" rx="4" fill="#f7fafc" stroke="#d5dee8" stroke-width="1"/>
+<text x="1260" y="568" font-size="13.5" fill="#25384d">port：JWT、密码、审计、加密、幂等与防重放输出端口接口</text>
+<rect x="1248" y="583" width="794" height="26" rx="4" fill="#f7fafc" stroke="#d5dee8" stroke-width="1"/>
+<text x="1260" y="601" font-size="13.5" fill="#25384d">编排用例流程，仅依赖 domain 与自身 port 抽象</text>
+<path d="M1230,726 H1354 Q1366,726 1366,738 V760 H1230 Z" fill="#e3f4e8" stroke="#29445f" stroke-width="1.7"/>
+<rect x="1230" y="760" width="830" height="164" rx="6" fill="#ffffff" stroke="#29445f" stroke-width="1.7"/>
+<text x="1298.0" y="749" text-anchor="middle" font-size="15.5" font-weight="bold" fill="#172033">domain</text>
+<rect x="1248" y="776" width="794" height="26" rx="4" fill="#f7fafc" stroke="#d5dee8" stroke-width="1"/>
+<text x="1260" y="794" font-size="13.5" fill="#25384d">model：Role、RoleGrant、UserAccount、Organization 等领域模型</text>
+<rect x="1248" y="809" width="794" height="26" rx="4" fill="#f7fafc" stroke="#d5dee8" stroke-width="1"/>
+<text x="1260" y="827" font-size="13.5" fill="#25384d">service：RoleHierarchy、PermissionResolver 领域服务</text>
+<rect x="1248" y="842" width="794" height="26" rx="4" fill="#f7fafc" stroke="#d5dee8" stroke-width="1"/>
+<text x="1260" y="860" font-size="13.5" fill="#25384d">repository：纯领域仓储接口（只接收并返回领域对象）</text>
+<rect x="1248" y="875" width="794" height="26" rx="4" fill="#f7fafc" stroke="#d5dee8" stroke-width="1"/>
+<text x="1260" y="893" font-size="13.5" fill="#25384d">exception：领域规则异常（不依赖 Spring / JPA / interfaces）</text>
+<path d="M1230,1024 H1408 Q1420,1024 1420,1036 V1058 H1230 Z" fill="#f8eddc" stroke="#29445f" stroke-width="1.7"/>
+<rect x="1230" y="1058" width="830" height="164" rx="6" fill="#ffffff" stroke="#29445f" stroke-width="1.7"/>
+<text x="1325.0" y="1047" text-anchor="middle" font-size="15.5" font-weight="bold" fill="#172033">infrastructure</text>
+<rect x="1248" y="1074" width="794" height="26" rx="4" fill="#f7fafc" stroke="#d5dee8" stroke-width="1"/>
+<text x="1260" y="1092" font-size="13.5" fill="#25384d">persistence.entity / mapper / repository / adapter：JPA 持久化适配</text>
+<rect x="1248" y="1107" width="794" height="26" rx="4" fill="#f7fafc" stroke="#d5dee8" stroke-width="1"/>
+<text x="1260" y="1125" font-size="13.5" fill="#25384d">crypto：AES 姓名加密、PBKDF2 口令校验、HMAC 令牌摘要</text>
+<rect x="1248" y="1140" width="794" height="26" rx="4" fill="#f7fafc" stroke="#d5dee8" stroke-width="1"/>
+<text x="1260" y="1158" font-size="13.5" fill="#25384d">security / cache / logging：JWT 签发、本地幂等与防重放、切面日志</text>
+<rect x="1248" y="1173" width="794" height="26" rx="4" fill="#f7fafc" stroke="#d5dee8" stroke-width="1"/>
+<text x="1260" y="1191" font-size="13.5" fill="#25384d">实现 domain.repository 与 application.port（反向适配领域与用例）</text>
+<path d="M595,340 L595,467" fill="none" stroke="#5b6f86" stroke-width="1.9" stroke-dasharray="8,5" marker-end="url(#package-arrow)"/>
+<text x="611" y="409" text-anchor="start" font-size="13" font-weight="normal" fill="#45586d">interfaces → application</text>
+<path d="M595,632 L595,759" fill="none" stroke="#5b6f86" stroke-width="1.9" stroke-dasharray="8,5" marker-end="url(#package-arrow)"/>
+<text x="611" y="701" text-anchor="start" font-size="13" font-weight="normal" fill="#45586d">application → infrastructure</text>
+<path d="M595,924 L595,1057" fill="none" stroke="#5b6f86" stroke-width="1.9" stroke-dasharray="8,5" marker-end="url(#package-arrow)"/>
+<text x="611" y="996" text-anchor="start" font-size="13" font-weight="normal" fill="#45586d">infrastructure → common</text>
+<path d="M180,275 H128 M180,550 H128" fill="none" stroke="#5b6f86" stroke-width="1.6" stroke-dasharray="8,5"/>
+<path d="M128,275 L128,1140 L179,1140" fill="none" stroke="#5b6f86" stroke-width="1.9" stroke-dasharray="8,5" marker-end="url(#package-arrow)"/>
+<text x="116" y="822" text-anchor="end" font-size="13" font-weight="normal" fill="#45586d">各层共用</text>
+<text x="116" y="842" text-anchor="end" font-size="13" font-weight="normal" fill="#45586d">common</text>
+<path d="M1645,340 L1645,467" fill="none" stroke="#5b6f86" stroke-width="1.9" stroke-dasharray="8,5" marker-end="url(#package-arrow)"/>
+<text x="1661" y="409" text-anchor="start" font-size="13" font-weight="normal" fill="#45586d">interfaces → application</text>
+<path d="M1645,632 L1645,759" fill="none" stroke="#5b6f86" stroke-width="1.9" stroke-dasharray="8,5" marker-end="url(#package-arrow)"/>
+<text x="1661" y="701" text-anchor="start" font-size="13" font-weight="normal" fill="#45586d">application → domain</text>
+<path d="M1645,1058 L1645,925" fill="none" stroke="#1d6b52" stroke-width="1.9" stroke-dasharray="8,5" marker-end="url(#package-arrow-dip)"/>
+<text x="1661" y="989" text-anchor="start" font-size="13" font-weight="bold" fill="#195c46">infrastructure → domain</text>
+<text x="1661" y="1009" text-anchor="start" font-size="13" font-weight="bold" fill="#195c46">（依赖倒置：实现 domain.repository）</text>
+<path d="M2060,1140 L2112,1140 L2112,563 L2061,563" fill="none" stroke="#1d6b52" stroke-width="1.9" stroke-dasharray="8,5" marker-end="url(#package-arrow-dip)"/>
+<text x="2126" y="818" text-anchor="start" font-size="13" font-weight="bold" fill="#195c46">infrastructure →</text>
+<text x="2126" y="838" text-anchor="start" font-size="13" font-weight="bold" fill="#195c46">application.port</text>
+<text x="2126" y="858" text-anchor="start" font-size="13" font-weight="bold" fill="#195c46">（实现输出端口）</text>
+<rect x="80" y="1272" width="2240" height="126" rx="8" fill="#f7fafc" stroke="#cbd7e3" stroke-width="1.3"/>
+<line x1="120" y1="1300" x2="178" y2="1300" stroke="#5b6f86" stroke-width="1.9" stroke-dasharray="8,5" marker-end="url(#package-arrow)"/>
+<text x="192" y="1305" text-anchor="start" font-size="13.5" font-weight="normal" fill="#45586d">常规单向依赖（编译期 import 方向）</text>
+<line x1="470" y1="1300" x2="528" y2="1300" stroke="#1d6b52" stroke-width="2" stroke-dasharray="8,5" marker-end="url(#package-arrow-dip)"/>
+<text x="542" y="1305" text-anchor="start" font-size="13.5" font-weight="bold" fill="#195c46">依赖倒置（infrastructure 反向实现 domain.repository 与 application.port）</text>
+<text x="120" y="1338" text-anchor="start" font-size="14" font-weight="normal" fill="#25384d">架构对比：结构化后端沿 interfaces → application → infrastructure → common 向下编排过程，业务规则集中在 Service；OOP 后端沿 interfaces → application → domain 逐层收敛，由 infrastructure 反向适配。</text>
+<text x="120" y="1370" text-anchor="start" font-size="13.5" font-weight="normal" fill="#526579">编译期约束：UML 包图虚线箭头指向被依赖方；OOP 的 domain 层不依赖 Spring / JPA / JWT，避免持久化与安全框架反向侵入核心领域规则。</text></svg>

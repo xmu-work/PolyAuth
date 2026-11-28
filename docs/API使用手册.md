@@ -276,7 +276,8 @@ VIEW_EDIT_APPROVE, VIEW_ADD_EDIT, VIEW_EDIT_EXPORT, VIEW_SELF, VIEW_EDIT_SELF
 - `domain/repository` 只使用领域对象和 JDK 容器。
 - JPA Entity、Mapper 和 Adapter 位于 `infrastructure/persistence`。
 
-端点集合由 `ApiParityContractTest` 静态校验；16 个共享 HTTP 场景由 [backend/README.md](../backend/README.md) 说明。
+端点集合由 `ApiParityContractTest` 静态校验；共享 HTTP 场景由
+[backend/README.md](../backend/README.md) 说明。
 
 ## 7. 错误码
 

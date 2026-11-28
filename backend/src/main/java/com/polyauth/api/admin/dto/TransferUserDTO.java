@@ -1,6 +1,7 @@
 package com.polyauth.api.admin.dto;
 
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
@@ -11,6 +12,7 @@ import lombok.Data;
 public class TransferUserDTO {
 
     @NotNull
+    @Positive
     private Long orgId;
 
     @Size(max = 64)

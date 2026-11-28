@@ -292,6 +292,99 @@ class OopApiSmokeTest {
     }
 
     @Test
+    @DisplayName("HTTP 方法不匹配返回 405/1006")
+    void wrongHttpMethodReturnsMethodNotAllowed() {
+        ResponseEntity<Map> response = rest.exchange(
+                "/systems/1", HttpMethod.POST,
+                authorized(), Map.class);
+
+        assertThat(response.getStatusCode().value()).isEqualTo(405);
+        assertThat(response.getBody().get("code")).isEqualTo(1006);
+    }
+
+    @Test
+    @DisplayName("非 ADMIN 系统令牌访问管理端接口仍按 ADMIN 系统校验权限")
+    void managementGuardChecksAdminPermissionRegardlessOfTokenSystem() {
+        LocalDateTime now = LocalDateTime.now();
+        SystemEntity courseSystem = new SystemEntity();
+        courseSystem.setSystemCode("course-project-management");
+        courseSystem.setSystemName("课程项目管理系统");
+        courseSystem.setStatus("ACTIVE");
+        courseSystem.setIsDeleted(0);
+        courseSystem.setCreatedAt(now);
+        courseSystem.setUpdatedAt(now);
+        courseSystem.setVersion(0L);
+        systems.saveAndFlush(courseSystem);
+
+        ResponseEntity<Map> login = rest.postForEntity(
+                LOGIN_URL,
+                Map.of("username", "admin", "password", "Admin@123",
+                        "systems", List.of("course-project-management")),
+                Map.class);
+        assertThat(login.getStatusCode().value()).isEqualTo(200);
+        String courseToken = String.valueOf(login.getBody().get("accessToken"));
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(courseToken);
+        headers.setAccept(List.of(MediaType.APPLICATION_JSON));
+        ResponseEntity<Map> response = rest.exchange(
+                ORGANIZATIONS_URL, HttpMethod.GET,
+                new HttpEntity<>(headers), Map.class);
+
+        assertThat(response.getStatusCode().value()).isEqualTo(200);
+        assertThat(response.getBody().get("code")).isEqualTo(0);
+    }
+
+    @Test
+    @DisplayName("统一身份部门分页 hasChildren 仅统计未删除的启用子部门")
+    void identityDepartmentsHasChildrenIgnoresDisabledChildren() {
+        LocalDateTime now = LocalDateTime.now();
+        OrganizationEntity disabledChild = new OrganizationEntity();
+        disabledChild.setParentId(organizationId);
+        disabledChild.setAncestors("0," + organizationId);
+        disabledChild.setOrgCode("BRANCH_DISABLED");
+        disabledChild.setOrgName("停用分部");
+        disabledChild.setOrgType("BRANCH");
+        disabledChild.setOrgLevel(2);
+        disabledChild.setSortNo(1);
+        disabledChild.setStatus("DISABLED");
+        disabledChild.setIsDeleted(0);
+        disabledChild.setCreatedAt(now);
+        disabledChild.setUpdatedAt(now);
+        disabledChild.setVersion(0L);
+        organizations.saveAndFlush(disabledChild);
+
+        ResponseEntity<Map> whenOnlyDisabled = rest.exchange(
+                "/auth/departments", HttpMethod.GET, authorized(), Map.class);
+        assertThat(whenOnlyDisabled.getStatusCode().value()).isEqualTo(200);
+        List<?> itemsWithoutActive = (List<?>) whenOnlyDisabled.getBody().get("items");
+        assertThat(itemsWithoutActive).hasSize(1);
+        assertThat(((Map<?, ?>) itemsWithoutActive.get(0)).get("hasChildren")).isEqualTo(false);
+
+        OrganizationEntity activeChild = new OrganizationEntity();
+        activeChild.setParentId(organizationId);
+        activeChild.setAncestors("0," + organizationId);
+        activeChild.setOrgCode("BRANCH_ACTIVE");
+        activeChild.setOrgName("启用分部");
+        activeChild.setOrgType("BRANCH");
+        activeChild.setOrgLevel(2);
+        activeChild.setSortNo(2);
+        activeChild.setStatus("ACTIVE");
+        activeChild.setIsDeleted(0);
+        activeChild.setCreatedAt(now);
+        activeChild.setUpdatedAt(now);
+        activeChild.setVersion(0L);
+        organizations.saveAndFlush(activeChild);
+
+        ResponseEntity<Map> withActiveChild = rest.exchange(
+                "/auth/departments", HttpMethod.GET, authorized(), Map.class);
+        assertThat(withActiveChild.getStatusCode().value()).isEqualTo(200);
+        List<?> itemsWithActive = (List<?>) withActiveChild.getBody().get("items");
+        assertThat(itemsWithActive).hasSize(1);
+        assertThat(((Map<?, ?>) itemsWithActive.get(0)).get("hasChildren")).isEqualTo(true);
+    }
+
+    @Test
     @DisplayName("FR-45 外部统一身份审计日志写入幂等且查询不混入访问日志")
     void externalAuditLogsSupportIdempotentWriteAndFilteredQuery() {
         String requestId = UUID.randomUUID().toString();

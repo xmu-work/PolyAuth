@@ -254,6 +254,36 @@ class DualBackendContractTest {
         assertThat(item.path("actor").path("deleted").asBoolean()).isFalse();
     }
 
+    @Test
+    @DisplayName("HTTP 方法不允许统一返回 405/1006")
+    void wrongHttpMethodReturnsMethodNotAllowed() throws Exception {
+        ContractHttpClient.Response response = client.postEmpty("/systems/1", token);
+
+        assertThat(response.status()).isEqualTo(405);
+        assertThat(client.json(response).path("code").asInt()).isEqualTo(1006);
+    }
+
+    @Test
+    @DisplayName("FR-09 组织更新按 Query/Form 传参而非 JSON Body")
+    void updateOrganizationAcceptsQueryForm() throws Exception {
+        ContractHttpClient.Response response = client.putForm(
+                "/organizations/9223372036854775000", token, Map.of("orgName", "契约组织"));
+
+        assertThat(response.status()).isEqualTo(404);
+        assertThat(client.json(response).path("code").asInt()).isEqualTo(1005);
+    }
+
+    @Test
+    @DisplayName("FR-02 员工调岗按 Query/Form 传参而非 JSON Body")
+    void transferUserAcceptsQueryForm() throws Exception {
+        ContractHttpClient.Response response = client.putForm(
+                "/users/9223372036854775000/organization",
+                token, Map.of("orgId", "1", "post", "契约"));
+
+        assertThat(response.status()).isEqualTo(404);
+        assertThat(client.json(response).path("code").asInt()).isEqualTo(1005);
+    }
+
     private static Map<String, String> roleForm(String code, String name) {
         Map<String, String> form = new LinkedHashMap<>();
         form.put("roleCode", code);

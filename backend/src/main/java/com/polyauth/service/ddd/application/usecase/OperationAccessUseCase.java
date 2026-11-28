@@ -12,6 +12,8 @@ import org.springframework.stereotype.Service;
 @Service
 public class OperationAccessUseCase {
 
+    private static final String ADMIN_SYSTEM_CODE = "ADMIN";
+
     private final OperationCatalogRepository operationCatalogRepository;
     private final PermissionAccessUseCase permissionAccessUseCase;
 
@@ -27,14 +29,13 @@ public class OperationAccessUseCase {
     /**
      * 要求请求已登记、已映射权限且当前用户实际拥有该权限。
      */
-    public void requireRequest(Long userId, String systemCode,
-                               String apiPath, String httpMethod) {
+    public void requireRequest(Long userId, String apiPath, String httpMethod) {
         ApiPermissionLookup lookup = operationCatalogRepository
-                .findByRequest(systemCode, apiPath, httpMethod)
+                .findByRequest(apiPath, httpMethod)
                 .orElseThrow(() -> new UseCaseException(
                         ApplicationErrorCode.NO_FUNCTION_PERM,
                         "接口未登记为 API，默认拒绝"));
-        requireMappedPermission(userId, systemCode, lookup);
+        requireMappedPermission(userId, ADMIN_SYSTEM_CODE, lookup);
     }
 
     /**

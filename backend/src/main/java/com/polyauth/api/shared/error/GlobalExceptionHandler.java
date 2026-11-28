@@ -6,6 +6,7 @@ import com.polyauth.api.shared.Result;
 import com.polyauth.api.identity.vo.IdentityErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
+import org.springframework.context.MessageSourceResolvable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindException;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 
 import java.util.stream.Collectors;
 import java.util.Set;
@@ -51,9 +53,12 @@ public class GlobalExceptionHandler {
             HttpServletRequest request) {
         var code = ex.errorCode();
         if (isIdentityRequest(request)) {
+            String message = code
+                    == com.polyauth.service.ddd.application.exception.ApplicationErrorCode.SERVICE_UNAVAILABLE
+                    ? "统一身份认证暂时不可用，请稍后重试。"
+                    : ex.getMessage();
             return ResponseEntity.status(code.httpStatus())
-                    .body(new IdentityErrorResponse(
-                            identityUseCaseCode(code, request), ex.getMessage()));
+                    .body(new IdentityErrorResponse(identityUseCaseCode(code, request), message));
         }
         return ResponseEntity.status(code.httpStatus())
                 .body(Result.fail(code.code(), ex.getMessage()));
@@ -73,6 +78,7 @@ public class GlobalExceptionHandler {
             case UNAUTHENTICATED, TOKEN_INVALID, TOKEN_EXPIRED, TOKEN_REVOKED,
                  SIGNATURE_INVALID, REPLAY_DETECTED -> "UNAUTHORIZED";
             case ACCOUNT_SEALED, ACCOUNT_DISABLED, NO_FUNCTION_PERM, APP_DISABLED -> "FORBIDDEN";
+            case SERVICE_UNAVAILABLE -> "IDENTITY_SERVICE_UNAVAILABLE";
             default -> "CONFLICT";
         };
     }
@@ -104,6 +110,21 @@ public class GlobalExceptionHandler {
         String msg = ex.getConstraintViolations().stream()
                 .map(v -> v.getPropertyPath() + ": " + v.getMessage())
                 .collect(Collectors.joining("; "));
+        if (isIdentityRequest(request)) {
+            return ResponseEntity.badRequest().body(new IdentityErrorResponse("BAD_REQUEST", msg));
+        }
+        return ResponseEntity.badRequest().body(Result.fail(ErrorCode.PARAM_INVALID, msg));
+    }
+
+    @ExceptionHandler(HandlerMethodValidationException.class)
+    public ResponseEntity<?> handleMethodValidation(HandlerMethodValidationException ex, HttpServletRequest request) {
+        String msg = ex.getAllErrors().stream()
+                .map(MessageSourceResolvable::getDefaultMessage)
+                .filter(item -> item != null && !item.isBlank())
+                .collect(Collectors.joining("; "));
+        if (msg.isBlank()) {
+            msg = ex.getMessage();
+        }
         if (isIdentityRequest(request)) {
             return ResponseEntity.badRequest().body(new IdentityErrorResponse("BAD_REQUEST", msg));
         }

@@ -129,7 +129,7 @@ public class IdentityAccessUseCase {
         String normalized = keyword == null ? ""
                 : keyword.trim().toLowerCase(Locale.ROOT);
         List<IdentityDepartment> filtered = source.stream()
-                .filter(Organization::isActive)
+                .filter(item -> !item.isDeleted() && item.isActive())
                 .filter(item -> normalized.isEmpty()
                         || item.orgCode().toLowerCase(Locale.ROOT).contains(normalized)
                         || item.orgName().toLowerCase(Locale.ROOT).contains(normalized))
@@ -137,7 +137,7 @@ public class IdentityAccessUseCase {
                         .thenComparing(Organization::id))
                 .map(item -> new IdentityDepartment(
                         item.id(), item.orgCode(), item.orgName(), item.parentId(),
-                        !organizationRepository.findByParentId(item.id()).isEmpty()))
+                        hasActiveChildren(item.id())))
                 .toList();
         return page(filtered, page, pageSize);
     }
@@ -417,6 +417,11 @@ public class IdentityAccessUseCase {
                 .orElseThrow(() -> new UseCaseException(
                         ApplicationErrorCode.RESOURCE_NOT_FOUND,
                         "统一身份认证系统中没有找到该部门。"));
+    }
+
+    private boolean hasActiveChildren(Long departmentId) {
+        return organizationRepository.findByParentId(departmentId).stream()
+                .anyMatch(child -> !child.isDeleted() && child.isActive());
     }
 
     private String externalRole(String roleCode) {

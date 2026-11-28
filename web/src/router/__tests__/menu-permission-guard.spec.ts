@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
-import { ADMIN_MENU_PERMISSIONS } from '@/constants/permissions'
+import { ADMIN_ACTION_PERMISSIONS, ADMIN_MENU_PERMISSIONS } from '@/constants/permissions'
 import { useAppStore } from '@/stores/app.store'
 import { useAuthStore } from '@/stores/auth.store'
 import { usePermissionStore } from '@/stores/permission.store'
@@ -98,5 +98,25 @@ describe('FR-38 路由守卫菜单权限校验全覆盖', () => {
     expect(apiMocks.checkPermission).toHaveBeenCalledWith('MENU_USER')
     expect(router.currentRoute.value.path).toBe('/home')
     expect(usePermissionStore().count).toBeGreaterThan(0)
+  })
+
+  it('无任何后台菜单权限时访问首页跳 /403，且再次导航到 /login 不会死循环踢回 /403', async () => {
+    apiMocks.getUserPermissionIds.mockResolvedValueOnce([])
+
+    await router.push('/')
+    expect(router.currentRoute.value.path).toBe('/403')
+
+    await router.push('/login')
+    expect(router.currentRoute.value.path).toBe('/login')
+  })
+
+  it('仅有按钮权限而无菜单权限时访问首页跳 /403，且可正常进入 /login 切换账号', async () => {
+    apiMocks.getUserPermissionIds.mockResolvedValueOnce([ADMIN_ACTION_PERMISSIONS.USER_LIST])
+
+    await router.push('/')
+    expect(router.currentRoute.value.path).toBe('/403')
+
+    await router.push('/login')
+    expect(router.currentRoute.value.path).toBe('/login')
   })
 })

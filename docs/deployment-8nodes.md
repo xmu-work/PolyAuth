@@ -85,13 +85,13 @@ docker login swr.cn-north-4.myhuaweicloud.com
 ```bash
 export REG=swr.cn-north-4.myhuaweicloud.com/ooad-mytx
 
-docker build -f deploy/Dockerfile.app -t "$REG/iam-app:1.0.1" .
-docker build -f deploy/Dockerfile.oop -t "$REG/iam-oop-app:1.0.1" .
-docker build -f deploy/Dockerfile.web -t "$REG/iam-web:1.0.1" .
+docker build -f deploy/Dockerfile.app -t "$REG/iam-app:1.0.4" .
+docker build -f deploy/Dockerfile.oop -t "$REG/iam-oop-app:1.0.5" .
+docker build -f deploy/Dockerfile.web -t "$REG/iam-web:1.0.2" .
 
-docker push "$REG/iam-app:1.0.1"
-docker push "$REG/iam-oop-app:1.0.1"
-docker push "$REG/iam-web:1.0.1"
+docker push "$REG/iam-app:1.0.4"
+docker push "$REG/iam-oop-app:1.0.5"
+docker push "$REG/iam-web:1.0.2"
 ```
 
 MySQL 和 Redis 基础镜像也应转推到同一 SWR 组织，避免集群节点访问 Docker Hub：
@@ -170,7 +170,9 @@ docker stack ps iam
 
 如果 `iam_app` 出现两个 Pending，检查是否有且只有三台节点带 `role=app`；如果 `iam_oop` Pending，检查 `oop-01` 的 `role=oop` 标签；如果 `iam_web` 不足三副本，检查三台 manager 是否都能拉取私有镜像。
 
-## 6. 初始化两个数据库
+## 6. 初始化数据库
+
+结构化后端与 OOP 后端共用同一个数据库 `iam_platform`（`iam_mysql` 已通过环境变量 `MYSQL_DATABASE=iam_platform` 与 `MYSQL_USER=iam_app` 自动建库并授权 `iam_app`）。
 
 在 `data-01` 上找到 MySQL 容器：
 
@@ -192,7 +194,7 @@ docker cp /tmp/schema.sql "$CID:/tmp/schema.sql"
 docker cp /tmp/seed.sql "$CID:/tmp/seed.sql"
 ```
 
-初始化 `iam_platform` 数据库：
+初始化业务数据库 `iam_platform`：
 
 ```bash
 docker exec "$CID" sh -c \
@@ -203,7 +205,6 @@ docker exec "$CID" sh -c \
 ```
 
 两种策略共用 `iam_platform`，不需要再初始化第二套数据库。
-
 若当前数据库已有数据，不要重复执行全量 `schema.sql`；应改用对应的幂等升级脚本。
 
 ## 7. 验收权限系统
@@ -282,9 +283,9 @@ docker service update --env-add API_UPSTREAM=http://app:8080 iam_web
 滚动更新前端或后端：
 
 ```bash
-docker service update --image "$REG/iam-app:1.0.1" iam_app
-docker service update --image "$REG/iam-oop-app:1.0.1" iam_oop
-docker service update --image "$REG/iam-web:1.0.1" iam_web
+docker service update --image "$REG/iam-app:1.0.4" iam_app
+docker service update --image "$REG/iam-oop-app:1.0.5" iam_oop
+docker service update --image "$REG/iam-web:1.0.2" iam_web
 ```
 
 常用排障：

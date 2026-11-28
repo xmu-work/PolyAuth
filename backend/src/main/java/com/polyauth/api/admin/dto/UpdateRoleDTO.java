@@ -22,6 +22,7 @@ public class UpdateRoleDTO {
     @Pattern(regexp = "ACTIVE|DISABLED")
     private String status;
 
+    @Positive
     private Long parentId;
 
     /**

@@ -4,10 +4,13 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.mvc.method.RequestMappingInfo;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
@@ -91,6 +94,14 @@ class ApiParityContractTest {
             "POST /systems/role-data-scopes"
     );
 
+    private static final Set<String> JSON_BODY_ENDPOINTS = Set.of(
+            "POST /auth/login",
+            "POST /auth/audit-logs",
+            "PUT /roles/{roleId}",
+            "POST /roles/{roleId}/permissions",
+            "DELETE /roles/{roleId}/permissions"
+    );
+
     private final RequestMappingHandlerMapping handlerMapping;
 
     ApiParityContractTest(
@@ -124,5 +135,32 @@ class ApiParityContractTest {
         assertThat(actual)
                 .as("仅功能权限项目不得注册数据权限端点")
                 .doesNotContainAnyElementsOf(REMOVED_DATA_PERMISSION_ENDPOINTS);
+    }
+
+    @Test
+    @DisplayName("除契约约定的 JSON Body 入口外，其余端点均不得使用 @RequestBody")
+    void onlyContractJsonBodyEndpointsUseRequestBody() {
+        Set<String> requestBodyEndpoints = new TreeSet<>();
+        for (Map.Entry<RequestMappingInfo, HandlerMethod> entry : handlerMapping.getHandlerMethods().entrySet()) {
+            boolean hasRequestBody = Arrays.stream(entry.getValue().getMethodParameters())
+                    .anyMatch(parameter -> parameter.hasParameterAnnotation(RequestBody.class));
+            if (!hasRequestBody) {
+                continue;
+            }
+            Set<String> patterns = entry.getKey().getPatternValues();
+            Set<RequestMethod> methods = entry.getKey().getMethodsCondition().getMethods();
+            for (String pattern : patterns) {
+                for (RequestMethod method : methods) {
+                    String endpoint = method.name() + " " + pattern;
+                    if (STRUCTURED_ENDPOINTS.contains(endpoint)) {
+                        requestBodyEndpoints.add(endpoint);
+                    }
+                }
+            }
+        }
+
+        assertThat(requestBodyEndpoints)
+                .as("使用 @RequestBody 的端点必须与双后端契约一致")
+                .containsExactlyInAnyOrderElementsOf(JSON_BODY_ENDPOINTS);
     }
 }
