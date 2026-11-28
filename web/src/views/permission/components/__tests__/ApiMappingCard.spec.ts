@@ -80,7 +80,7 @@ describe('FR-19 API 与前端权限映射', () => {
 
     await flushPromises()
     expect(wrapper.text()).toContain('查询用户')
-    expect(wrapper.text()).toContain('GET /users')
+    expect(wrapper.text()).toContain('/users')
     expect(wrapper.findAllComponents({ name: 'ElOption' }).map((option) => option.props('value'))).toEqual([
       30002,
     ])
@@ -90,7 +90,7 @@ describe('FR-19 API 与前端权限映射', () => {
     await flushPromises()
 
     expect(unbindApiFromPermission).toHaveBeenCalledWith(20001, 30001)
-    expect(wrapper.text()).toContain('暂无已映射 API')
+    expect(wrapper.text()).toContain('当前权限尚未映射 API')
   })
 
   it('FR-19 可将尚未映射的 API 建立到当前权限', async () => {

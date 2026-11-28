@@ -16,6 +16,12 @@
   --color-warning: #fa8c16;
   --color-danger: #f5222d;
   --color-info: #8c8c8c;
+  --color-success-light-9: #ecf8f1;
+  --color-warning-light-9: #fff5e6;
+  --color-accent-violet: #6d5bd0;
+  --color-accent-violet-light: #f1eefb;
+  --color-accent-teal: #16897b;
+  --color-accent-teal-light: #e8f7f4;
 
   /* ---- 颜色：背景 ---- */
   --color-bg-page: #f5f6fa;
@@ -52,11 +58,13 @@
   --font-size-lg: 16px;
   --font-size-xl: 20px;
   --font-size-title: 24px;
+  --font-size-2xl: 28px;
 
   /* ---- 圆角 ---- */
   --radius-sm: 2px;
   --radius-md: 4px;
   --radius-lg: 8px;
+  --radius-xl: 12px;
   --radius-round: 999px;
 
   /* ---- 阴影 ---- */

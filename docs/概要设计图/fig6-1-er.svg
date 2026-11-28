@@ -1,0 +1,113 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="800" viewBox="0 0 1600 800" font-family="Microsoft YaHei, PingFang SC, SimHei, sans-serif">
+  <style>text[fill="#b03030"]{paint-order:stroke;stroke:#ffffff;stroke-width:2.8px;stroke-linejoin:round}</style>
+  <defs>
+    <marker id="er" markerWidth="12" markerHeight="12" refX="10" refY="4" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L10,4 L0,8" fill="none" stroke="#222" stroke-width="1.2"/>
+    </marker>
+  </defs>
+  <rect width="1600" height="900" fill="#ffffff"/>
+
+  <!-- 第一行实体 -->
+  <rect x="60" y="130" width="190" height="80" fill="#fff" stroke="#222" stroke-width="1.7"/>
+  <text x="155" y="156" text-anchor="middle" font-size="13.5" font-weight="bold">IAM_SYSTEM</text>
+  <text x="155" y="176" text-anchor="middle" font-size="11" fill="#555">业务接入系统</text>
+  <text x="155" y="196" text-anchor="middle" font-size="10.5" fill="#777">system_code, system_name</text>
+
+  <rect x="310" y="130" width="190" height="80" fill="#fff" stroke="#222" stroke-width="1.7"/>
+  <text x="405" y="156" text-anchor="middle" font-size="13.5" font-weight="bold">IAM_PERMISSION</text>
+  <text x="405" y="176" text-anchor="middle" font-size="11" fill="#555">前端权限树</text>
+  <text x="405" y="196" text-anchor="middle" font-size="10.5" fill="#777">permission_code, type</text>
+
+  <rect x="560" y="130" width="190" height="80" fill="#fff" stroke="#222" stroke-width="1.7"/>
+  <text x="655" y="156" text-anchor="middle" font-size="13.5" font-weight="bold">IAM_API</text>
+  <text x="655" y="176" text-anchor="middle" font-size="11" fill="#555">后端 API</text>
+  <text x="655" y="196" text-anchor="middle" font-size="10.5" fill="#777">api_path, http_method</text>
+
+  <rect x="810" y="130" width="190" height="80" fill="#fff" stroke="#222" stroke-width="1.7"/>
+  <text x="905" y="156" text-anchor="middle" font-size="13.5" font-weight="bold">IAM_ROLE</text>
+  <text x="905" y="176" text-anchor="middle" font-size="11" fill="#555">角色</text>
+  <text x="905" y="196" text-anchor="middle" font-size="10.5" fill="#777">role_code, role_type</text>
+
+  <rect x="1060" y="130" width="190" height="80" fill="#fff" stroke="#222" stroke-width="1.7"/>
+  <text x="1155" y="156" text-anchor="middle" font-size="13.5" font-weight="bold">IAM_USER</text>
+  <text x="1155" y="176" text-anchor="middle" font-size="11" fill="#555">账号 / 员工</text>
+  <text x="1155" y="196" text-anchor="middle" font-size="10.5" fill="#777">user_no, account_status</text>
+
+  <rect x="1310" y="130" width="190" height="80" fill="#fff" stroke="#222" stroke-width="1.7"/>
+  <text x="1405" y="156" text-anchor="middle" font-size="13.5" font-weight="bold">IAM_ORG</text>
+  <text x="1405" y="176" text-anchor="middle" font-size="11" fill="#555">分层组织</text>
+  <text x="1405" y="196" text-anchor="middle" font-size="10.5" fill="#777">org_code, org_type</text>
+
+  <!-- 第二行实体 -->
+  <rect x="310" y="430" width="190" height="80" fill="#fff" stroke="#222" stroke-width="1.7"/>
+  <text x="405" y="456" text-anchor="middle" font-size="13.5" font-weight="bold">IAM_DATA_SCOPE</text>
+  <text x="405" y="476" text-anchor="middle" font-size="11" fill="#555">数据范围字典</text>
+  <text x="405" y="496" text-anchor="middle" font-size="10.5" fill="#777">scope_code, scope_name</text>
+
+  <rect x="560" y="430" width="190" height="80" fill="#fff" stroke="#222" stroke-width="1.7"/>
+  <text x="655" y="456" text-anchor="middle" font-size="13.5" font-weight="bold">IAM_LOG</text>
+  <text x="655" y="476" text-anchor="middle" font-size="11" fill="#555">统一审计日志</text>
+  <text x="655" y="496" text-anchor="middle" font-size="10.5" fill="#777">log_type, operate_time</text>
+
+  <rect x="810" y="430" width="190" height="80" fill="#fff" stroke="#222" stroke-width="1.7"/>
+  <text x="905" y="456" text-anchor="middle" font-size="13.5" font-weight="bold">IAM_TOKEN</text>
+  <text x="905" y="476" text-anchor="middle" font-size="11" fill="#555">令牌</text>
+  <text x="905" y="496" text-anchor="middle" font-size="10.5" fill="#777">token_hash, expire_time</text>
+
+  <rect x="1060" y="430" width="190" height="80" fill="#fff" stroke="#222" stroke-width="1.7"/>
+  <text x="1155" y="456" text-anchor="middle" font-size="12.5" font-weight="bold">IAM_ROLE_EXCLUSION</text>
+  <text x="1155" y="476" text-anchor="middle" font-size="11" fill="#555">角色互斥</text>
+  <text x="1155" y="496" text-anchor="middle" font-size="10.5" fill="#777">role_id, excluded_role_id</text>
+
+  <rect x="1310" y="430" width="190" height="80" fill="#fff" stroke="#222" stroke-width="1.7"/>
+  <text x="1405" y="456" text-anchor="middle" font-size="12" font-weight="bold">IAM_ROLE_DATA_SCOPE</text>
+  <text x="1405" y="476" text-anchor="middle" font-size="11" fill="#555">角色数据范围授权</text>
+  <text x="1405" y="496" text-anchor="middle" font-size="10.5" fill="#777">role_id, scope_type</text>
+
+  <!-- 第一行直连关系 -->
+  <line x1="250" y1="170" x2="308" y2="170" stroke="#222" stroke-width="1.4" marker-end="url(#er)"/>
+  <text x="279" y="158" text-anchor="middle" font-size="10.5" fill="#b03030">1:N 拥有</text>
+
+  <line x1="500" y1="170" x2="558" y2="170" stroke="#222" stroke-width="1.4" marker-end="url(#er)"/>
+  <text x="529" y="158" text-anchor="middle" font-size="10.5" fill="#b03030">1:N 映射</text>
+
+  <line x1="1000" y1="170" x2="1058" y2="170" stroke="#222" stroke-width="1.4" marker-end="url(#er)"/>
+  <text x="1029" y="158" text-anchor="middle" font-size="10.5" fill="#b03030">M:N 拥有</text>
+
+  <line x1="1250" y1="170" x2="1308" y2="170" stroke="#222" stroke-width="1.4" marker-end="url(#er)"/>
+  <text x="1279" y="158" text-anchor="middle" font-size="10.5" fill="#b03030">1:N 属于</text>
+
+  <!-- 自关联 -->
+  <path d="M350,130 L350,100 L460,100 L460,128" fill="none" stroke="#222" stroke-width="1.4" marker-end="url(#er)"/>
+  <text x="405" y="92" text-anchor="middle" font-size="10.5" fill="#b03030">parent_id 1:N</text>
+
+  <path d="M850,130 L850,105 L950,105 L950,128" fill="none" stroke="#222" stroke-width="1.4" marker-end="url(#er)"/>
+  <text x="900" y="97" text-anchor="middle" font-size="10.5" fill="#b03030">父角色 0..1</text>
+
+  <!-- 跨行关系 -->
+  <path d="M860,210 L860,300 L405,300 L405,212" fill="none" stroke="#222" stroke-width="1.4" marker-end="url(#er)"/>
+  <text x="630" y="290" text-anchor="middle" font-size="10.5" fill="#b03030">授予 M:N（iam_role_permission）</text>
+
+  <path d="M155,210 L155,350 L655,350 L655,212" fill="none" stroke="#222" stroke-width="1.4" marker-end="url(#er)"/>
+  <text x="400" y="340" text-anchor="middle" font-size="10.5" fill="#b03030">登记 1:N</text>
+
+  <path d="M940,210 L940,390 L405,390 L405,428" fill="none" stroke="#222" stroke-width="1.4" marker-end="url(#er)"/>
+  <text x="670" y="380" text-anchor="middle" font-size="10.5" fill="#b03030">限定 M:N</text>
+
+  <path d="M1110,210 L1110,400 L655,400 L655,428" fill="none" stroke="#222" stroke-width="1.4" marker-end="url(#er)"/>
+  <text x="820" y="412" text-anchor="middle" font-size="10.5" fill="#b03030">记录 1:N</text>
+
+  <path d="M1160,210 L1160,415 L905,415 L905,428" fill="none" stroke="#222" stroke-width="1.4" marker-end="url(#er)"/>
+  <text x="955" y="405" text-anchor="middle" font-size="10.5" fill="#b03030">签发 1:N</text>
+
+  <path d="M990,210 L990,360 L1155,360 L1155,428" fill="none" stroke="#222" stroke-width="1.4" marker-end="url(#er)"/>
+  <text x="1085" y="350" text-anchor="start" font-size="10.5" fill="#b03030">互斥 M:N</text>
+
+  <path d="M1000,190 L1045,190 L1045,560 L1405,560 L1405,512" fill="none" stroke="#222" stroke-width="1.4" marker-end="url(#er)"/>
+  <text x="1150" y="550" text-anchor="middle" font-size="10.5" fill="#b03030">角色数据范围 M:N</text>
+
+  <text x="60" y="650" font-size="11.5" fill="#666">说明：本图为概念级 E-R，只保留核心实体及其联系，不列外键与完整字段（字段字典见详细设计）。</text>
+  <text x="60" y="674" font-size="11.5" fill="#666">M:N 联系由关系表承载：iam_user_role（用户-角色）、iam_role_permission（角色-前端权限）、iam_role_data_scope（角色-数据范围）、iam_role_exclusion（角色-角色互斥）。</text>
+  <text x="60" y="698" font-size="11.5" fill="#666">角色不直接关联 IAM_API：角色 → 前端权限 → API 的链路保证前端可见性与后端鉴权使用同一授权事实（详见 6.2 与 3.2 节）。</text>
+  <text x="60" y="722" font-size="11.5" fill="#777">IAM_LOG 与 IAM_TOKEN 为运行支撑实体，不参与 RBAC 授权链，但属于全局数据设计范围。</text>
+</svg>

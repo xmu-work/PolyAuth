@@ -5,6 +5,8 @@ import vue from '@vitejs/plugin-vue'
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd())
   const apiBase = env.VITE_API_BASE || '/api/v1'
+  // 默认代理到本地后端；联调远程环境时用 VITE_PROXY_TARGET 覆盖。
+  const apiTarget = process.env.VITE_PROXY_TARGET || 'http://localhost:8080'
 
   return {
     plugins: [vue()],
@@ -18,7 +20,7 @@ export default defineConfig(({ mode }) => {
       proxy: {
         // 所有前端请求统一通过 Vite proxy 访问真实后端。
         [apiBase]: {
-          target: 'http://localhost:8080',
+          target: apiTarget,
           changeOrigin: true,
         },
       },

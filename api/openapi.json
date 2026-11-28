@@ -6331,7 +6331,7 @@
       "post": {
         "summary": "创建角色",
         "deprecated": false,
-        "description": "创建功能角色或岗位型数据角色，支持可选父角色。",
+        "description": "创建功能角色或岗位型数据角色，支持可选多个父角色（多继承）。",
         "operationId": "role_create",
         "tags": [
           "04 角色与授权"
@@ -6340,12 +6340,11 @@
           {
             "name": "roleCode",
             "in": "query",
-            "description": "角色编码",
-            "required": true,
+            "description": "角色编码；省略或留空时由后端自动生成，界面不再要求填写",
+            "required": false,
             "schema": {
               "type": "string",
               "description": "角色编码",
-              "minLength": 1,
               "maxLength": 64,
               "example": "PROJECT_MANAGER"
             }
@@ -6401,6 +6400,23 @@
               "format": "int64",
               "minimum": 1
             }
+          },
+          {
+            "name": "parentIds",
+            "in": "query",
+            "description": "多个父角色主键，可重复传参或逗号分隔，例如 parentIds=1,2",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "description": "父角色主键列表",
+              "items": {
+                "type": "integer",
+                "format": "int64",
+                "minimum": 1
+              }
+            },
+            "style": "form",
+            "explode": true
           },
           {
             "name": "X-Request-Id",
@@ -6678,7 +6694,7 @@
       "put": {
         "summary": "修改角色",
         "deprecated": false,
-        "description": "修改角色名称、描述、状态和父角色；父角色变化执行循环继承校验。",
+        "description": "修改角色名称、描述、状态和多个父角色；父角色变化执行多分支循环继承校验。",
         "operationId": "role_update",
         "tags": [
           "04 角色与授权"
@@ -10424,6 +10440,14 @@
             "description": "主键",
             "format": "int64"
           },
+          "parentIds": {
+            "type": "array",
+            "description": "全部父角色主键",
+            "items": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
           "status": {
             "type": "string",
             "description": "ACTIVE 或 DISABLED"
@@ -10466,6 +10490,7 @@
           "roleName",
           "roleType",
           "parentId",
+          "parentIds",
           "status",
           "description",
           "isDeleted",
@@ -11886,6 +11911,14 @@
             "type": "integer",
             "format": "int64",
             "description": "父角色主键；用于角色继承"
+          },
+          "parentIds": {
+            "type": "array",
+            "description": "多个父角色主键；传空数组表示清除继承关系",
+            "items": {
+              "type": "integer",
+              "format": "int64"
+            }
           }
         },
         "additionalProperties": false

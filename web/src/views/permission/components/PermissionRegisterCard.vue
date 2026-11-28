@@ -17,6 +17,7 @@ const props = defineProps<{
   systems: System[]
   permissions: Permission[]
   selectedSystemId?: number | null
+  embedded?: boolean
 }>()
 const emit = defineEmits<{ created: [] }>()
 
@@ -89,8 +90,12 @@ async function submit(): Promise<void> {
 </script>
 
 <template>
-  <el-card class="permission-register-card" shadow="never">
-    <template #header>
+  <el-card
+    class="permission-register-card"
+    :class="{ 'permission-register-card--embedded': embedded }"
+    shadow="never"
+  >
+    <template v-if="!embedded" #header>
       <div>
         <h2 class="permission-register-card__title">菜单 / 按钮权限</h2>
         <p class="permission-register-card__hint">菜单与按钮构成前端权限树；可授权粒度是权限而不是 HTTP 路径</p>
@@ -185,6 +190,8 @@ async function submit(): Promise<void> {
 
 <style scoped>
 .permission-register-card { border-radius: var(--radius-lg); box-shadow: var(--shadow-card); }
+.permission-register-card--embedded { border: none; box-shadow: none; background: transparent; }
+.permission-register-card--embedded :deep(.el-card__body) { padding: var(--space-0); }
 .permission-register-card__title { margin: var(--space-0); color: var(--color-text-primary); font-size: var(--font-size-lg); }
 .permission-register-card__hint { margin: var(--space-2) var(--space-0) var(--space-0); color: var(--color-text-secondary); font-size: var(--font-size-sm); }
 </style>

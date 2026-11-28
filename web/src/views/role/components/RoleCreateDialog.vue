@@ -7,7 +7,7 @@ import { RoleType } from '@/constants/enums'
 import { toFieldErrors } from '@/utils/formErrors'
 import type { Role } from '@/types/role.types'
 
-/** 新建角色（契约 8.5）：roleCode 冲突由后端 1001 返回并回填表单 */
+/** 新建角色（契约 8.5）：角色编码由后端自动生成，界面不展示。 */
 const emit = defineEmits<{ success: [role: Role] }>()
 
 const visible = defineModel<boolean>({ default: false })
@@ -17,19 +17,17 @@ const submitting = ref(false)
 const serverErrors = ref<Record<string, string>>({})
 
 interface RoleCreateForm {
-  roleCode: string
   roleName: string
   description: string
   roleType: (typeof RoleType)[keyof typeof RoleType]
-  parentId: number | undefined
+  parentIds: number[]
 }
 
 const form = reactive<RoleCreateForm>({
-  roleCode: '',
   roleName: '',
   description: '',
   roleType: RoleType.FUNC,
-  parentId: undefined,
+  parentIds: [],
 })
 
 const roles = ref<Role[]>([])
@@ -38,11 +36,10 @@ watch(visible, (open) => {
   if (!open) {
     return
   }
-  form.roleCode = ''
   form.roleName = ''
   form.description = ''
   form.roleType = RoleType.FUNC
-  form.parentId = undefined
+  form.parentIds = []
   serverErrors.value = {}
   formRef.value?.clearValidate()
   void listRoles().then((items) => {
@@ -57,14 +54,6 @@ watch(form, () => {
 })
 
 const rules: FormRules = {
-  roleCode: [
-    { required: true, message: '请输入角色编码', trigger: 'blur' },
-    {
-      pattern: /^[A-Z][A-Z0-9_]{1,63}$/,
-      message: '编码以大写字母开头，2-64 位大写字母/数字/下划线',
-      trigger: 'blur',
-    },
-  ],
   roleName: [
     { required: true, message: '请输入角色名称', trigger: 'blur' },
     { max: 50, message: '角色名称不超过 50 个字符', trigger: 'blur' },
@@ -84,11 +73,10 @@ async function submit(): Promise<void> {
   serverErrors.value = {}
   try {
     const role = await createRole({
-      roleCode: form.roleCode.trim(),
       roleName: form.roleName.trim(),
       roleType: form.roleType,
       description: form.description.trim() || undefined,
-      parentId: form.parentId,
+      parentIds: form.parentIds.length > 0 ? form.parentIds : undefined,
     })
     ElMessage.success(`角色「${role.roleName}」创建成功`)
     visible.value = false
@@ -104,18 +92,24 @@ async function submit(): Promise<void> {
 <template>
   <el-dialog v-model="visible" title="新建角色" width="520px">
     <el-form ref="formRef" :model="form" :rules="rules" label-position="top">
-      <el-form-item label="角色编码" prop="roleCode" :error="serverErrors.roleCode">
-        <el-input v-model="form.roleCode" maxlength="64" placeholder="如 CONTRACT_AUDITOR" />
-      </el-form-item>
       <el-form-item label="角色名称" prop="roleName" :error="serverErrors.roleName">
         <el-input v-model="form.roleName" maxlength="50" placeholder="如 合同审计员" />
       </el-form-item>
-      <el-form-item label="父角色（继承，选填）">
-        <el-select v-model="form.parentId" clearable filterable style="width: 100%">
+      <el-form-item label="父角色（继承，可多选）">
+        <el-select
+          v-model="form.parentIds"
+          multiple
+          clearable
+          filterable
+          collapse-tags
+          collapse-tags-tooltip
+          placeholder="可选一个或多个父角色"
+          style="width: 100%"
+        >
           <el-option
             v-for="role in roles"
             :key="role.id"
-            :label="`${role.roleCode} · ${role.roleName}`"
+            :label="role.roleName"
             :value="role.id"
           />
         </el-select>

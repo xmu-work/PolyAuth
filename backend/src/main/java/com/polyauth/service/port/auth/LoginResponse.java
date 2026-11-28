@@ -1,0 +1,16 @@
+package com.polyauth.service.port.auth;
+
+import lombok.Data;
+
+/**
+ * 登录响应 DTO。
+ */
+@Data
+public class LoginResponse {
+    private String accessToken;
+    private String tokenType;
+    private long expiresIn;
+    private String userId;
+    private String displayName;
+    private String accountStatus;
+}

@@ -1,0 +1,212 @@
+= 统一应用软件权限管理系统 数据库设计说明书
+:doctype: book
+:toc: left
+
+[cols="1,3"]
+|===
+| 文档版本 | V2.0
+| 修订说明 | 将“前端菜单/按钮权限”和“后端 API”拆分为独立实体；删除角色互斥；统一角色能力边界
+| 目标数据库 | MySQL 8.0 / InnoDB / utf8mb4
+| 建表脚本 | `backend/src/main/resources/db/schema.sql`
+| 初始化数据 | `backend/src/main/resources/db/seed.sql`
+| 核心 E-R 图 | `docs/ER图.png`，说明见 `05_ER图实体说明.adoc`
+|===
+
+== 1. 核心模型
+
+RBAC 核心由六个业务实体组成：
+
+[cols="1,1,3"]
+|===
+| 实体 | 表 | 职责
+| 多系统 | `iam_system` | 被接入和统一管理的业务系统
+| 前端权限 | `iam_permission` | 菜单/按钮自关联树
+| 后端 API | `iam_api` | HTTP 接口目录及请求匹配信息
+| 角色 | `iam_role` | 权限集合的业务载体
+| 用户 | `iam_user` | 登录账号与员工身份
+| 分层组织部门 | `iam_org` | 总公司、分公司、部门、项目部树
+|===
+
+`iam_user_role` 和 `iam_role_permission` 是表达多对多联系的关系表，不作为独立业务实体。普通操作日志和权限变更日志统一为 `iam_log`，与令牌一起属于运行支撑数据，不进入核心 E-R 图。角色互斥不再建模。
+
+== 2. 核心表设计
+
+=== 2.1 iam_system
+
+[cols="1,1,1,3"]
+|===
+| 字段 | 类型 | 约束 | 说明
+| id | bigint | PK | 主键
+| system_code | varchar(64) | UK | 系统编码
+| system_name | varchar(128) | NOT NULL | 系统名称
+| callback_url | varchar(500) | NULL | 回调地址
+| status | varchar(16) | NOT NULL | ACTIVE / DISABLED
+| is_deleted | tinyint | NOT NULL | 软删除标记
+| created_at / updated_at | datetime | NOT NULL | 创建/更新时间
+|===
+
+=== 2.2 iam_permission（前端菜单/按钮树）
+
+[cols="1,1,1,3"]
+|===
+| 字段 | 类型 | 约束 | 说明
+| id | bigint | PK | 权限 ID
+| system_id | bigint | FK | 所属系统
+| parent_id | bigint | FK，自关联 | 父菜单/按钮；根节点为空
+| permission_code | varchar(64) | UK(system_id) | 系统内唯一权限编码
+| permission_name | varchar(128) | NOT NULL | 显示名称
+| permission_type | varchar(16) | NOT NULL | MENU / BUTTON
+| route_path | varchar(255) | NULL | 前端菜单路由
+| action | varchar(64) | NOT NULL | 权限要求的操作
+| sort_no | int | NOT NULL | 同级排序
+| status | varchar(16) | NOT NULL | 状态
+| is_deleted | tinyint | NOT NULL | 软删除标记
+| created_at / updated_at | datetime | NOT NULL | 时间戳
+|===
+
+约束：
+
+* `UNIQUE(system_id, permission_code)`。
+* `system_id → iam_system.id`。
+* `parent_id → iam_permission.id`，父子节点必须属于同一系统（应用层校验）。
+
+=== 2.3 iam_api（后端 API）
+
+[cols="1,1,1,3"]
+|===
+| 字段 | 类型 | 约束 | 说明
+| id | bigint | PK | API ID
+| system_id | bigint | FK | 所属系统
+| permission_id | bigint | FK，NULL | 所属前端权限；未映射则默认拒绝
+| api_code | varchar(64) | UK(system_id) | 系统内唯一 API 编码
+| api_name | varchar(128) | NOT NULL | API 名称
+| api_path | varchar(255) | UK(api_path,http_method) | Controller 映射模板
+| http_method | varchar(16) | NOT NULL | GET/POST/PUT/DELETE/PATCH
+| status | varchar(16) | NOT NULL | 状态
+| is_deleted | tinyint | NOT NULL | 软删除标记
+| created_at / updated_at | datetime | NOT NULL | 时间戳
+|===
+
+权限与 API 为一对多：一个菜单/按钮可以关联多个 API；一个 API 只归属一个前端权限。API 不复制菜单路由或按钮动作，只在服务端按 `api_path + http_method` 匹配。
+
+=== 2.4 iam_role
+
+[cols="1,1,1,3"]
+|===
+| 字段 | 类型 | 约束 | 说明
+| id | bigint | PK | 角色 ID
+| role_code | varchar(64) | UK | 角色编码
+| role_name | varchar(128) | NOT NULL | 角色名称
+| role_type | varchar(16) | NOT NULL | 当前为 FUNC
+| parent_id | bigint | FK，自关联 | 可选角色继承
+| status | varchar(16) | NOT NULL | 状态
+| description | varchar(500) | NULL | 描述
+| version | bigint | NOT NULL | 乐观锁
+|===
+
+=== 2.5 iam_user
+
+[cols="1,1,1,3"]
+|===
+| 字段 | 类型 | 约束 | 说明
+| id | bigint | PK | 用户 ID
+| user_no | varchar(32) | UK | 登录账号
+| password_hash | varchar(128) | NOT NULL | PBKDF2 哈希
+| name_enc / phone_enc | varchar(512) | NOT NULL / NULL | AES-GCM 密文
+| name_hash / phone_hash | varchar(64) | NULL | 检索哈希
+| org_id | bigint | FK | 所属组织
+| post | varchar(64) | NULL | 岗位
+| account_status | varchar(16) | NOT NULL | NORMAL/DISABLED/SEALED/LOCKED
+| leave_time / last_login_at | datetime | NULL | 离职与最近登录时间
+| is_deleted | tinyint | NOT NULL | 软删除标记
+|===
+
+=== 2.6 iam_org
+
+[cols="1,1,1,3"]
+|===
+| 字段 | 类型 | 约束 | 说明
+| id | bigint | PK | 组织 ID
+| parent_id | bigint | FK，自关联 | 父组织；根节点为空
+| ancestors | varchar(500) | NOT NULL | 祖先路径
+| org_code | varchar(64) | UK | 组织编码
+| org_name | varchar(128) | NOT NULL | 组织名称
+| org_type | varchar(16) | NOT NULL | HQ/BRANCH/DEPT/PROJECT
+| org_level | tinyint | NOT NULL | 组织层级
+| leader_user_id | bigint | NULL | 负责人
+| sort_no | int | NOT NULL | 同级排序
+| status | varchar(16) | NOT NULL | 状态
+|===
+
+== 3. 关系表
+
+=== 3.1 iam_user_role
+
+表达用户与角色的 M:N 联系：
+
+* `user_id → iam_user.id`
+* `role_id → iam_role.id`
+* `UNIQUE(user_id, role_id)`
+* `status = ACTIVE/EXPIRED/REVOKED`
+* `effective_time`、`expire_time`、`grant_by`、`grant_reason`
+
+=== 3.2 iam_role_permission
+
+表达角色与前端权限的 M:N 联系：
+
+* `role_id → iam_role.id`
+* `permission_id → iam_permission.id`
+* `UNIQUE(role_id, permission_id)`
+* `allowed_action` 保存授予的操作范围
+
+角色不直接关联 API。角色→权限→API 的链路保证前端菜单/按钮控制与服务端 API 鉴权使用同一授权事实。
+
+== 4. 鉴权查询链
+
+[source,text]
+----
+HTTP 请求
+  → iam_api(api_path, http_method) 定位 API
+  → iam_api.permission_id 取得所属前端权限
+  → 有效 iam_user_role 取得用户角色
+  → iam_role_permission 取得角色授予的权限
+  → allowed_action 覆盖 permission.action 时放行
+----
+
+任何一段缺失均拒绝：API 未登记、API 未映射权限、用户无有效角色、角色未授予权限、权限/API/系统停用。
+
+== 5. 技术支撑表
+
+`iam_token` 和 `iam_log` 作为登录凭证与日志支撑表存在，但不属于核心 E-R 图的六个业务实体。普通操作日志与权限变更日志统一保存在 `iam_log`：以 `log_type` 区分，权限变更额外保存 `before_snapshot` 和 `after_snapshot`。角色互斥不再建模。
+
+=== 5.1 iam_log 统一日志表
+
+[cols="1,1,1,3"]
+|===
+| 字段 | 类型 | 约束 | 说明
+| log_id | bigint | PK | 日志主键
+| log_type | varchar(32) | NOT NULL，索引 | `ACTION` 普通操作 / `PERMISSION_CHANGE` 权限变更
+| user_id | bigint | NULL，索引 | 操作人
+| username | varchar(128) | NULL | 操作人快照
+| action | varchar(128) | NOT NULL | 操作动作
+| operate_time | datetime | NOT NULL，索引 | 操作时间
+| success | tinyint | NOT NULL | 1 成功 / 0 失败
+| target | varchar(255) | NULL | 操作对象
+| ip | varchar(64) | NULL | 来源 IP
+| system_code | varchar(64) | NULL，索引 | 所属系统
+| detail | json | NULL | 请求摘要、异常信息
+| before_snapshot | json | NULL | 权限变更前快照
+| after_snapshot | json | NULL | 权限变更后快照
+| decision_id | varchar(64) | NULL | 鉴权决策 ID
+| request_id | varchar(64) | NULL，索引 | 请求追踪 ID
+|===
+
+统一日志只追加，不提供更新或删除接口。普通操作与权限变更共用 `/logs` 查询端点，通过 `logType` 过滤。
+
+数据库约束：
+
+* `chk_log_type` 限定 `ACTION / PERMISSION_CHANGE`。
+* `idx_log_time`、`idx_log_user`、`idx_log_type_time`、`idx_log_system`、`idx_log_request` 支撑常用筛选。
+* 权限类型、API HTTP 方法、组织类型、组织层级和授权动作同时由数据库 `CHECK` 约束兜底。
+
+完整 DDL、索引与外键以 `backend/src/main/resources/db/schema.sql` 为唯一实现口径。

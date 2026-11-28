@@ -1,0 +1,128 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1250" viewBox="0 0 1600 1250" font-family="Microsoft YaHei, PingFang SC, SimHei, sans-serif">
+  <style>text[fill="#b03030"]{paint-order:stroke;stroke:#ffffff;stroke-width:2.8px;stroke-linejoin:round}</style>
+  <defs>
+    <marker id="sync" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L9,3 L0,6 Z" fill="#222"/>
+    </marker>
+    <marker id="ret" markerWidth="12" markerHeight="12" refX="10" refY="4" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L10,4 L0,8" fill="none" stroke="#222" stroke-width="1.2"/>
+    </marker>
+  </defs>
+  <rect width="1600" height="1250" fill="#ffffff"/>
+
+  <!-- 生命线 -->
+  <rect x="15" y="70" width="150" height="60" fill="#eef4fc" stroke="#1f4e8c" stroke-width="1.6"/>
+  <text x="90" y="96" text-anchor="middle" font-size="12" font-weight="bold" fill="#13396b">business: 业务系统</text>
+  <text x="90" y="116" text-anchor="middle" font-size="10" fill="#33507a">调用者</text>
+  <rect x="190" y="70" width="150" height="60" fill="#fff" stroke="#222" stroke-width="1.6"/>
+  <text x="265" y="94" text-anchor="middle" font-size="9.6" font-weight="bold">interceptor: AuthInterceptor</text>
+  <text x="265" y="116" text-anchor="middle" font-size="10" fill="#555">«boundary»</text>
+  <rect x="365" y="70" width="150" height="60" fill="#eef4fc" stroke="#1f4e8c" stroke-width="1.6"/>
+  <text x="440" y="96" text-anchor="middle" font-size="12" font-weight="bold" fill="#13396b">auth: AuthService</text>
+  <text x="440" y="116" text-anchor="middle" font-size="10" fill="#33507a">«service» M01</text>
+  <rect x="540" y="70" width="150" height="60" fill="#fff" stroke="#222" stroke-width="1.6"/>
+  <text x="615" y="94" text-anchor="middle" font-size="9.6" font-weight="bold">controller: OpenApiController</text>
+  <text x="615" y="116" text-anchor="middle" font-size="10" fill="#555">«boundary»</text>
+  <rect x="715" y="70" width="150" height="60" fill="#dce9f9" stroke="#1f4e8c" stroke-width="1.8"/>
+  <text x="790" y="94" text-anchor="middle" font-size="11" font-weight="bold" fill="#13396b">decision: DecisionService</text>
+  <text x="790" y="116" text-anchor="middle" font-size="10" fill="#33507a">«service» M07 PDP</text>
+  <rect x="890" y="70" width="150" height="60" fill="#eef4fc" stroke="#1f4e8c" stroke-width="1.6"/>
+  <text x="965" y="92" text-anchor="middle" font-size="9.2" font-weight="bold" fill="#13396b">dataperm: DataPermissionService</text>
+  <text x="965" y="112" text-anchor="middle" font-size="10" fill="#33507a">«service» M06</text>
+  <rect x="1065" y="70" width="150" height="60" fill="#fff7e0" stroke="#8a6d1d" stroke-width="1.6"/>
+  <text x="1140" y="92" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#5c4710">cache: PermissionCache</text>
+  <text x="1140" y="112" text-anchor="middle" font-size="10" fill="#7a6220">Redis 版本快照</text>
+  <rect x="1240" y="70" width="150" height="60" fill="#fff7e0" stroke="#8a6d1d" stroke-width="1.6"/>
+  <text x="1315" y="92" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#5c4710">db: MySQL</text>
+  <text x="1315" y="112" text-anchor="middle" font-size="10" fill="#7a6220">账号 / 角色 / 绑定</text>
+  <rect x="1415" y="70" width="150" height="60" fill="#eef4fc" stroke="#1f4e8c" stroke-width="1.6"/>
+  <text x="1490" y="96" text-anchor="middle" font-size="12" font-weight="bold" fill="#13396b">logs: LogService</text>
+  <text x="1490" y="116" text-anchor="middle" font-size="10" fill="#33507a">«service» M08</text>
+
+  <line x1="90" y1="130" x2="90" y2="1180" stroke="#888" stroke-width="1" stroke-dasharray="6,5"/>
+  <line x1="265" y1="130" x2="265" y2="1180" stroke="#888" stroke-width="1" stroke-dasharray="6,5"/>
+  <line x1="440" y1="130" x2="440" y2="1180" stroke="#888" stroke-width="1" stroke-dasharray="6,5"/>
+  <line x1="615" y1="130" x2="615" y2="1180" stroke="#888" stroke-width="1" stroke-dasharray="6,5"/>
+  <line x1="790" y1="130" x2="790" y2="1180" stroke="#888" stroke-width="1" stroke-dasharray="6,5"/>
+  <line x1="965" y1="130" x2="965" y2="1180" stroke="#888" stroke-width="1" stroke-dasharray="6,5"/>
+  <line x1="1140" y1="130" x2="1140" y2="1180" stroke="#888" stroke-width="1" stroke-dasharray="6,5"/>
+  <line x1="1315" y1="130" x2="1315" y2="1180" stroke="#888" stroke-width="1" stroke-dasharray="6,5"/>
+  <line x1="1490" y1="130" x2="1490" y2="1180" stroke="#888" stroke-width="1" stroke-dasharray="6,5"/>
+
+  <!-- 执行条 -->
+  <rect x="85" y="200" width="10" height="900" fill="#cfdff5" stroke="#1f4e8c" stroke-width="1"/>
+  <rect x="260" y="200" width="10" height="890" fill="#cfdff5" stroke="#1f4e8c" stroke-width="1"/>
+  <rect x="435" y="245" width="10" height="140" fill="#cfdff5" stroke="#1f4e8c" stroke-width="1"/>
+  <rect x="610" y="410" width="10" height="545" fill="#cfdff5" stroke="#1f4e8c" stroke-width="1"/>
+  <rect x="785" y="450" width="10" height="470" fill="#cfdff5" stroke="#1f4e8c" stroke-width="1"/>
+  <rect x="960" y="810" width="10" height="55" fill="#cfdff5" stroke="#1f4e8c" stroke-width="1"/>
+  <rect x="1135" y="490" width="10" height="40" fill="#cfdff5" stroke="#1f4e8c" stroke-width="1"/>
+  <rect x="1135" y="685" width="10" height="40" fill="#cfdff5" stroke="#1f4e8c" stroke-width="1"/>
+  <rect x="1310" y="290" width="10" height="40" fill="#cfdff5" stroke="#1f4e8c" stroke-width="1"/>
+  <rect x="1310" y="600" width="10" height="45" fill="#cfdff5" stroke="#1f4e8c" stroke-width="1"/>
+  <rect x="1485" y="990" width="10" height="45" fill="#cfdff5" stroke="#1f4e8c" stroke-width="1"/>
+
+  <!-- 消息 -->
+  <line x1="95" y1="200" x2="258" y2="200" stroke="#222" stroke-width="1.6" marker-end="url(#sync)"/>
+  <text x="176" y="190" text-anchor="middle" font-size="10.5" fill="#b03030">1 请求(令牌, apiId, 数据上下文)</text>
+
+  <line x1="270" y1="245" x2="433" y2="245" stroke="#222" stroke-width="1.6" marker-end="url(#sync)"/>
+  <text x="351" y="235" text-anchor="middle" font-size="10.5" fill="#b03030">2 authenticate(令牌)</text>
+
+  <line x1="445" y1="290" x2="1308" y2="290" stroke="#222" stroke-width="1.6" marker-end="url(#sync)"/>
+  <text x="876" y="280" text-anchor="middle" font-size="10.5" fill="#b03030">3 查询令牌记录（哈希 / 状态 / 过期）</text>
+  <line x1="1310" y1="330" x2="447" y2="330" stroke="#222" stroke-width="1.4" stroke-dasharray="6,4" marker-end="url(#ret)"/>
+  <text x="878" y="320" text-anchor="middle" font-size="10.5" fill="#b03030">返回令牌记录</text>
+
+  <line x1="435" y1="370" x2="272" y2="370" stroke="#222" stroke-width="1.4" stroke-dasharray="6,4" marker-end="url(#ret)"/>
+  <text x="353" y="360" text-anchor="middle" font-size="10.5" fill="#b03030">4 返回 userId</text>
+
+  <line x1="270" y1="410" x2="608" y2="410" stroke="#222" stroke-width="1.6" marker-end="url(#sync)"/>
+  <text x="439" y="400" text-anchor="middle" font-size="10.5" fill="#b03030">5 authorize(userId, apiId, 上下文)</text>
+
+  <line x1="620" y1="450" x2="783" y2="450" stroke="#222" stroke-width="1.6" marker-end="url(#sync)"/>
+  <text x="701" y="440" text-anchor="middle" font-size="10.5" fill="#b03030">6 authorize(...)</text>
+
+  <line x1="795" y1="490" x2="1133" y2="490" stroke="#222" stroke-width="1.6" marker-end="url(#sync)"/>
+  <text x="964" y="480" text-anchor="middle" font-size="10.5" fill="#b03030">7 currentVersion()</text>
+  <line x1="1135" y1="525" x2="797" y2="525" stroke="#222" stroke-width="1.4" stroke-dasharray="6,4" marker-end="url(#ret)"/>
+  <text x="966" y="515" text-anchor="middle" font-size="10.5" fill="#b03030">返回权限版本号</text>
+
+  <!-- opt 片段 -->
+  <rect x="800" y="565" width="600" height="210" fill="#f4f8fd" fill-opacity="0.55" stroke="#1f4e8c" stroke-width="1.3" stroke-dasharray="7,4"/>
+  <text x="810" y="584" font-size="11" font-weight="bold" fill="#13396b">opt [权限快照未命中]</text>
+
+  <line x1="795" y1="600" x2="1308" y2="600" stroke="#222" stroke-width="1.6" marker-end="url(#sync)"/>
+  <text x="1051" y="590" text-anchor="middle" font-size="10.5" fill="#b03030">8 findGrantedPermissions(角色集合, 系统编码)</text>
+  <line x1="1310" y1="640" x2="797" y2="640" stroke="#222" stroke-width="1.4" stroke-dasharray="6,4" marker-end="url(#ret)"/>
+  <text x="1053" y="630" text-anchor="middle" font-size="10.5" fill="#b03030">返回授权候选</text>
+
+  <line x1="795" y1="685" x2="1133" y2="685" stroke="#222" stroke-width="1.6" marker-end="url(#sync)"/>
+  <text x="964" y="675" text-anchor="middle" font-size="10.5" fill="#b03030">9 putPermissionSnapshot(权限集, 版本号, TTL)</text>
+  <line x1="1135" y1="720" x2="797" y2="720" stroke="#222" stroke-width="1.4" stroke-dasharray="6,4" marker-end="url(#ret)"/>
+  <text x="966" y="710" text-anchor="middle" font-size="10.5" fill="#b03030">返回写入结果</text>
+
+  <text x="820" y="552" font-size="10.5" fill="#666">缓存命中时直接使用快照，跳过 8～9</text>
+
+  <line x1="795" y1="810" x2="958" y2="810" stroke="#222" stroke-width="1.6" marker-end="url(#sync)"/>
+  <text x="876" y="800" text-anchor="middle" font-size="10.5" fill="#b03030">10 checkResourceScope(组织/项目/本人)</text>
+  <line x1="960" y1="860" x2="797" y2="860" stroke="#222" stroke-width="1.4" stroke-dasharray="6,4" marker-end="url(#ret)"/>
+  <text x="878" y="850" text-anchor="middle" font-size="10.5" fill="#b03030">返回数据范围判定</text>
+
+  <line x1="785" y1="900" x2="622" y2="900" stroke="#222" stroke-width="1.4" stroke-dasharray="6,4" marker-end="url(#ret)"/>
+  <text x="703" y="890" text-anchor="middle" font-size="10.5" fill="#b03030">11 返回 ResourceDecision</text>
+
+  <line x1="610" y1="945" x2="272" y2="945" stroke="#222" stroke-width="1.4" stroke-dasharray="6,4" marker-end="url(#ret)"/>
+  <text x="441" y="935" text-anchor="middle" font-size="10.5" fill="#b03030">12 返回鉴权结果(放行 / 403)</text>
+
+  <line x1="270" y1="990" x2="1483" y2="990" stroke="#222" stroke-width="1.6" marker-end="url(#sync)"/>
+  <text x="876" y="980" text-anchor="middle" font-size="10.5" fill="#b03030">13 record(鉴权结果, 决策 ID, requestId)</text>
+  <line x1="1485" y1="1030" x2="272" y2="1030" stroke="#222" stroke-width="1.4" stroke-dasharray="6,4" marker-end="url(#ret)"/>
+  <text x="878" y="1020" text-anchor="middle" font-size="10.5" fill="#b03030">返回</text>
+
+  <line x1="260" y1="1080" x2="97" y2="1080" stroke="#222" stroke-width="1.4" stroke-dasharray="6,4" marker-end="url(#ret)"/>
+  <text x="178" y="1070" text-anchor="middle" font-size="10.5" fill="#b03030">14 返回 200 / 403</text>
+
+  <text x="60" y="1215" font-size="11" fill="#666">说明：判定为只读无状态操作，可水平扩展；缓存采用“版本号 + 不可变快照”，命中时一次 Redis 读取即可完成判定，未命中才回源数据库。</text>
+  <text x="60" y="1235" font-size="11" fill="#666">对应需求：FR-33、FR-37、FR-38、NFR-07、NFR-08；对应架构故事 S1（性能）与 S3（可用性，失败默认拒绝）。</text>
+</svg>

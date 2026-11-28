@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { nextTick, onBeforeUnmount, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Refresh } from '@element-plus/icons-vue'
 import { moveOrg } from '@/api/org.api'
@@ -7,6 +7,8 @@ import type { BusinessError } from '@/utils/request'
 import { useDict } from '@/composables/useDict'
 import { useOrgLazyLoad, type OrgTreeNode, type TreeNodeLike } from '@/composables/useOrgTree'
 import { OrgType, type OrgTypeCode } from '@/constants/enums'
+import { ADMIN_ACTION_PERMISSIONS as FP } from '@/constants/permissions'
+import { usePermissionStore } from '@/stores/permission.store'
 import OrgMoveDialog from './OrgMoveDialog.vue'
 
 const props = defineProps<{
@@ -17,6 +19,8 @@ const props = defineProps<{
 const emit = defineEmits<{ select: [orgId: number | null] }>()
 
 const { dictLabel, orgTypeOptions } = useDict()
+const permissionStore = usePermissionStore()
+const canMoveOrg = computed(() => permissionStore.canAccess(FP.ORG_MOVE))
 
 /** 组织类型 → 徽标配色（视觉映射，文案仍出自 dict store，契约 9.2-7） */
 type TagType = 'primary' | 'success' | 'info' | 'warning' | 'danger'
@@ -221,7 +225,7 @@ onBeforeUnmount(() => {
         lazy
         node-key="id"
         highlight-current
-        draggable
+        :draggable="canMoveOrg"
         :load="loadChildren"
         :props="{ label: 'orgName' }"
         :default-expanded-keys="expandedKeys"

@@ -41,12 +41,14 @@ usePermissionSync()
 <style scoped>
 .app-layout {
   display: flex;
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
 }
 
 .app-layout__sidebar {
   flex: 0 0 var(--layout-sidebar-width);
   width: var(--layout-sidebar-width);
+  height: 100%;
   overflow: hidden;
   transition:
     flex-basis 0.2s ease,
@@ -62,7 +64,9 @@ usePermissionSync()
   display: flex;
   flex: 1;
   flex-direction: column;
+  height: 100%;
   min-width: 0;
+  min-height: 0;
 }
 
 .app-layout__header {
@@ -78,8 +82,26 @@ usePermissionSync()
 .app-layout__main {
   flex: 1;
   min-width: 0;
+  min-height: 0;
   padding: var(--space-4) var(--space-6) var(--space-6);
   overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+  scrollbar-color: var(--color-border-base) transparent;
+  scrollbar-width: thin;
+}
+
+.app-layout__main::-webkit-scrollbar {
+  width: 8px;
+}
+
+.app-layout__main::-webkit-scrollbar-thumb {
+  border-radius: var(--radius-round);
+  background: var(--color-border-base);
+}
+
+.app-layout__main::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 .page-fade-enter-active,

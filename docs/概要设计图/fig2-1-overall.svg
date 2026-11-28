@@ -1,0 +1,111 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1240" height="940" viewBox="0 0 1240 940" font-family="Microsoft YaHei, PingFang SC, SimHei, sans-serif">
+  <defs>
+    <marker id="arr" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#333"/>
+    </marker>
+    <marker id="arrb" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#1f4e8c"/>
+    </marker>
+  </defs>
+  <rect width="1240" height="940" fill="#ffffff"/>
+
+  <!-- 外部实体 -->
+  <text x="60" y="76" font-size="13" fill="#666">外部实体</text>
+  <rect x="60" y="86" width="230" height="60" rx="6" fill="#f7f7f7" stroke="#222" stroke-width="1.6"/>
+  <text x="175" y="112" text-anchor="middle" font-size="15" fill="#111">浏览器 / 管理端</text>
+  <text x="175" y="133" text-anchor="middle" font-size="11.5" fill="#555">E1 员工、E2 管理员</text>
+  <rect x="340" y="86" width="230" height="60" rx="6" fill="#f7f7f7" stroke="#222" stroke-width="1.6"/>
+  <text x="455" y="112" text-anchor="middle" font-size="15" fill="#111">18 套业务系统</text>
+  <text x="455" y="133" text-anchor="middle" font-size="11.5" fill="#555">E3 令牌与 OpenAPI 调用</text>
+  <rect x="620" y="86" width="230" height="60" rx="6" fill="#f7f7f7" stroke="#222" stroke-width="1.6"/>
+  <text x="735" y="112" text-anchor="middle" font-size="15" fill="#111">HR 人力资源系统</text>
+  <text x="735" y="133" text-anchor="middle" font-size="11.5" fill="#555">E4 人事事件</text>
+  <rect x="900" y="86" width="280" height="60" rx="6" fill="#f7f7f7" stroke="#222" stroke-width="1.6"/>
+  <text x="1040" y="112" text-anchor="middle" font-size="15" fill="#111">第三方系统 / 大屏</text>
+  <text x="1040" y="133" text-anchor="middle" font-size="11.5" fill="#555">扩展接入（第 19 套系统）</text>
+
+  <!-- 展现层 -->
+  <rect x="60" y="200" width="1120" height="84" rx="6" fill="#eef4fc" stroke="#1f4e8c" stroke-width="1.8"/>
+  <text x="78" y="226" font-size="15" font-weight="bold" fill="#13396b">展现层（M11）</text>
+  <text x="78" y="252" font-size="13" fill="#33507a">Vue 3 + TypeScript + Element Plus 管理后台：按权限渲染菜单 / 按钮，按 60 秒轮询刷新权限视图</text>
+  <text x="78" y="272" font-size="11.5" fill="#667">只负责展示与交互，不承载任何业务判定；所有可见性最终以后端判定为准</text>
+
+  <!-- 接入层 -->
+  <rect x="60" y="320" width="1120" height="96" rx="6" fill="#eef4fc" stroke="#1f4e8c" stroke-width="1.8"/>
+  <text x="78" y="344" font-size="15" font-weight="bold" fill="#13396b">接入层（interfaces）</text>
+  <rect x="78" y="356" width="190" height="44" rx="4" fill="#ffffff" stroke="#1f4e8c"/>
+  <text x="173" y="383" text-anchor="middle" font-size="13" fill="#13396b">Nginx 反向代理</text>
+  <rect x="288" y="356" width="196" height="44" rx="4" fill="#ffffff" stroke="#1f4e8c"/>
+  <text x="386" y="383" text-anchor="middle" font-size="13" fill="#13396b">RequestIdFilter</text>
+  <rect x="504" y="356" width="232" height="44" rx="4" fill="#ffffff" stroke="#1f4e8c"/>
+  <text x="620" y="383" text-anchor="middle" font-size="13" fill="#13396b">AuthInterceptor</text>
+  <rect x="756" y="356" width="240" height="44" rx="4" fill="#ffffff" stroke="#1f4e8c"/>
+  <text x="876" y="383" text-anchor="middle" font-size="13" fill="#13396b">OpenApiAuthInterceptor</text>
+  <rect x="1016" y="356" width="146" height="44" rx="4" fill="#ffffff" stroke="#1f4e8c"/>
+  <text x="1089" y="383" text-anchor="middle" font-size="13" fill="#13396b">IdempotencyFilter</text>
+
+  <!-- 应用层 -->
+  <rect x="60" y="452" width="1120" height="230" rx="6" fill="#eef4fc" stroke="#1f4e8c" stroke-width="1.8"/>
+  <text x="78" y="476" font-size="15" font-weight="bold" fill="#13396b">应用层（application，M01–M08）</text>
+  <rect x="90" y="490" width="190" height="66" rx="4" fill="#ffffff" stroke="#1f4e8c"/>
+  <text x="185" y="514" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#13396b">M01 统一认证</text>
+  <text x="185" y="534" text-anchor="middle" font-size="11" fill="#33507a">AuthService · JWT · 防重放</text>
+  <rect x="300" y="490" width="190" height="66" rx="4" fill="#ffffff" stroke="#1f4e8c"/>
+  <text x="395" y="514" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#13396b">M02 账号管理</text>
+  <text x="395" y="534" text-anchor="middle" font-size="11" fill="#33507a">AccountService · 封存</text>
+  <rect x="510" y="490" width="190" height="66" rx="4" fill="#ffffff" stroke="#1f4e8c"/>
+  <text x="605" y="514" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#13396b">M03 组织机构</text>
+  <text x="605" y="534" text-anchor="middle" font-size="11" fill="#33507a">OrganizationService</text>
+  <rect x="720" y="490" width="190" height="66" rx="4" fill="#ffffff" stroke="#1f4e8c"/>
+  <text x="815" y="514" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#13396b">M04 角色与授权</text>
+  <text x="815" y="534" text-anchor="middle" font-size="11" fill="#33507a">RoleService · 继承 · 互斥</text>
+  <rect x="930" y="490" width="220" height="66" rx="4" fill="#ffffff" stroke="#1f4e8c"/>
+  <text x="1040" y="514" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#13396b">M05 权限目录</text>
+  <text x="1040" y="534" text-anchor="middle" font-size="11" fill="#33507a">System / Permission / ApiService</text>
+  <rect x="90" y="580" width="190" height="66" rx="4" fill="#ffffff" stroke="#1f4e8c"/>
+  <text x="185" y="604" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#13396b">M06 数据权限</text>
+  <text x="185" y="624" text-anchor="middle" font-size="11" fill="#33507a">DataScope · DataPermission</text>
+  <rect x="300" y="580" width="190" height="66" rx="4" fill="#ffffff" stroke="#1f4e8c"/>
+  <text x="395" y="604" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#13396b">M07 鉴权决策 PDP</text>
+  <text x="395" y="624" text-anchor="middle" font-size="11" fill="#33507a">DecisionService</text>
+  <rect x="510" y="580" width="190" height="66" rx="4" fill="#ffffff" stroke="#1f4e8c"/>
+  <text x="605" y="604" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#13396b">M08 审计日志</text>
+  <text x="605" y="624" text-anchor="middle" font-size="11" fill="#33507a">LogService · 只追加 · 快照</text>
+  <rect x="720" y="580" width="190" height="66" rx="4" fill="#ffffff" stroke="#1f4e8c"/>
+  <text x="815" y="604" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#13396b">M09 加密与密钥</text>
+  <text x="815" y="624" text-anchor="middle" font-size="11" fill="#33507a">CryptoComponent · AES-GCM</text>
+  <rect x="930" y="580" width="220" height="66" rx="4" fill="#ffffff" stroke="#1f4e8c"/>
+  <text x="1040" y="604" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#13396b">M10 缓存与并发</text>
+  <text x="1040" y="624" text-anchor="middle" font-size="11" fill="#33507a">版本快照 · 分布式锁 · 幂等</text>
+
+  <!-- 基础设施层 -->
+  <rect x="60" y="720" width="1120" height="96" rx="6" fill="#fff7e0" stroke="#8a6d1d" stroke-width="1.8"/>
+  <text x="78" y="744" font-size="15" font-weight="bold" fill="#5c4710">基础设施层（infrastructure）</text>
+  <rect x="78" y="756" width="200" height="44" rx="4" fill="#ffffff" stroke="#8a6d1d"/>
+  <text x="178" y="783" text-anchor="middle" font-size="13" fill="#5c4710">MySQL 8.0 / InnoDB</text>
+  <rect x="298" y="756" width="180" height="44" rx="4" fill="#ffffff" stroke="#8a6d1d"/>
+  <text x="388" y="783" text-anchor="middle" font-size="13" fill="#5c4710">Redis 7</text>
+  <rect x="498" y="756" width="200" height="44" rx="4" fill="#ffffff" stroke="#8a6d1d"/>
+  <text x="598" y="783" text-anchor="middle" font-size="13" fill="#5c4710">Spring Data JPA</text>
+  <rect x="718" y="756" width="200" height="44" rx="4" fill="#ffffff" stroke="#8a6d1d"/>
+  <text x="818" y="783" text-anchor="middle" font-size="13" fill="#5c4710">AOP 层日志</text>
+  <rect x="938" y="756" width="224" height="44" rx="4" fill="#ffffff" stroke="#8a6d1d"/>
+  <text x="1050" y="783" text-anchor="middle" font-size="13" fill="#5c4710">配置 / 密钥 / 定时任务</text>
+
+  <!-- 运行支撑 -->
+  <rect x="60" y="850" width="1120" height="56" rx="6" fill="#f3f3f3" stroke="#666" stroke-width="1.4" stroke-dasharray="8,5"/>
+  <text x="620" y="884" text-anchor="middle" font-size="13.5" fill="#444">运行支撑：Docker Swarm 集群 + 华为云 SWR 镜像仓库（拓扑见第 7 章图 7-1）</text>
+
+  <!-- 层间依赖箭头 -->
+  <line x1="620" y1="146" x2="620" y2="198" stroke="#333" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="620" y1="284" x2="620" y2="318" stroke="#333" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="620" y1="416" x2="620" y2="450" stroke="#333" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="620" y1="682" x2="620" y2="718" stroke="#333" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="620" y1="816" x2="620" y2="848" stroke="#333" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="632" y="176" font-size="11" fill="#666">HTTP / JSON</text>
+  <text x="632" y="306" font-size="11" fill="#666">HTTP / 轮询</text>
+  <text x="632" y="440" font-size="11" fill="#666">方法调用</text>
+  <text x="632" y="706" font-size="11" fill="#666">Repository / RedisClient</text>
+
+  <text x="1220" y="920" text-anchor="end" font-size="10.5" fill="#999">注：M11 接口适配与前端、M12 部署与运维的职责见 3.2 节模块清单</text>
+</svg>

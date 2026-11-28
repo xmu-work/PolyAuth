@@ -25,12 +25,12 @@ const form = reactive<{
   roleName: string
   description: string
   status: 'ACTIVE' | 'DISABLED'
-  parentId: number | undefined
+  parentIds: number[]
 }>({
   roleName: '',
   description: '',
   status: 'ACTIVE',
-  parentId: undefined,
+  parentIds: [],
 })
 
 const parentCandidates = ref<Role[]>([])
@@ -62,7 +62,8 @@ async function load(): Promise<void> {
     form.roleName = detail.roleName
     form.description = detail.description ?? ''
     form.status = detail.status
-    form.parentId = detail.parentId
+    form.parentIds = detail.parentIds
+      ?? (detail.parentId !== undefined ? [detail.parentId] : [])
     peerRoleId.value = undefined
   } finally {
     loading.value = false
@@ -80,7 +81,7 @@ async function save(): Promise<void> {
       roleName: form.roleName.trim(),
       description: form.description.trim(),
       status: form.status,
-      parentId: form.parentId,
+      parentIds: form.parentIds,
     })
     ElMessage.success('角色继承与状态已更新')
     emit('updated')
@@ -113,7 +114,7 @@ async function removeExclusion(peerId: number): Promise<void> {
 
 function roleLabel(roleId: number): string {
   const role = roles.value.find((item) => item.id === roleId)
-  return role ? `${role.roleCode} · ${role.roleName}` : `#${roleId}`
+  return role ? role.roleName : `#${roleId}`
 }
 </script>
 
@@ -122,7 +123,7 @@ function roleLabel(roleId: number): string {
     <template #header>
       <div>
         <h2 class="governance-card__title">继承、启停与互斥</h2>
-        <p class="governance-card__hint">父子角色权限自动叠加；互斥角色不能同时授予同一用户</p>
+        <p class="governance-card__hint">多个父角色的权限自动叠加；互斥角色不能同时授予同一用户</p>
       </div>
     </template>
     <el-empty v-if="roleId === null" description="请选择角色" />
@@ -131,12 +132,21 @@ function roleLabel(roleId: number): string {
         <el-form-item label="角色名称">
           <el-input v-model="form.roleName" maxlength="128" />
         </el-form-item>
-        <el-form-item label="父角色">
-          <el-select v-model="form.parentId" clearable filterable style="width: 100%">
+        <el-form-item label="父角色（可多选）">
+          <el-select
+            v-model="form.parentIds"
+            multiple
+            clearable
+            filterable
+            collapse-tags
+            collapse-tags-tooltip
+            placeholder="可选一个或多个父角色"
+            style="width: 100%"
+          >
             <el-option
               v-for="role in parentCandidates"
               :key="role.id"
-              :label="`${role.roleCode} · ${role.roleName}`"
+              :label="role.roleName"
               :value="role.id"
             />
           </el-select>

@@ -1,14 +1,17 @@
 # PolyAuth：多系统统一权限管理平台
 
-PolyAuth 是面向多业务系统的统一身份与功能权限平台，集中管理系统、前端菜单/按钮权限、后端 API、账号、组织、角色继承、角色互斥和审计。项目采用 Maven 多模块，同时维护**结构化后端**与**面向对象后端**，通过共享 HTTP 契约验证外部行为等价。
+PolyAuth 是面向多业务系统的统一身份与功能权限平台，集中管理系统、前端菜单/按钮权限、后端 API、账号、组织、角色继承、角色互斥和审计。项目采用**同应用、同 API、同数据库、双 Service 实现**：启动时通过 `app.backend-strategy=structured|ddd` 选择结构化事务脚本或 DDD 实现。
 
 ## 项目边界
 
-本项目实现课程要求的 RBAC3 核心能力，并持续迁移为可独立运行的双后端系统。
+本项目实现课程要求的 RBAC3 核心能力，并提供两套可切换的 Service 实现。
 
-- `structured-backend`：保留完整管理能力，按“校验 → 处理 → 持久化”组织 Service。
-- `oop-backend`：完整实现认证、统一身份、用户、组织、系统、权限树、API 目录、角色治理、审计查询、OpenAPI 和幂等，外部端点与结构化后端对齐。
-- 两套后端不互相依赖，不共享业务实现；共享数据库基线、API 路径、错误码和黑盒契约测试。
+- `backend/src/main/java/com/polyauth/api`：共享 Controller、DTO/VO、异常映射、认证与过滤器。
+- `backend/src/main/java/com/polyauth/service/port`：两套实现共同遵守的用例接口与结果模型。
+- `backend/src/main/java/com/polyauth/service/structured`：结构化事务脚本实现。
+- `backend/src/main/java/com/polyauth/service/ddd`：DDD 应用服务与领域模型实现。
+- `api/openapi.yaml`：两套实现共用的唯一 API 契约源，`api/openapi.json` 为对应生成物。
+- 两套实现不各自创建 Controller、错误响应或 SQL；共享数据库基线、API 契约、错误码和黑盒契约测试。
 
 - “能访问哪个菜单、页面和按钮”由角色与前端权限树决定；“能调用哪个后端 API”再由 API 到权限的映射独立校验。
 - 组织机构同时作为账号归属主数据和分公司、部门、项目范围的映射依据。
@@ -20,7 +23,7 @@ PolyAuth 是面向多业务系统的统一身份与功能权限平台，集中�
 
 | 类别 | 技术 |
 | --- | --- |
-| 双后端 | Java 17、Spring Boot 3.4.5、Maven 多模块 |
+| 后端 | Java 17、Spring Boot 3.4.5、Maven 单模块 |
 | 持久层 | Spring Data JPA、MySQL 8.0 |
 | 缓存与幂等 | Redis、Spring Data Redis |
 | 安全 | JWT、PBKDF2、AES-256-GCM、HMAC-SHA256 |
@@ -32,7 +35,7 @@ PolyAuth 是面向多业务系统的统一身份与功能权限平台，集中�
 
 ## 已实现能力
 
-以下能力基线同时适用于结构化后端和 OOP 后端；两者共用相同的 HTTP 路径、请求参数、响应结构、错误码和数据库基线。
+以下能力基线同时适用于 `structured` 与 `ddd` 两种策略；两者共用同一套 Controller、HTTP 路径、请求参数、响应结构、错误码和数据库基线。
 
 ### 身份认证与账号
 
@@ -85,40 +88,47 @@ PolyAuth 是面向多业务系统的统一身份与功能权限平台，集中�
 ## 架构
 
 ```text
-┌────────────────────────────────────────────────────┐
-│ web：Vue 管理后台，只依赖统一 HTTP API             │
-├────────────────────────────────────────────────────┤
-│ contract-tests：共享黑盒场景、HTTP 客户端、fixture │
-├──────────────────────────────┬─────────────────────┤
-│ structured-backend           │ oop-backend         │
-│ interfaces → application     │ interfaces          │
-│              → infrastructure│   → application     │
-│                              │       → domain      │
-│                              │ infrastructure      │
-│                              │   → domain ports    │
-└──────────────────────────────┴─────────────────────┘
+┌───────────────────────────────────────────────┐
+│ web：Vue 管理后台，只依赖统一 HTTP API        │
+├───────────────────────────────────────────────┤
+│ api：共享 Controller / DTO / VO / 安全与异常   │
+├───────────────────────────────────────────────┤
+│ service.port：共享用例接口与结果模型          │
+├──────────────────────┬────────────────────────┤
+│ service.structured   │ service.ddd            │
+│ 事务脚本实现         │ 应用服务 + 领域模型    │
+├──────────────────────┴────────────────────────┤
+│ infrastructure：共享 JPA / 缓存 / 加密 / 日志  │
+└───────────────────────────────────────────────┘
 ```
 
 核心目录：
 
 ```text
 PolyAuth/
-├── pom.xml                       Maven 聚合与共享版本
-├── structured-backend/           完整结构化实现，端口 8080
-├── oop-backend/                  完整 OOP/DDD 实现，端口 8081
-├── contract-tests/               不依赖生产类的 HTTP 契约
-├── db/                           共享 schema、seed 与升级脚本
-├── web/                          Vue 管理后台
-├── design/                       详细设计与接口材料
-└── scripts/                      双后端契约验证脚本
+├── api/                          OpenAPI 契约（openapi.yaml / openapi.json）
+├── backend/                      单 Spring Boot 模块，双 Service 实现
+│   ├── pom.xml
+│   ├── src/main/java/com/polyauth/
+│   │   ├── api/                  共享接口层
+│   │   ├── service/port/         共享用例契约
+│   │   ├── service/structured/   结构化实现
+│   │   ├── service/ddd/          DDD 实现
+│   │   └── infrastructure/       共享基础设施
+│   └── src/main/resources/db/    共享 schema、seed 与升级脚本
+├── deploy/                       Dockerfile、Swarm stack 与 Nginx 配置
+├── docs/                         需求、详细设计、API 手册与部署文档
+├── prototype/                    原型与 OpenAPI 校验/推送脚本
+└── web/                          Vue 管理后台
 ```
 
-OOP 分层约束：
+DDD 分层约束：
 
 ```text
-interface → application/command/usecase → domain/model/service/repository
-                      ↘ application/port
-infrastructure → domain + application/port
+api → service.port
+service.structured → service.port + infrastructure
+service.ddd → service.port + service.ddd.domain + infrastructure
+infrastructure → 共享 JPA / 缓存 / 加密 / 外部适配
 ```
 
 `domain` 与 `application` 不引用 JPA Entity、Spring Data Repository、Redis 或 infrastructure。
@@ -147,16 +157,25 @@ infrastructure → domain + application/port
 
 ```bash
 mysql -u root -p -e "CREATE DATABASE iam_platform DEFAULT CHARSET utf8mb4 COLLATE utf8mb4_general_ci;"
-mysql -u root -p -e "CREATE DATABASE iam_platform_oop DEFAULT CHARSET utf8mb4 COLLATE utf8mb4_general_ci;"
-mysql -u root -p iam_platform < db/schema.sql
-mysql -u root -p iam_platform < db/seed.sql
-mysql -u root -p iam_platform_oop < db/schema.sql
-mysql -u root -p iam_platform_oop < db/seed.sql
+mysql -u root -p iam_platform < backend/src/main/resources/db/schema.sql
+mysql -u root -p iam_platform < backend/src/main/resources/db/seed.sql
 ```
 
-已部署 RBAC0/RBAC1 数据库升级时，先执行 `db/rbac3_upgrade.sql`，再重启应用。
+角色多继承需要新表 `iam_role_parent`：已有数据库请执行
+`backend/src/main/resources/db/multi_role_inheritance_upgrade.sql`，该脚本会把旧的
+`iam_role.parent_id` 迁移为继承边，可重复执行。
 
-已初始化数据库接入课程项目管理系统时，再执行 `db/identity_course_upgrade.sql`。
+所有角色内置“数据查看”权限（`DATA_VIEW`）；已有数据库请执行
+`backend/src/main/resources/db/builtin_data_view_permission.sql`，脚本会登记权限并自动授予全部角色。
+该权限不在角色权限组件中展示，也不能通过解绑接口取消。
+
+拥有 `DATA_VIEW` 的用户自动获得目标系统内全部 `action=VIEW` 的权限：所有菜单均可见，
+GET/查询类按钮可用；新建、修改、删除、授权、撤销等 `action=ALL` 的权限不会授予，
+对应按钮在前端隐藏，对应写接口在后端返回 403。
+
+已部署 RBAC0/RBAC1 数据库升级时，先执行 `backend/src/main/resources/db/rbac3_upgrade.sql`，再重启应用。
+
+已初始化数据库接入课程项目管理系统时，再执行 `backend/src/main/resources/db/identity_course_upgrade.sql`。
 该脚本幂等登记 `course-project-management` 系统、`teacher / student / admin` 角色和 `TEC` 权限。
 
 初始化管理员为 `admin / Admin@123`。该密码仅用于本地初始化，部署前必须修改。
@@ -168,7 +187,7 @@ MySQL 建议设置 `default-time-zone = '+08:00'`；`seed.sql` 已在会话级�
 | 变量 | 默认值或用途 |
 | --- | --- |
 | `DB_HOST` / `DB_PORT` | MySQL 地址与端口 |
-| `DB_NAME` | 结构化默认 `iam_platform`，OOP 默认 `iam_platform_oop` |
+| `DB_NAME` | 数据库名，默认 `iam_platform`（两种策略共用） |
 | `DB_USERNAME` / `DB_PASSWORD` | 数据库账号与密码 |
 | `DB_SSL` | MySQL SSL 开关，默认 `false` |
 | `REDIS_HOST` / `REDIS_PORT` | Redis 地址与端口 |
@@ -181,25 +200,27 @@ MySQL 建议设置 `default-time-zone = '+08:00'`；`seed.sql` 已在会话级�
 
 ### 后端
 
-```bash
-.\mvnw.cmd clean test
-.\mvnw.cmd -pl structured-backend spring-boot:run
-```
-
-结构化后端地址：`http://localhost:8080/api/v1`。
-
-OOP 后端启动：
+在 `backend/` 目录执行：
 
 ```bash
-.\mvnw.cmd -pl oop-backend spring-boot:run
+./mvnw clean test
+./mvnw -Dspring-boot.run.arguments=--app.backend-strategy=structured spring-boot:run
 ```
 
-OOP 后端地址：`http://localhost:8081/api/v1`。两套数据库使用同一 schema 和 seed，但建议使用独立库，避免并行验证时互相修改数据。
+结构化策略地址：`http://localhost:8080/api/v1`。
 
-双后端契约验证：
+切换到 DDD 策略（同一 JAR、同一端口、同一数据库）：
+
+```bash
+./mvnw -Dspring-boot.run.arguments=--app.backend-strategy=ddd spring-boot:run
+```
+
+两种策略共用 `iam_platform` 的 schema 和 seed；启动前执行 `backend/src/main/resources/db/schema.sql` 与 `seed.sql`。
+
+双策略契约验证：
 
 ```powershell
-.\scripts\run-dual-contracts.ps1
+.\run-dual-contracts.ps1
 ```
 
 ### 前端
@@ -216,12 +237,12 @@ pnpm build
 
 ### Docker Swarm
 
-正式部署采用 8 台 2 核 2G 节点：3 台 manager、3 台结构化应用、1 台数据库、1 台 OOP 应用。完整标签、构建、密钥、数据库初始化、OOP 端口和菜单日志验收步骤见 [DEPLOYMENT_8NODES.md](DEPLOYMENT_8NODES.md)。
+正式部署采用 8 台 2 核 2G 节点：3 台 manager、3 台 `structured` 策略应用、1 台数据库、1 台 `ddd` 策略应用。两套应用使用同一个 JAR，仅 `APP_BACKEND_STRATEGY` 不同。完整标签、构建、密钥、数据库初始化、端口和菜单日志验收步骤见 [docs/deployment-8nodes.md](docs/deployment-8nodes.md)。
 
 ## 鉴权规则
 
 - `POST /auth/login` 为公开接口。
-- 统一身份契约见 [design/07_统一身份外部契约.md](design/07_统一身份外部契约.md)；该组 8 个接口直接返回业务对象和字符串错误码，不使用内部 `Result` 包装。
+- 统一身份契约见 [docs/07_统一身份外部契约.md](docs/07_统一身份外部契约.md)；该组 8 个接口直接返回业务对象和字符串错误码，不使用内部 `Result` 包装。
 - 登录响应的 `userId` 是本地数据库主键字符串；统一身份用户标识使用 JWT `sub` 或 `/auth/me.subject`，值为 `user_no`。
 - 管理端请求携带 `Authorization: Bearer <token>`。
 - 管理端请求必须先匹配已登记的 `iam_api`，再检查该 API 映射的前端权限；任一环节缺失都默认拒绝。
@@ -275,13 +296,13 @@ pnpm build
 
 ## 验证状态
 
-结构化后端测试覆盖 CloneFactory、统一身份、JWT、账号、组织、角色继承/互斥、功能权限树、日志、校验和幂等。OOP 后端测试覆盖组织、账号、角色、互斥、权限解析、用例编排、本地认证、统一身份、OpenAPI、幂等、JPA Adapter、50 个功能权限端点覆盖和真实 HTTP 烟测。
+合并后的 `backend` 模块共 184 项测试通过，覆盖结构化 Service、DDD 用例与领域模型、共享 API 层、JWT/统一身份、Controller 契约、JPA Adapter、日志与架构约束。`structured` 与 `ddd` 两种策略分别启动的真实 HTTP 烟测均通过。
 
-前端 21 项 Vitest 测试通过，`pnpm typecheck`、`pnpm build` 和 `pnpm lint` 均通过。
+前端 29 项 Vitest 测试通过，`pnpm typecheck`、`pnpm build` 和 `pnpm lint` 均通过。
 
-`contract-tests` 共 15 个共享黑盒场景；未指定 `contract.baseUrl` 时会明确跳过，不伪造通过。要确认两套实现等价，必须分别启动 8080、8081 并执行双后端契约脚本。
+`backend/src/test/java/com/polyauth/contract` 共 16 个共享黑盒场景；未指定 `contract.baseUrl` 时会明确跳过，不伪造通过。要确认两种策略等价，必须分别以 `structured` 与 `ddd` 启动后端并执行契约脚本。
 
-OOP 已注册与结构化后端相同的 50 个功能权限端点，已下线能力端点明确不存在。真实双后端契约仍需在 8080 和 8081 同时运行并连接各自数据库后执行，不能用自动跳过结果替代联调结论。
+两套实现共用同一份 `service.port`，结构化与 DDD 均覆盖 52 个功能权限端点。真实契约联调仍需在运行中的服务上执行，不能用自动跳过结果替代。
 
-`design/` 目录保留课程详细设计材料；功能范围以本 README、当前代码和
-[RBAC后端API使用手册.md](RBAC后端API使用手册.md) 为准。
+`docs/` 目录保留课程详细设计材料；功能范围以本 README、当前代码和
+[API 使用手册](docs/API使用手册.md) 为准。

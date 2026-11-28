@@ -102,6 +102,7 @@ function handleUpdated(org: Org): void {
             编辑/停用
           </el-button>
           <el-button
+            v-perm="FP.ORG_CREATE"
             type="primary"
             plain
             :icon="Plus"

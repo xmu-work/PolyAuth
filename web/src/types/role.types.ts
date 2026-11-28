@@ -2,10 +2,13 @@ import type { CommonStatusCode, GrantStatusCode, RoleTypeCode } from '@/constant
 
 export interface Role {
   id: number
-  roleCode: string
+  /** 内部唯一编码，仅后端使用，界面不展示 */
+  roleCode?: string
   roleName: string
   roleType: RoleTypeCode
+  /** 兼容单父调用方；多继承以 parentIds 为准 */
   parentId?: number
+  parentIds?: number[]
   status: CommonStatusCode
   description?: string
   isDeleted: number
@@ -16,11 +19,11 @@ export interface Role {
 }
 
 export interface RoleCreatePayload {
-  roleCode: string
   roleName: string
   roleType: RoleTypeCode
   description?: string
   parentId?: number
+  parentIds?: number[]
 }
 
 export interface RoleUpdatePayload {
@@ -28,6 +31,7 @@ export interface RoleUpdatePayload {
   description?: string
   status?: CommonStatusCode
   parentId?: number
+  parentIds?: number[]
 }
 
 export interface UserRole {

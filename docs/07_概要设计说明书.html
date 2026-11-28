@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>统一应用软件权限管理系统 概要设计说明书</title>
+<style>
+  @page { size: A4; margin: 18mm 16mm 18mm 16mm; }
+  @page wide { size: A4 landscape; margin: 8mm 8mm 8mm 8mm; }
+  * { box-sizing: border-box; }
+  body { margin: 0; color: #111; font-family: "Microsoft YaHei", "PingFang SC", "SimSun", serif; font-size: 10.5pt; line-height: 1.75; }
+  h1 { page-break-before: always; font-size: 17pt; color: #13396b; border-bottom: 2px solid #1f4e8c; padding-bottom: 6px; margin: 0 0 14px 0; }
+  h1.first { page-break-before: avoid; }
+  h2 { font-size: 13pt; color: #13396b; margin: 18px 0 8px 0; }
+  h3 { font-size: 11.2pt; color: #13396b; margin: 14px 0 6px 0; }
+  h4 { font-size: 10.5pt; color: #222; margin: 12px 0 5px 0; }
+  p { text-indent: 2em; margin: 6px 0; text-align: justify; }
+  p.ni { text-indent: 0; }
+  ul, ol { margin: 6px 0 8px 0; padding-left: 2.2em; }
+  li { margin: 3px 0; text-align: justify; }
+  table { border-collapse: collapse; width: 100%; margin: 10px 0 14px 0; font-size: 8.8pt; }
+  th, td { border: 1px solid #777; padding: 4px 6px; vertical-align: top; line-height: 1.55; }
+  th { background: #eef4fc; color: #13396b; font-weight: bold; }
+  tr { page-break-inside: avoid; }
+  .tcap { text-indent: 0; font-size: 9.4pt; font-weight: bold; color: #13396b; margin: 12px 0 3px 0; page-break-after: avoid; }
+  figure { margin: 14px 0; page-break-inside: avoid; text-align: center; }
+  figure.wide { page: wide; page-break-before: always; page-break-after: always; margin: 0; }
+  figure.wide img { display: block; margin: 0 auto; max-width: 100%; max-height: 180mm; width: auto; height: auto; }
+  figure img { width: 100%; height: auto; }
+  figcaption { font-size: 9.2pt; color: #444; margin-top: 4px; }
+  .note { background: #f7f9fc; border-left: 4px solid #1f4e8c; padding: 8px 12px; font-size: 9.2pt; margin: 10px 0; }
+  .boundary { background: #fff7e0; border-left: 4px solid #c9a227; padding: 8px 12px; font-size: 9.2pt; margin: 10px 0; }
+  .small { font-size: 9pt; color: #555; }
+  .cover { height: 250mm; display: block; page-break-after: always; text-align: center; }
+  .cover .top { margin-top: 18mm; font-size: 12pt; letter-spacing: 2px; color: #444; }
+  .cover .title { margin-top: 26mm; font-size: 30pt; font-weight: bold; color: #13396b; letter-spacing: 4px; }
+  .cover .sub { margin-top: 8mm; font-size: 16pt; color: #222; }
+  .cover .meta { margin-top: 40mm; font-size: 11.5pt; line-height: 2.4; }
+  .cover .meta td { border: none; text-align: left; }
+  .toc { page-break-before: always; page-break-after: always; }
+  .toc h2 { text-align: center; font-size: 16pt; margin-top: 0; }
+  .toc ol { list-style: none; padding-left: 0; font-size: 9.8pt; }
+  .toc ol li { margin: 3px 0; }
+  .toc ol ol { padding-left: 2em; font-size: 9.2pt; }
+  .kv { width: 100%; }
+  .kv td:first-child { width: 26%; background: #fafafa; font-weight: bold; }
+  .tag { display: inline-block; padding: 0 5px; border: 1px solid #888; border-radius: 3px; font-size: 8pt; color: #555; }
+</style>
+</head>
+<body>
+
+<!-- ===================== 封面 ===================== -->
+<div class="cover">
+  <div class="top">面向对象分析与设计 · 课程大作业二</div>
+  <div class="title">概要设计说明书</div>
+  <div class="sub">统一应用软件权限管理系统<br><span style="font-size:13pt;color:#555">（RBAC 统一身份与权限平台）</span></div>
+  <table class="meta" style="margin-left:auto;margin-right:auto;width:62%;">
+    <tr><td>文档版本：</td><td>V1.0</td></tr>
+    <tr><td>组　　号：</td><td>第 ______ 组</td></tr>
+    <tr><td>项目名称：</td><td>统一应用软件权限管理系统（RBAC-Structured）</td></tr>
+    <tr><td>编制单位：</td><td>信息中心 / 系统架构组</td></tr>
+    <tr><td>编制日期：</td><td>2026 年 11 月 18 日</td></tr>
+    <tr><td>适用阶段：</td><td>概要设计（需求分析 → 概要设计 → 详细设计）</td></tr>
+    <tr><td>密　　级：</td><td>内部</td></tr>
+  </table>
+</div>
+
+<!-- ===================== 修订记录 ===================== -->
+<h1 class="first">修订记录</h1>
+<table>
+  <thead><tr><th style="width:12%">版本</th><th style="width:18%">日期</th><th style="width:20%">修订人</th><th>修订说明</th></tr></thead>
+  <tbody>
+    <tr><td>V0.1</td><td>2026-11-10</td><td>架构组</td><td>依据《需求规格说明书》V1.1 建立概要设计框架，确定分层架构与模块边界。</td></tr>
+    <tr><td>V0.9</td><td>2026-11-15</td><td>架构组</td><td>补充包图、设计类图、状态图、系统级 DFD 与运行时时序图；完成轻量级 ATAM 评估。</td></tr>
+    <tr><td>V1.0</td><td>2026-11-18</td><td>架构组</td><td>与当前代码（RBAC3 实现）对齐模块命名与接口清单；补充需求可追溯性矩阵、图表编号与边界声明。</td></tr>
+  </tbody>
+</table>
+<div class="note">
+  <b>文档状态说明：</b>本说明书描述“目标系统的概要设计”，并以当前代码实现为一致性基准。需求编号、用例编号、验收编号均引用《需求规格说明书》V1.1；分析模型编号引用《详细设计说明书》与需求文档中的既有图号。凡与代码不一致处，以代码与本文 3.2 节模块清单为准，并在后续详细设计中同步修订。
+</div>
+
+<!-- ===================== 目录 ===================== -->
+<div class="toc">
+  <h2>目　录</h2>
+  <ol>
+    <li>1　引言
+      <ol>
+        <li>1.1　编写目的</li>
+        <li>1.2　项目背景与范围</li>
+        <li>1.3　术语与缩略语</li>
+        <li>1.4　参考资料</li>
+        <li>1.5　文档约定与阶段边界</li>
+        <li>1.6　设计原则与约束</li>
+      </ol>
+    </li>
+    <li>2　总体架构设计与评估
+      <ol>
+        <li>2.1　架构设计</li>
+        <li>2.2　架构故事（支撑场景描述）</li>
+        <li>2.3　轻量级 ATAM 评估</li>
+      </ol>
+    </li>
+    <li>3　模块设计与逻辑架构
+      <ol>
+        <li>3.1　包图与分层划分</li>
+        <li>3.2　模块职责与功能分配</li>
+        <li>3.3　模块间接口契约（概要级）</li>
+      </ol>
+    </li>
+    <li>4　设计模型（分析模型 → 设计模型转换）
+      <ol>
+        <li>4.1　核心设计类图</li>
+        <li>4.2　关键类状态设计</li>
+        <li>4.3　系统级数据流图</li>
+        <li>4.4　关键运行时设计：系统级时序图</li>
+      </ol>
+    </li>
+    <li>5　接口设计
+      <ol>
+        <li>5.1　外部接口设计</li>
+        <li>5.2　内部系统级接口设计</li>
+      </ol>
+    </li>
+    <li>6　数据设计与存储策略
+      <ol>
+        <li>6.1　全局数据逻辑结构设计</li>
+        <li>6.2　概要级表结构设计</li>
+        <li>6.3　存储方案与物理策略</li>
+      </ol>
+    </li>
+    <li>7　部署设计
+      <ol>
+        <li>7.1　部署图</li>
+        <li>7.2　物理部署架构说明</li>
+      </ol>
+    </li>
+    <li>8　非功能需求的实现方案</li>
+    <li>9　附录：需求可追溯性矩阵
+      <ol>
+        <li>9.1　功能需求追溯矩阵</li>
+        <li>9.2　非功能需求追溯矩阵</li>
+        <li>9.3　引用大作业一分析模型编号清单</li>
+      </ol>
+    </li>
+  </ol>
+</div>
+
+<!-- ===================== 第 1 章 ===================== -->
+<h1>1　引言</h1>
+
+<h2>1.1　编写目的</h2>
+<p>本文档是统一应用软件权限管理系统（以下简称“本系统”或“权限平台”）在需求分析阶段之后的<b>概要设计</b>交付物，用于回答“系统怎么做”的总体问题：确定体系结构风格、划分模块与层次、定义模块间与系统间的接口契约、给出全局数据与存储策略、描述关键运行时协作，并对架构方案做一次轻量级 ATAM 评估。</p>
+<p>预期读者包括：课程指导教师与评阅人员、系统架构师与开发人员、测试与运维人员，以及后续承接本系统的技术人员。本文档也是详细设计、编码、测试与部署的直接上游依据。</p>
+
+<h2>1.2　项目背景与范围</h2>
+<p>首个接入案例为某市政公司（约 10000 名员工，1 个总公司 + 9 个分公司、111 个部门、18 套在跑业务系统、约 359 个功能点）。现状是“一人一系统一套权限”，权限口径不一致、离职账号清理不及时、前端隐藏代替后端校验、权限变更生效慢、敏感信息保护不足、日志留存不合规。本系统的建设目标是建立公司级 IAM 平台，实现统一身份、统一认证、统一授权、双维度权限（功能 + 数据）、权限即时生效、永久审计与敏感信息保护。</p>
+<p><b>范围内：</b>统一账号与四级组织树；RBAC0/1/3 能力（角色继承、角色互斥、数据范围）；前端权限树与后端 API 分离建模；服务端 API 鉴权；授权全生命周期；审计日志；敏感字段加密与脱敏；多系统接入登记。<b>范围外：</b>不重写任何业务系统、不新建业务功能点、不做物理删除、不承担人事主数据维护、不提供统一门户聚合、不做 ABAC 与审批流（扩展项）。详见《需求规格说明书》1.3 节。</p>
+
+<h2>1.3　术语与缩略语</h2>
+<p>本文使用的术语与缩略语见表 1-1。</p>
+<p class="tcap">表 1-1　术语与缩略语</p>
+<table>
+  <thead><tr><th style="width:18%">术语</th><th>说明</th></tr></thead>
+  <tbody>
+    <tr><td>RBAC</td><td>基于角色的访问控制。本系统以 RBAC0（用户—角色—权限）为基础，实现 RBAC1（角色继承）与 RBAC3（继承 + 互斥），并叠加数据权限维度。</td></tr>
+    <tr><td>PDP</td><td>策略决策点（Policy Decision Point），本系统中指 <code>DecisionService</code>：只读、无状态地计算用户在某系统可执行的权限集合。</td></tr>
+    <tr><td>功能权限</td><td>对菜单、按钮、API 可执行操作的控制；操作取值覆盖 NONE / VIEW / ALL / VIEW_EDIT 等 12 种。</td></tr>
+    <tr><td>数据权限 / 数据范围</td><td>对全公司、本分公司、本部门、本项目、本人五类数据范围的授权与判定。</td></tr>
+    <tr><td>前端权限树</td><td><code>iam_permission</code> 中的菜单/按钮自关联树，回答“页面是否显示、按钮是否可用”。</td></tr>
+    <tr><td>后端 API</td><td><code>iam_api</code> 中的 HTTP 接口目录，按 <code>api_path + http_method</code> 匹配，回答“这次请求是否允许执行”。</td></tr>
+    <tr><td>fail-closed</td><td>默认拒绝：未登记 API、未映射权限、无有效角色、权限未授予，任一环节缺失均拒绝。</td></tr>
+    <tr><td>版本快照缓存</td><td>以“不可变快照 + 全局版本号”组织的 Redis 缓存；变更时只递增版本号，旧快照自然过期，不使用 <code>KEYS</code> 扫描。</td></tr>
+    <tr><td>ATAM</td><td>体系结构权衡分析方法（Architecture Tradeoff Analysis Method）；本文只模拟其“场景—效用树—分析—改进”的核心逻辑。</td></tr>
+    <tr><td>DFD</td><td>数据流图（Data Flow Diagram），本文使用 0 层（顶层）与第一层。</td></tr>
+  </tbody>
+</table>
+
+<h2>1.4　参考资料</h2>
+<ol>
+  <li>《统一应用软件权限管理系统需求规格说明书》V1.1（2026-10-26），本文简称《需求规格说明书》或 SRS。</li>
+  <li>《统一应用软件权限管理系统详细设计说明书》V2.1（2026-11-06），含分层数据流图与模块结构图。</li>
+  <li>《统一应用软件权限管理系统数据库设计说明书》V2.0。</li>
+  <li>《统一应用软件权限管理系统 API 设计说明书》V2.0。</li>
+  <li>《RBAC 核心 E-R 图实体说明》。</li>
+  <li>课程讲义《需求分析》《结构化软件设计》《软件体系结构》；ATAM 方法参考 SEI 技术报告。</li>
+  <li>项目代码与部署资料：<code>backend/src/main/java/com/polyauth</code>、<code>backend/src/main/resources/db</code>、<code>deploy</code>、<code>README.md</code>、<code>docs/deployment-8nodes.md</code>。</li>
+</ol>
+
+<h2>1.5　文档约定与阶段边界</h2>
+<p class="ni"><b>编号约定：</b>功能需求 <code>FR-NN</code>、非功能需求 <code>NFR-NN</code>、用例规约 <code>IAM-XXX-NNN</code>、验收用例 <code>UC-NN</code> 均沿用 SRS；架构决策 <code>AD-N</code>、架构故事 <code>S1～S7</code>、风险 <code>R-N</code>、非风险 <code>NR-N</code>、敏感点 <code>SP-N</code>、权衡点 <code>TP-N</code>、改进 <code>IMP-N</code> 为本文新增编号。</p>
+<p class="ni"><b>图表约定：</b>图按“章-序号”编号（如图 4-1），表按“章-序号”编号（如表 2-1）；正文引用图号/表号。所有建模图均由脚本化 SVG 生成，源文件位于 <code>docs/概要设计图/</code>，可重复生成。</p>
+<p class="ni"><b>模板说明：</b>本文采用课程 2026 版《概要设计说明书》模板（章节与作业“四、内容要求”1～9 一一对应；该模板以 GB/T 8567 概要设计说明书结构为基础裁剪）。未删除模板章节：标准 HDL 的“引用文件”并入 1.4，“总体设计”对应第 2、3 章，“接口设计”对应第 5 章，“运行设计”对应 2.2、4.4 与第 7 章，“出错处理设计”对应 2.3.3 与第 8 章，“安全保密设计”对应 2.1.3 与第 8 章，“维护设计”对应第 8 章。确实不适用的“硬件接口”保留标题并注明原因（5.1.2）。</p>
+<p class="ni"><b>建模工具说明：</b>图 2-1～图 7-1 均为标准 SVG 矢量图，源文件位于 <code>docs/概要设计图/</code>，由脚本化绘图生成，可导入 draw.io、Visio 或 StarUML 继续编辑；不是手绘图或照片。</p>
+<div class="boundary"><b>阶段边界声明：</b>本文不重复需求阶段的用例图、用例详述与活动图；不包含算法伪代码、完整表字段字典、代码级函数签名、SQL 语句、模块内部流程与具体配置参数。涉及之处只给到设计决策、接口大类与模块协作粒度，细节留待详细设计。各节另有“⚠️ 边界声明”处以该处为准。</div>
+
+<h2>1.6　设计原则与约束</h2>
+<p>本文的设计与评估遵循表 1-2 所列原则；后续章节的模块划分、接口契约、数据策略与部署方案均以此为准。</p>
+<p class="tcap">表 1-2　设计原则与约束</p>
+<table>
+  <thead><tr><th style="width:18%">原则 / 约束</th><th style="width:52%">落地方式</th><th style="width:30%">体现位置</th></tr></thead>
+  <tbody>
+    <tr><td>可追溯性</td><td>每个模块、接口、数据策略与架构决策标注 FR / NFR 编号，并在第 9 章矩阵中闭环</td><td>表 2-1、表 3-1、表 9-1、表 9-2</td></tr>
+    <tr><td>高内聚、低耦合</td><td>按业务能力划分 M01～M12；模块间只传标识与值对象；<code>interfaces → application → infrastructure</code> 单向依赖</td><td>3.1、3.2、3.3</td></tr>
+    <tr><td>最小权限、默认拒绝</td><td>未登记 API、未映射权限、无有效角色、权限未授予，任一环节缺失即拒绝</td><td>AD-3、M07、8</td></tr>
+    <tr><td>前后端权限同源</td><td>角色 → 前端权限 → API 为唯一授权事实；前端查询与后端鉴权共用 M07</td><td>AD-4、图 4-1、图 4-6</td></tr>
+    <tr><td>非功能需求前置</td><td>性能用版本快照与无状态 PDP；安全用 AES-GCM、令牌哈希、脱敏；可靠性用事务、锁、唯一约束；可维护性用分层与模块边界；可移植性用容器与环境变量</td><td>2.1.3、6.3、7.2、8</td></tr>
+    <tr><td>数据与审计约束</td><td>账号不物理删除（封存）；日志只追加、不可改删；权限变更保存前后快照</td><td>4.2、AD-8、6.3</td></tr>
+    <tr><td>阶段与范围约束</td><td>按课程三阶段实现 RBAC0 → RBAC1 → RBAC3；不重写业务系统、不做审批流（列为扩展）</td><td>1.2、3.2、8</td></tr>
+    <tr><td>技术与部署约束</td><td>JDK 17、Spring Boot 3.4、MySQL 8、Redis 7、Vue 3；Docker Swarm + SWR + Secrets</td><td>2.1.3、7.1、7.2</td></tr>
+  </tbody>
+</table>
+
+<!-- ===================== 第 2 章 ===================== -->
+<h1>2　总体架构设计与评估</h1>
+
+<h2>2.1　架构设计</h2>
+
+<h3>2.1.1　架构风格选择与理由</h3>
+<p>本系统采用<b>“分层 + 模块化单体（modular monolith）”</b>为主、<b>“可分离的认证组件与无状态 PDP”</b>为辅的混合架构风格：运行时以单个 Spring Boot 应用部署，内部严格按 <code>interfaces → application → infrastructure</code> 分层并划分 M01～M12 模块；认证（M01）与决策（M07）在逻辑上独立、在数据上只读无状态，具备未来拆分为独立服务的边界条件。</p>
+<p><b>选择依据：</b></p>
+<ul>
+  <li><b>业务规模与一致性要求：</b>RBAC 授权是一次写、多次读的强一致场景。授权事实（用户—角色、角色—权限、角色—数据范围）必须与审计快照在同一事务内落库；拆成微服务会引入分布式事务或最终一致，与 FR-38（前后端同源）、FR-41（并发互斥）、FR-42（变更快照）冲突。</li>
+  <li><b>质量属性：</b>鉴权是高频只读路径（NFR-07），通过“无状态 PDP + 版本快照缓存”即可水平扩展，不需要微服务的服务发现与链路治理；管理后台是低频写路径，与鉴权共享进程但通过线程池、限流与超时隔离。</li>
+  <li><b>可修改性与可扩展性：</b>18 套系统共用一套模型，第 19 套系统接入只需登记系统、权限树、API 映射与角色配置，不改核心代码（NFR-13）。模块边界按“权限事实 / 判定 / 审计 / 基础设施”切分，满足高内聚低耦合。</li>
+  <li><b>课程与运维约束：</b>团队规模与部署环境（4 台 Swarm 节点）不支持微服务的多语言、独立发布与可观测性成本；单体 + 容器化足以覆盖课程规模，并保留拆分路径。</li>
+  <li><b>不选纯 C/S：</b>本系统面向 18 套异构系统与浏览器，客户端不是自建富客户端；Web 前后端分离已足够表达 UI 接口，C/S 的重客户端部署与升级成本无收益。</li>
+</ul>
+
+<h3>2.1.2　系统总体结构图</h3>
+<p>系统总体结构如图 2-1 所示。</p>
+<figure class="wide">
+  <img src="概要设计图/fig2-1-overall.svg" alt="系统总体结构图">
+  <figcaption>图 2-1　系统总体结构图</figcaption>
+</figure>
+<p>系统自上而下分为四层，并由此形成两条运行时路径：</p>
+<ul>
+  <li><b>展现层（M11）：</b>Vue 3 管理后台。按 <code>/open/permissions</code> 返回的权限集合渲染菜单与按钮；不承载判定，所有可见性最终以后端为准（FR-36、FR-38）。</li>
+  <li><b>接入层：</b>Nginx 终止 TLS 并转发；<code>RequestIdFilter</code> 注入追踪号；<code>AuthInterceptor</code> 完成令牌认证与管理端 API 鉴权；<code>OpenApiAuthInterceptor</code> 处理接入方签名与防重放；<code>IdempotencyFilter</code> 处理写请求幂等。</li>
+  <li><b>应用层（M01～M08）：</b>认证、账号、组织、角色与授权、权限目录、数据权限、鉴权决策、审计日志。业务规则与事务边界全部在本层。</li>
+  <li><b>基础设施层：</b>Spring Data JPA / MySQL、Redis、加解密、AOP 日志、定时任务与配置密钥。</li>
+</ul>
+<p>两条关键路径：<b>管理路径</b>（浏览器 → 接入层 → M02/M03/M04/M05/M06 → MySQL → M08 审计）；<b>鉴权路径</b>（业务系统/前端 → 接入层 → M01 认证 → M07 决策 → Redis 快照 / MySQL 回源 → M06 数据范围 → M08 审计）。</p>
+
+<h3>2.1.3　关键架构决策说明</h3>
+<p>关键架构决策及其质量属性目标、需求映射见表 2-1。</p>
+<p class="tcap">表 2-1　关键架构决策</p>
+<table>
+  <thead><tr><th style="width:7%">编号</th><th style="width:24%">决策</th><th style="width:31%">理由</th><th style="width:20%">目标质量属性</th><th style="width:18%">对应需求</th></tr></thead>
+  <tbody>
+    <tr><td>AD-1</td><td>采用分层模块化单体，暂不拆分微服务</td><td>授权写操作需要本地事务与快照一致；团队与部署规模不支持微服务治理成本；模块边界保留拆分条件</td><td>可维护性、一致性、可移植性</td><td>FR-38、FR-41、FR-42</td></tr>
+    <tr><td>AD-2</td><td>认证（M01）与决策（M07）职责分离，决策无状态</td><td>“你是谁”与“你能做什么”变化频率不同；决策是高频只读路径，可独立缓存与水平扩展</td><td>性能、可修改性</td><td>FR-31～FR-34、FR-38、NFR-07</td></tr>
+    <tr><td>AD-3</td><td>鉴权 fail-closed：未登记 API、未映射权限、无角色、未授权一律拒绝</td><td>前端隐藏不可信；默认拒绝是最小权限原则的直接落地</td><td>安全</td><td>FR-37、NFR-02、NFR-03</td></tr>
+    <tr><td>AD-4</td><td>前端权限树与后端 API 分离，角色只绑定前端权限，API 通过 <code>permission_id</code> 归属</td><td>一个按钮可调用多个 API；合并会导致“隐藏按钮”被误当成服务端鉴权</td><td>安全、可修改性</td><td>FR-17～FR-19、FR-36～FR-38</td></tr>
+    <tr><td>AD-5</td><td>权限缓存采用“不可变快照 + 全局版本号 + TTL”，变更时递增版本号</td><td>避免 <code>KEYS</code> 扫描阻塞 Redis；版本切换使旧快照立即不可达，满足即时生效</td><td>性能、可修改性</td><td>FR-40、NFR-08</td></tr>
+    <tr><td>AD-6</td><td>授权写操作使用 Redis 分布式锁（owner token + Lua 原子解锁）+ 数据库唯一约束 / 乐观锁</td><td>并发授予、互斥校验、临时授权需要跨请求互斥；数据库约束是最后兜底</td><td>可靠性、一致性</td><td>FR-41、FR-14、FR-25</td></tr>
+    <tr><td>AD-7</td><td>敏感字段 AES-256-GCM 加密存储，HMAC 检索哈希，展示层脱敏视图</td><td>既支持按姓名/电话检索，又保证库内无明文；视图隔离避免实体直出</td><td>安全</td><td>FR-48、FR-49、NFR-01</td></tr>
+    <tr><td>AD-8</td><td>普通操作与权限变更统一写入 <code>iam_log</code>，只追加，数据库触发器拒绝更新删除</td><td>统一查询入口，权限变更保存前后快照，满足永久审计</td><td>可审计性</td><td>FR-42、FR-44～FR-47、NFR-09</td></tr>
+    <tr><td>AD-9</td><td>RBAC3 判定链：账号正常 → 有效用户-角色 → 角色继承 → 角色-权限覆盖 → 系统/状态过滤</td><td>判定规则集中在一个 PDP，继承与互斥的变化只影响 M07/M04</td><td>可修改性、安全</td><td>FR-13、FR-14、FR-24、FR-29</td></tr>
+    <tr><td>AD-10</td><td>Docker Swarm + 华为云 SWR + Docker Secrets 部署；app 无状态多副本</td><td>课程环境 4 台节点；镜像集中构建、节点只拉取；密钥不落镜像</td><td>可移植性、可用性</td><td>NFR-11、NFR-13</td></tr>
+  </tbody>
+</table>
+<p class="small">说明：表中“目标质量属性”与 2.3 节效用树、2.2 节故事一一对应；需求编号引用 SRS。</p>
+
+<h2>2.2　架构故事（支撑场景描述）</h2>
+<p>以下 5 个故事对应 2.3 节效用树的高优先级叶节点，每个故事包含 ATAM 六要素并标注需求编号。</p>
+
+<h3>故事 S1（性能）：18 套系统高峰期的鉴权响应</h3>
+<p>工作日 9:00–10:00，18 套业务系统同时迎来访问高峰，业务系统后端对每个受保护请求调用本系统鉴权接口；普通员工与管理后台也在并发查询菜单权限。刺激源是外部业务系统与终端用户，刺激是“每请求一次鉴权/权限查询”，运行环境为 10000 账号、359 个功能点、Redis 与 MySQL 正常。制品是接入层拦截器、M07 决策服务与 Redis 版本快照缓存。系统应命中当前版本的用户权限快照并完成功能权限与数据范围判定，返回放行或 403。响应度量为：单次鉴权平均 ≤ 100ms、峰值 ≤ 200ms（NFR-07），错误率 < 0.1%，且同一用户的权限快照在一次请求内只计算一次（批量判定复用）。对应需求 NFR-06、NFR-07、NFR-08、FR-33、FR-39。</p>
+
+<h3>故事 S2（安全）：绕过前端直接调用未授权 API</h3>
+<p>一名普通员工通过浏览器开发者工具或脚本，直接构造 HTTP 请求访问只有管理员可见的接口；或以伪造成员身份尝试读取他人姓名与电话。刺激源是内部越权用户或外部攻击者，刺激是“未授权 API 调用 / 伪造令牌 / 敏感字段读取”，环境为系统正常运行的任意时刻。制品是认证拦截器、M07 决策、M09 加密组件与 M02 视图转换。系统应：校验令牌签名与吊销状态；按 <code>api_path + http_method</code> 找到已登记 API 与其前端权限；若未登记、未映射、用户无有效角色或角色未授予该权限，一律返回 401/403 并记录审计；敏感字段在库内为密文、在普通视图中为脱敏值。响应度量为：未授权请求 100% 拒绝（UC-03），敏感字段 0 明文落库，审计记录包含用户、动作、结果与请求号。对应需求 FR-37、FR-48、FR-49、NFR-01、NFR-02、NFR-03、NFR-04。</p>
+
+<h3>故事 S3（可用性/可靠性）：Redis 故障时的鉴权行为</h3>
+<p>业务高峰期 Redis 节点发生故障或网络分区，权限快照读取、分布式锁、幂等键与防重放 nonce 全部不可用。刺激源是基础设施故障，刺激是“缓存/锁依赖不可达”，环境为生产负载。制品是 M07 决策、M10 缓存组件、M04 授权写操作。系统应采取有界超时与快速失败：读路径在超时后回源 MySQL 完成判定（或返回 503 并由业务系统降级），写路径（授权、回收、互斥校验）直接失败并返回明确错误，<b>任何情况下不得因依赖故障而放行未授权请求</b>。响应度量为：故障期间未授权请求 0 放行；单次失败在 2 秒内返回；Redis 恢复后 60 秒内缓存自愈且无需重启应用。对应需求 NFR-11、NFR-04、FR-41。</p>
+
+<h3>故事 S4（可修改性/即时生效）：回收用户角色后的权限失效</h3>
+<p>管理员发现某员工调岗，撤销其原角色并授予新角色；此时该员工仍处于登录状态，且前端页面未刷新。刺激源是管理员，刺激是“角色授权/回收”，环境为在线用户与 3 个应用副本。制品是 M04 角色服务、M10 版本缓存、M11 前端轮询。系统应在一个本地事务内写入授权事实与变更前后快照，递增全局权限版本号，使该用户旧快照立即不可达；用户下一次 API 请求即按新权限判定，前端在下一次轮询（≤60 秒）后刷新菜单。响应度量为：后端生效 ≤ 1 次请求，前端可见 ≤ 60 秒；变更期间并发授予同一角色时由分布式锁串行化，不产生重复或丢失授权。对应需求 FR-27、FR-28、FR-40、FR-41、FR-42、NFR-08。</p>
+
+<h3>故事 S5（可审计性）：权限变更的追溯与导出</h3>
+<p>审计人员接到合规检查，需要查询某员工过去 30 天的全部权限变更（谁、何时、改了什么、成功与否），并导出 CSV。刺激源是审计人员，刺激是“按时间/用户/类型/结果查询并导出”，环境为系统运行一年、日志千万级。制品是 M08 审计日志、统一日志表与导出接口。系统应按索引列分页查询，权限变更记录包含变更前后 JSON 快照；日志只追加，任何更新/删除被数据库触发器拒绝；导出操作本身也写入日志，并对 CSV 做公式注入防护。响应度量为：查询 P95 ≤ 3 秒；导出 10 万行内 ≤ 60 秒；日志不可篡改可验证。对应需求 FR-44～FR-47、NFR-09、NFR-10。</p>
+
+<h2>2.3　轻量级 ATAM 评估</h2>
+<p class="ni"><b>评估对象与方法：</b>评估对象是 2.1 节已提出的架构方案；顺序为“设计 → 讲故事 → 建效用树 → 分析 → 给改进建议”。本文不模拟完整评审会议流程与多轮利益相关者协商。</p>
+
+<h3>2.3.1　质量属性效用树</h3>
+<p>质量属性效用树如图 2-2 所示，叶节点的场景、需求与优先级见表 2-2。</p>
+<figure class="wide">
+  <img src="概要设计图/fig2-2-utility-tree.svg" alt="质量属性效用树">
+  <figcaption>图 2-2　质量属性效用树</figcaption>
+</figure>
+<p class="tcap">表 2-2　质量属性效用树叶节点</p>
+<table>
+  <thead><tr><th style="width:10%">叶节点</th><th style="width:26%">场景</th><th style="width:14%">质量属性</th><th style="width:18%">对应需求</th><th style="width:10%">重要性</th><th style="width:10%">实现难度</th></tr></thead>
+  <tbody>
+    <tr><td>S1-1</td><td>高峰期单次鉴权 P99 ≤ 200ms</td><td>性能</td><td>NFR-06、NFR-07</td><td>H</td><td>M</td></tr>
+    <tr><td>S2-1</td><td>未授权 API 100% 拒绝，敏感字段不落明文</td><td>安全</td><td>FR-37、FR-48、NFR-01～03</td><td>H</td><td>M</td></tr>
+    <tr><td>S3-1</td><td>Redis 故障时不放行未授权请求，2s 内失败返回</td><td>可用性/可靠性</td><td>NFR-11、NFR-04</td><td>H</td><td>H</td></tr>
+    <tr><td>S4-1</td><td>授权回收后后端 ≤ 1 请求、前端 ≤ 60s 生效</td><td>可修改性</td><td>FR-28、FR-40、FR-41</td><td>H</td><td>M</td></tr>
+    <tr><td>S5-1</td><td>日志可查询、可导出、不可改删</td><td>可审计性</td><td>FR-44～FR-47、NFR-09</td><td>H</td><td>L</td></tr>
+    <tr><td>S6</td><td>第 19 套系统零改码接入</td><td>可修改性/可扩展性</td><td>FR-35、NFR-13</td><td>M</td><td>M</td></tr>
+    <tr><td>S7</td><td>账号全生命周期与封存一致性</td><td>可靠性/安全</td><td>FR-02、FR-05</td><td>H</td><td>L</td></tr>
+  </tbody>
+</table>
+<p class="small">注：S6、S7 为补充场景，未画入图 2-2，不参与本次 ATAM 分析，仅用于 2.1.3 的架构决策追溯。</p>
+
+<h3>2.3.2　架构方法识别与分析</h3>
+<p>各高优先级场景采用的架构方法及分析结论见表 2-3。</p>
+<p class="tcap">表 2-3　高优先级场景的架构方法分析</p>
+<table>
+  <thead><tr><th style="width:8%">场景</th><th style="width:28%">采用的架构方法</th><th style="width:34%">作用机理</th><th style="width:30%">分析结论</th></tr></thead>
+  <tbody>
+    <tr><td>S1</td><td>无状态 PDP + 版本快照缓存 + 单条 join 查询 + 覆盖索引 + 批量判定复用</td><td>命中快照时一次 Redis 读取；未命中时一次联表查询取候选权限，避免 N+1；批量接口只计算一次集合</td><td>满足 P99 ≤ 200ms 的把握较高；热点用户快照集中，需关注缓存雪崩（见 R-3）</td></tr>
+    <tr><td>S2</td><td>拦截器统一认证鉴权 + API/权限分离 + fail-closed + AES-GCM + 脱敏视图</td><td>每个请求先认证后鉴权；未登记 API 默认拒绝；实体不直出，视图层解密/掩码</td><td>能有效抵御水平/垂直越权与敏感信息泄露；依赖“管理端接口全部登记”的配置纪律</td></tr>
+    <tr><td>S3</td><td>Redis 超时与有界重试 + 回源判定 + 写操作快速失败 + 锁 owner token</td><td>读路径可退化到数据库；写路径拒绝而非放行；Lua 原子解锁避免误删</td><td>安全属性保持；可用性在 Redis 故障时下降，属于有意权衡（TP-4）</td></tr>
+    <tr><td>S4</td><td>版本号递增 + TTL 淘汰 + 前端 60s 轮询 + 分布式锁 + 变更快照</td><td>旧快照不可达；事务内写事实与快照；锁串行化并发授权</td><td>后端即时生效；前端受轮询周期限制，严格“秒级”需推送（IMP-3）</td></tr>
+    <tr><td>S5</td><td>统一日志表 + AOP 切面 + 触发器只追加 + 索引 + CSV 导出</td><td>写入口唯一；查询走组合索引；导出流式生成并审计</td><td>满足永久保存与可追溯；日志与业务同库带来容量风险（R-5）</td></tr>
+  </tbody>
+</table>
+
+<h3>2.3.3　评估发现</h3>
+<p>风险点按“决策 + 论证 + 质量影响”列于表 2-4；非风险点、敏感点与权衡点随后分列。</p>
+<h4>（1）风险点</h4>
+<p class="tcap">表 2-4　风险点（决策 + 论证 + 质量影响）</p>
+<table>
+  <thead><tr><th style="width:7%">编号</th><th style="width:31%">决策</th><th style="width:34%">论证</th><th style="width:28%">质量影响</th></tr></thead>
+  <tbody>
+    <tr><td>R-1</td><td>MySQL 单副本 + 本地盘部署（AD-10）</td><td>数据库节点宕机或磁盘故障时，账号、授权、令牌与日志全部不可读；单副本无自动故障转移</td><td>削弱可用性（NFR-11），鉴权与登录同时中断，业务系统无法降级到本地判定</td></tr>
+    <tr><td>R-2</td><td>Redis 同时承担权限快照、分布式锁、幂等键与防重放（AD-5、AD-6）</td><td>Redis 故障时读路径可回源，但写授权、幂等判断与防重放全部失败；故障恢复前管理动作不可用</td><td>削弱可用性；若实现为“异常即放行”则直接削弱安全性，必须保持 fail-closed</td></tr>
+    <tr><td>R-3</td><td>全局版本号使全部用户快照同时失效（AD-5）</td><td>授权变更频繁时，每次递增版本号都会造成缓存整体击穿，未命中请求集中回源 MySQL</td><td>削弱性能（NFR-07），高峰期可能出现查询排队与延迟抖动</td></tr>
+    <tr><td>R-4</td><td>角色继承链在未命中时逐层查询父角色（AD-9）</td><td>继承层级加深时每次判定需要多轮角色查询与去重，继承链越深查询放大越明显</td><td>削弱性能；建议限制继承深度或一次性加载子树</td></tr>
+    <tr><td>R-5</td><td>审计日志与业务同库同实例，且鉴权请求同步记录（AD-8）</td><td>日志表持续增长，索引与备份窗口扩大；同步写日志会增加鉴权路径延迟</td><td>削弱性能与可维护性；极端情况下磁盘写满影响业务库</td></tr>
+    <tr><td>R-6</td><td>管理后台与鉴权服务同进程（AD-1）</td><td>批量查询、日志导出等管理操作与鉴权共享 JVM、连接池与线程池</td><td>削弱性能与可用性；缺少进程级隔离，一个慢查询可能拖慢鉴权</td></tr>
+    <tr><td>R-7</td><td>前端依赖 60 秒轮询刷新权限（AD-5、M11）</td><td>权限回收后，前端最多 60 秒仍显示旧菜单；虽然后端已即时拒绝，用户会看到“可点但失败”</td><td>削弱可修改性与用户体验；严格意义的“即时”未完全满足（FR-40）</td></tr>
+  </tbody>
+</table>
+<h4>（2）非风险点</h4>
+<ul>
+  <li><b>NR-1：</b>未登记 API 与未映射权限默认拒绝，使“新增接口忘记登记”表现为不可用而非越权，属于安全增益。</li>
+  <li><b>NR-2：</b>令牌只保存哈希并支持吊销，令牌库泄露也无法直接重放；配合签名与过期时间，抵御伪造（NFR-04）。</li>
+  <li><b>NR-3：</b>以版本号替代 <code>KEYS</code> 扫描，避免 Redis 单线程被阻塞，对性能与稳定性均为正向。</li>
+  <li><b>NR-4：</b>权限变更保存前后 JSON 快照，配合只追加约束，使审计可回答“改前是什么、改后是什么”。</li>
+  <li><b>NR-5：</b>数据范围在判定时按组织树与目标上下文计算，组织调整不需要批量重写授权记录，提升可修改性。</li>
+</ul>
+<h4>（3）敏感点</h4>
+<ul>
+  <li><b>SP-1：</b>缓存 TTL 与版本号策略——同时显著影响 NFR-07（延迟）与 FR-40（即时生效），是性能与一致性的交点。</li>
+  <li><b>SP-2：</b>分布式锁的粒度（按角色/按用户）——粒度过粗降低并发，过细则难以覆盖跨角色互斥校验。</li>
+  <li><b>SP-3：</b>角色继承查询次数——直接影响未命中路径的延迟，也是 R-4 的根因。</li>
+  <li><b>SP-4：</b>鉴权日志是否同步写入——每请求同步落库会线性放大写压力（R-5）。</li>
+</ul>
+<h4>（4）权衡点</h4>
+<ul>
+  <li><b>TP-1（安全 vs 性能）：</b>每个请求都做认证 + 鉴权 + 审计，安全性最高，但增加了 Redis/MySQL 访问与写日志开销；当前选择安全优先。</li>
+  <li><b>TP-2（即时生效 vs 缓存命中率）：</b>版本号全量失效保证即时，但降低命中率；若改为按用户精细失效，则状态复杂度与一致性风险上升。</li>
+  <li><b>TP-3（简单性 vs 独立扩展）：</b>单体部署降低运维成本，但认证/决策无法独立扩容，峰值时与管理后台互相影响（R-6）。</li>
+  <li><b>TP-4（一致性 vs 可用性）：</b>Redis 故障时写操作拒绝、读操作回源，选择一致性/安全优先，牺牲部分可用性（S3）。</li>
+</ul>
+
+<h3>2.3.4　评估结论与改进</h3>
+<p><b>结论：</b>现有架构对 S1、S2、S4、S5 的主要目标有较高支撑度；S3 的安全属性可保证，但可用性依赖 Redis 与 MySQL 的可靠性。上线前最需要处理的是 R-1（数据库单点）、R-2（Redis 单点与 fail-closed 实现一致性）与 R-3（缓存击穿）。</p>
+<ol>
+  <li><b>IMP-1（针对 R-2、R-3）：</b>为决策路径增加“本地二级缓存 + 空值缓存 + 请求合并（single-flight）”，并对 Redis 访问设置短超时与熔断；Redis 不可用时读路径回源数据库，写路径快速失败。是否已反映：AD-5 已预留版本快照接口与缓存组件边界，<b>当前未实现二级缓存与熔断</b>，列入 RBAC3 后续迭代。</li>
+  <li><b>IMP-2（针对 R-1、R-6）：</b>将 MySQL 升级为主从复制或云数据库高可用实例，鉴权读请求可路由到只读副本；管理端高耗时查询（日志导出、权限矩阵）增加限流与独立线程池。是否已反映：AD-10 的 Swarm 约束允许替换数据节点，<b>当前部署仍为单副本本地盘</b>，属于已知单点。</li>
+  <li><b>IMP-3（针对 R-5、R-7）：</b>审计日志改为“同步写队列 + 异步批量落库”，并对日志表按时间分区/归档；前端增加变更事件推送（WebSocket 或 SSE），把生效时间从 ≤60 秒缩短到秒级。是否已反映：M08 已统一日志入口、M10 已封装缓存版本接口，<b>异步化与推送尚未实现</b>，列为扩展项。</li>
+</ol>
+<div class="note">说明：以上改进中，IMP-1 与 IMP-2 属于上线前必须完成的基础设施加固；IMP-3 属于体验与容量优化。本文第 8 章的非功能落实方案以“当前已实现 + 已设计未实现”两层描述，避免把规划能力写成既成事实。</div>
+
+<!-- ===================== 第 3 章 ===================== -->
+<h1>3　模块设计与逻辑架构</h1>
+
+<h2>3.1　包图与分层划分</h2>
+<p>系统包图如图 3-1 所示。</p>
+<figure class="wide">
+  <img src="概要设计图/fig3-1-package.svg" alt="系统包图">
+  <figcaption>图 3-1　系统包图（逻辑分层）</figcaption>
+</figure>
+<p>后端按 <code>com.iam.platform</code> 根包划分为四个子包，前端 <code>web</code> 作为独立构建产物：</p>
+<ul>
+  <li><b>interfaces（接口层）：</b>管理端 Controller、开放鉴权 Controller、认证/签名拦截器、请求追踪与幂等过滤器、统一异常处理。职责是协议适配与参数转换，<b>不写业务规则</b>。</li>
+  <li><b>application（应用层）：</b>按业务能力划分为 auth、account、organization、role、permission、system、api、datascope、decision、openapi、log、expiration、idempotency 等子包。事务边界、权限守卫、状态机与判定规则全部在本层。</li>
+  <li><b>infrastructure（基础设施层）：</b>JPA 实体与仓储接口、Redis 缓存与分布式锁、加解密组件、AOP 日志切面、授权到期定时任务。对上只暴露仓储/组件接口。</li>
+  <li><b>common（公共包）：</b>统一响应 <code>Result</code>/<code>PageResult</code>、错误码、业务异常、枚举。被三层共同使用，但不反向依赖任何层。</li>
+</ul>
+<p><b>依赖约束：</b><code>interfaces → application → infrastructure</code> 单向依赖；<code>application</code> 不得直接依赖 Spring MVC 类型；<code>infrastructure</code> 不得反向调用应用服务；跨模块调用只通过应用服务公开方法或仓储接口，不共享可变状态。</p>
+<div class="boundary"><b>⚠️ 边界声明：</b>本节只到“包/组件”粒度，不展开包内类清单、类属性与类内部实现；类级设计见第 4 章，代码级细节见详细设计。</div>
+
+<h2>3.2　模块职责与功能分配</h2>
+<p>各模块的职责、输入输出与需求映射见表 3-1。</p>
+<p class="tcap">表 3-1　模块职责、输入输出与需求映射</p>
+<table>
+  <thead><tr><th style="width:6%">编号</th><th style="width:17%">模块</th><th style="width:27%">职责</th><th style="width:18%">主要输入</th><th style="width:18%">主要输出</th><th style="width:14%">对应需求</th></tr></thead>
+  <tbody>
+    <tr><td>M01</td><td>统一认证</td><td>账号密码登录、令牌签发/校验/吊销、OpenAPI 接入方签名与防重放、请求认证</td><td>账号密码、令牌、签名头、客户端 IP</td><td>访问令牌、用户标识、401/403</td><td>FR-31～34、NFR-04</td></tr>
+    <tr><td>M02</td><td>账号管理</td><td>账号建立与查询、状态变更与离职封存、员工调岗、敏感视图转换</td><td>账号资料、目标状态、调岗指令</td><td>账号视图、封存结果、令牌吊销指令</td><td>FR-01～07、FR-48～49</td></tr>
+    <tr><td>M03</td><td>组织机构</td><td>四级组织树查询、新增、修改、停用、移动、祖先路径维护</td><td>组织节点、父节点、层级与类型</td><td>组织树、节点详情、层级校验结果</td><td>FR-08～11</td></tr>
+    <tr><td>M04</td><td>角色与授权</td><td>角色定义、继承与互斥、用户-角色授予/回收、角色-权限授予/回收、临时授权到期</td><td>角色资料、用户/权限集合、有效期</td><td>角色、绑定记录、互斥冲突、到期回收结果</td><td>FR-12～16、20、27～29、41</td></tr>
+    <tr><td>M05</td><td>权限目录</td><td>业务系统登记、前端权限树维护、后端 API 登记与权限映射</td><td>系统/菜单/按钮/API 定义</td><td>权限树、API 目录、映射关系</td><td>FR-17～19、35、NFR-13</td></tr>
+    <tr><td>M06</td><td>数据权限</td><td>数据范围字典、角色-数据范围授权、有效范围合并、资源级联合判定</td><td>角色、范围类型、目标组织/项目/用户</td><td>有效范围集合、允许/拒绝判定</td><td>FR-22～26、FR-24</td></tr>
+    <tr><td>M07</td><td>鉴权决策（PDP）</td><td>计算用户在某系统的权限集合、单点/批量判定、对外鉴权入口</td><td>用户标识、系统编码、权限/API 标识</td><td>权限 ID 集合、布尔判定、决策结果</td><td>FR-33、37～39、FR-24</td></tr>
+    <tr><td>M08</td><td>审计日志</td><td>普通操作与权限变更统一记录、分页查询、CSV 导出、AOP 层日志</td><td>操作人、动作、对象、结果、前后快照</td><td>日志记录、查询分页、导出文件</td><td>FR-42、44～47、NFR-09</td></tr>
+    <tr><td>M09</td><td>安全与加解密</td><td>敏感字段 AES-GCM 加解密、密码哈希、检索哈希、脱敏</td><td>明文/密文、密码、检索键</td><td>密文、哈希、脱敏值、校验结果</td><td>FR-48～49、NFR-01</td></tr>
+    <tr><td>M10</td><td>缓存与并发控制</td><td>权限版本与快照、分布式锁、幂等键、防重放 nonce</td><td>用户/系统/版本键、锁键、幂等键</td><td>快照、版本号、锁持有结果</td><td>FR-40～41、NFR-08</td></tr>
+    <tr><td>M11</td><td>接口适配与前端</td><td>HTTP 适配、请求追踪、幂等过滤、异常翻译；Vue 管理后台与权限渲染</td><td>HTTP 请求、前端路由与权限集合</td><td>统一响应、菜单/按钮视图</td><td>FR-36、39、NFR-12</td></tr>
+    <tr><td>M12</td><td>部署与运维</td><td>镜像构建、Swarm 编排、Secrets 注入、健康检查与滚动更新</td><td>应用镜像、配置与密钥</td><td>可用服务、健康状态</td><td>NFR-11、NFR-13</td></tr>
+  </tbody>
+</table>
+<p class="small">说明：模块内聚以“同一业务数据 + 同一变化原因”为准；例如角色定义、继承、互斥、角色-权限与用户-角色都围绕“角色能力”，统一归入 M04，避免引入额外的 GrantService 造成职责分散。</p>
+
+<h2>3.3　模块间接口契约（概要级）</h2>
+<p>模块间调用的接口契约见表 3-2。</p>
+<p class="tcap">表 3-2　模块间接口契约</p>
+<table>
+  <thead><tr><th style="width:7%">编号</th><th style="width:18%">接口名称</th><th style="width:26%">功能描述</th><th style="width:19%">核心输入大类</th><th style="width:19%">核心输出大类</th><th style="width:11%">协议类型</th></tr></thead>
+  <tbody>
+    <tr><td>I-01</td><td>认证服务·登录认证</td><td>校验账号密码与账号状态，签发访问令牌</td><td>账号、密码、客户端标识</td><td>令牌、用户标识、账号状态、有效期</td><td>进程内调用 / HTTPS</td></tr>
+    <tr><td>I-02</td><td>认证服务·令牌认证</td><td>校验签名、有效期与吊销状态，解析用户身份</td><td>访问令牌</td><td>用户标识或认证异常</td><td>进程内调用</td></tr>
+    <tr><td>I-03</td><td>决策服务·权限集合查询</td><td>计算用户在某系统下已授权的前端权限集合</td><td>用户标识、系统编码</td><td>权限标识集合</td><td>进程内 / HTTPS</td></tr>
+    <tr><td>I-04</td><td>决策服务·功能权限判定</td><td>单点或批量判断用户是否拥有指定权限</td><td>用户标识、系统编码、权限标识集合</td><td>布尔结果 / 判定结果集</td><td>进程内 / HTTPS</td></tr>
+    <tr><td>I-05</td><td>数据权限·资源联合判定</td><td>在功能权限通过后，判断目标数据是否在授权范围</td><td>用户、系统、API、目标组织/项目/用户</td><td>允许/拒绝、命中的范围</td><td>进程内 / HTTPS</td></tr>
+    <tr><td>I-06</td><td>授权管理·授予与回收</td><td>用户-角色、角色-权限、角色-数据范围的写入与撤销</td><td>角色、用户或权限集合、有效期、原因</td><td>绑定结果、冲突/重复错误</td><td>进程内调用 / HTTPS</td></tr>
+    <tr><td>I-07</td><td>审计·记录与查询</td><td>记录操作与变更快照；按条件分页查询与导出</td><td>操作人、动作、对象、结果、快照、查询条件</td><td>日志记录 / 分页结果 / CSV</td><td>进程内调用 / HTTPS</td></tr>
+    <tr><td>I-08</td><td>缓存·版本与快照</td><td>读取当前权限版本、读取/写入用户权限快照、递增版本</td><td>用户、系统、版本号、快照内容</td><td>版本号、快照或未命中</td><td>进程内调用 / Redis</td></tr>
+    <tr><td>I-09</td><td>并发控制·互斥执行</td><td>按业务键获取分布式锁并原子释放</td><td>锁键、持有者标识、超时</td><td>获取成功/失败</td><td>进程内调用 / Redis</td></tr>
+  </tbody>
+</table>
+<p><b>调用关系：</b>Controller 只调用本模块的应用服务；应用服务之间以 I-03～I-06 协作（如 M04 写入后调用 M10 递增版本、调用 M08 记录快照）；M07 只读调用仓储与 M06，不调用任何写服务；M01 在封存场景接受 M02 的令牌吊销指令。所有跨模块调用只传标识与值对象，不传持久化实体。</p>
+<div class="boundary"><b>⚠️ 边界声明：</b>本节只给到“接口名称 + 输入输出大类 + 协议”，不编写代码级函数签名，不贴具体 JSON 样例；完整 HTTP 路由、参数与错误码见《API 设计说明书》。</div>
+
+<!-- ===================== 第 4 章 ===================== -->
+<h1>4　设计模型（分析模型 → 设计模型转换）</h1>
+
+<h2>4.1　核心设计类图</h2>
+<p>核心设计类图如图 4-1 所示。</p>
+<figure class="wide">
+  <img src="概要设计图/fig4-1-class.svg" alt="核心设计类图">
+  <figcaption>图 4-1　核心设计类图（粗粒度）</figcaption>
+</figure>
+<p><b>转换说明：</b>需求阶段的概念类（用户、角色、权限、API、组织、系统）在设计阶段转换为三层角色：</p>
+<ul>
+  <li><b>边界类：</b><code>AuthInterceptor</code>、<code>OpenApiController</code>、<code>RoleController</code>。只负责接收请求、调用控制类、包装统一响应；不承担权限规则。</li>
+  <li><b>控制类：</b><code>DecisionService</code>（几何与视觉中心，只读判定）、<code>RoleService</code>（授权写路径与事务）、<code>DataPermissionService</code>（功能 ∩ 数据联合）。三者职责互补：判定只读、授权写入、数据范围计算。</li>
+  <li><b>实体类：</b>图中保留与权限链直接相关的实体。角色—权限与用户—角色均为多对多，由关系实体承载；角色数据范围与角色互斥作为 RBAC3 的约束实体单列。</li>
+</ul>
+<p><b>关系与多重性：</b>组织 1—0..* 用户；用户 1—0..* 用户角色绑定；用户角色绑定 0..*—1 角色；角色 1—0..* 角色权限；角色权限 0..*—1 前端权限；前端权限 1—0..* 后端 API；角色 1—0..* 数据范围授权；角色 1—0..* 互斥声明。角色通过父子自关联形成 0..1 父角色的继承关系（图中以 IamRole 左侧的自关联表达）；本系统不存在整体—部分聚合语义，故不画聚合菱形。</p>
+<p><b>设计取舍：</b>（1）实体框只列与权限判定相关的业务属性，不列外键与全部审计字段——外键、索引在 6.2 的表设计中表达；（2）不画 Repository 与 Entity 的长关联线，仓储的查询职责由方法签名表达（见详细设计）；（3）依赖线只表达“服务使用实体/服务”的事实，线上不写文字，依赖方向由服务在中心、实体在外围的位置表达。</p>
+<div class="boundary"><b>⚠️ 边界声明：</b>禁止列全部私有变量、辅助方法与大量 getter/setter；方法只列签名，不展开算法。类图阶段不出现数据库外键字段，ER 与表结构见第 6 章。</div>
+
+<h2>4.2　关键类状态设计</h2>
+<p>账号状态图如图 4-2 所示，状态迁移、事件与守卫条件见表 4-1。</p>
+<figure>
+  <img src="概要设计图/fig4-2-state.svg" alt="账号状态图">
+  <figcaption>图 4-2　IamUser 账号状态图</figcaption>
+</figure>
+<p class="tcap">表 4-1　账号状态迁移、事件与守卫条件</p>
+<table>
+  <thead><tr><th style="width:12%">当前状态</th><th style="width:15%">事件</th><th style="width:22%">守卫条件</th><th style="width:12%">目标状态</th><th style="width:39%">动作 / 说明</th></tr></thead>
+  <tbody>
+    <tr><td>（初始）</td><td>创建账号</td><td>账号唯一、组织有效、必填字段完整</td><td>NORMAL</td><td>写入加密后的姓名/电话，记录创建日志</td></tr>
+    <tr><td>NORMAL</td><td>管理员停用</td><td>操作人为管理员；目标状态合法</td><td>DISABLED</td><td>吊销该用户全部令牌；写审计日志</td></tr>
+    <tr><td>DISABLED</td><td>管理员启用</td><td>账号未被封存</td><td>NORMAL</td><td>恢复登录能力；写审计日志</td></tr>
+    <tr><td>NORMAL</td><td>安全事件 / 异常登录</td><td>达到锁定策略</td><td>LOCKED</td><td>吊销令牌；记录失败与锁定原因</td></tr>
+    <tr><td>LOCKED</td><td>管理员解锁</td><td>风险已排除</td><td>NORMAL</td><td>恢复登录；写审计日志</td></tr>
+    <tr><td>NORMAL / DISABLED / LOCKED</td><td>离职封存</td><td>离职事实确认；账号未封存</td><td>SEALED</td><td>吊销全部令牌；回收全部用户-角色绑定；记录离职时间；账号与历史日志保留</td></tr>
+    <tr><td>SEALED</td><td>任意状态变更</td><td>—（不可逆）</td><td>SEALED</td><td>拒绝变更，返回 409 / 业务错误；封存账号不可再授权、不可登录</td></tr>
+  </tbody>
+</table>
+<p>状态设计将“账号是否可用”与“权限如何计算”解耦：状态只影响能否登录与令牌是否有效，具体权限仍由 M07 按角色实时计算。封存是终态，符合 FR-05“不做物理删除、保留历史日志”的要求；LOCKED 与 DISABLED 不能直接互迁，必须先回到 NORMAL，避免状态语义混淆。</p>
+<div class="boundary"><b>⚠️ 边界声明：</b>本节为状态级设计，不展开状态内行为实现、锁策略与定时任务细节。</div>
+
+<h2>4.3　系统级数据流图</h2>
+<p>系统级数据流图如图 4-3 与图 4-4 所示。</p>
+<figure class="wide">
+  <img src="概要设计图/fig4-3-dfd0.svg" alt="0 层数据流图">
+  <figcaption>图 4-3　系统级数据流图（0 层 / 顶层）</figcaption>
+</figure>
+<figure class="wide">
+  <img src="概要设计图/fig4-4-dfd1.svg" alt="第一层数据流图">
+  <figcaption>图 4-4　系统级数据流图（第一层）</figcaption>
+</figure>
+<p><b>加工与模块映射见表 4-2。</b></p>
+<p class="tcap">表 4-2　第一层 DFD 加工与模块映射</p>
+<table>
+  <thead><tr><th style="width:10%">加工</th><th style="width:24%">名称</th><th style="width:26%">对应模块</th><th style="width:40%">主要数据流</th></tr></thead>
+  <tbody>
+    <tr><td>P1</td><td>登录认证</td><td>M01</td><td>E1 登录凭证 → P1；P1 ↔ D1（账号/状态）、D5（令牌）；P1 → E1 令牌；P1 → P5 登录日志</td></tr>
+    <tr><td>P2</td><td>账号与组织管理</td><td>M02、M03</td><td>E2 账号/组织指令、E4 人事事件 → P2；P2 ↔ D1、D2；P2 → E2 操作结果；P2 → P6 变更事件、P5 日志</td></tr>
+    <tr><td>P3</td><td>权限与授权配置</td><td>M04、M05、M06</td><td>E2 配置指令 → P3；P3 ↔ D3（角色/权限/绑定）、D4（数据范围）；P3 → E2 配置结果；P3 → P6 变更事件、P5 日志</td></tr>
+    <tr><td>P4</td><td>鉴权决策</td><td>M07（依赖 M10）</td><td>E3 鉴权请求、E1 前端权限查询 → P4；P4 读 D1/D3/D4/D5、读写 D7；P4 → E3 鉴权结果、E1 权限集合；P4 → P5 鉴权日志</td></tr>
+    <tr><td>P5</td><td>审计日志</td><td>M08</td><td>P5 ↔ D6；E2 查询条件 → P5 → E2 查询结果；各加工 → P5 日志记录</td></tr>
+    <tr><td>P6</td><td>缓存失效与通知</td><td>M10</td><td>P2/P3 变更事件 → P6；P6 ↔ D7；P6 → E3 变更通知</td></tr>
+  </tbody>
+</table>
+<p><b>父子平衡核对：</b>顶层与第一层的外部数据流逐条一致，没有新增或丢失，如表 4-3 所示。</p>
+<p class="tcap">表 4-3　0 层与第一层外部数据流平衡核对</p>
+<table>
+  <thead><tr><th style="width:12%">外部实体</th><th style="width:38%">0 层图中的数据流</th><th style="width:50%">第一层图中的对应数据流</th></tr></thead>
+  <tbody>
+    <tr><td>E1 普通员工</td><td>登录凭证、权限查询请求 → 系统；系统 → 令牌、菜单/按钮权限集合</td><td>E1 → P1 登录凭证；E1 → P4 前端权限查询；P1 → E1 令牌；P4 → E1 权限集合</td></tr>
+    <tr><td>E2 管理员</td><td>账号/组织/角色/授权/日志查询指令 → 系统；系统 → 操作、配置、日志结果</td><td>E2 → P2 账号/组织指令；E2 → P3 配置指令；E2 → P5 日志查询；P2/P3/P5 → E2 对应结果</td></tr>
+    <tr><td>E3 业务系统</td><td>鉴权请求 → 系统；系统 → 鉴权结果/权限集合、变更通知</td><td>E3 → P4 鉴权请求；P4 → E3 鉴权结果；P6 → E3 变更通知</td></tr>
+    <tr><td>E4 HR 系统</td><td>人事事件 → 系统</td><td>E4 → P2 人事事件（入职/调岗/离职）</td></tr>
+  </tbody>
+</table>
+<p><b>DFD 规则符合性：</b>每个加工都有输入和输出；外部实体不直接连接数据存储；D1～D7 均由加工读写（双向箭头表示读/写）；数据流只描述数据、不描述控制（锁、事务顺序留在 4.4 节与第 8 章）；父子图输入输出一致。加工之间新增的“用户标识、权限集合、判定结果”属于内部数据流，不参与父子平衡。</p>
+
+<h2>4.4　关键运行时设计：系统级时序图</h2>
+<p>三张系统级时序图（图 4-5～图 4-7）均从 2.2 节的高优先级故事中选取，以模块/组件为生命线，不画到类方法级调用，不展开循环与条件内部算法。</p>
+<figure class="wide">
+  <img src="概要设计图/fig4-5-seq-login.svg" alt="登录与令牌签发时序图">
+  <figcaption>图 4-5　时序图：登录与令牌签发（故事 S2 / 效用树 S2-1）</figcaption>
+</figure>
+<figure class="wide">
+  <img src="概要设计图/fig4-6-seq-authz.svg" alt="服务端 API 鉴权时序图">
+  <figcaption>图 4-6　时序图：服务端 API 鉴权决策（故事 S1 / 效用树 S1-1）</figcaption>
+</figure>
+<figure class="wide">
+  <img src="概要设计图/fig4-7-seq-change.svg" alt="角色权限变更与即时生效时序图">
+  <figcaption>图 4-7　时序图：角色权限变更与即时生效（故事 S4 / 效用树 S4-1）</figcaption>
+</figure>
+<p><b>与 ATAM 评估的闭环：</b>三张时序图与故事、效用树叶节点及 ATAM 发现的对应关系见表 4-4。</p>
+<p class="tcap">表 4-4　时序图与架构故事、效用树、ATAM 的闭环</p>
+<table>
+  <thead><tr><th style="width:8%">时序图</th><th style="width:14%">对应故事</th><th style="width:14%">效用树叶节点</th><th style="width:32%">ATAM 发现</th><th style="width:32%">设计响应</th></tr></thead>
+  <tbody>
+    <tr><td>图 4-5</td><td>S2 安全</td><td>S2-1</td><td>令牌伪造、账号枚举、状态异常账号登录</td><td>统一错误码、密码哈希校验、状态校验、令牌只存哈希</td></tr>
+    <tr><td>图 4-6</td><td>S1 性能 / S3 可用性</td><td>S1-1、S3-1</td><td>R-3 缓存击穿；R-4 继承链查询放大；fail-closed 一致性</td><td>版本快照 + 单条 join + 超时回源；判定只读无状态</td></tr>
+    <tr><td>图 4-7</td><td>S4 可修改性</td><td>S4-1</td><td>R-2 Redis 依赖；R-7 前端轮询延迟</td><td>分布式锁 + 事务内写快照 + 版本号递增；前端轮询刷新</td></tr>
+  </tbody>
+</table>
+<div class="boundary"><b>⚠️ 边界声明：</b>时序图以模块/组件为生命线，不画到类方法级调用，不展开循环与条件内部的算法细节；异常路径只画到“直接从抛出方返回调用方”的粒度。</div>
+
+<!-- ===================== 第 5 章 ===================== -->
+<h1>5　接口设计</h1>
+
+<h2>5.1　外部接口设计</h2>
+
+<h3>5.1.1　用户界面接口</h3>
+<p>本系统面向管理员的交互形态为 <b>Web 单页应用</b>：Vue 3 + TypeScript 构建，运行于现代浏览器，通过 HTTPS 访问。界面按角色权限渲染菜单、按钮与页面元素；无权限元素不展示或置灰。文件导出（如日志 CSV）通过浏览器下载完成。</p>
+<p>本系统不提供独立移动端 App 与大屏展示端；移动巡检等场景由接入的第三方业务系统自行实现界面，本系统只提供鉴权能力（范围外，见 SRS 1.3.2）。</p>
+
+<h3>5.1.2　硬件接口</h3>
+<p><b>本节不适用。</b>原因：本系统不直接连接读卡器、生物识别仪、门禁等硬件设备；终端识别与硬件采集由接入业务系统或统一身份认证系统完成。系统仅通过 HTTP/JSON 与软件系统交互。</p>
+
+<h3>5.1.3　软件接口</h3>
+<p>外部软件接口见表 5-1。</p>
+<p class="tcap">表 5-1　外部软件接口</p>
+<table>
+  <thead><tr><th style="width:9%">编号</th><th style="width:24%">外部系统</th><th style="width:30%">交互内容</th><th style="width:19%">协议 / 形式</th><th style="width:18%">安全机制</th></tr></thead>
+  <tbody>
+    <tr><td>EXT-1</td><td>18 套接入业务系统</td><td>令牌校验、功能权限判定、前端权限集合查询、数据范围联合判定</td><td>HTTPS + JSON（REST/OpenAPI）</td><td>Bearer 令牌；接入方 HMAC 签名 + 时间戳 + nonce 防重放</td></tr>
+    <tr><td>EXT-2</td><td>HR 人力资源系统</td><td>入职、调岗、离职事件（当前为扩展项，人工触发兜底）</td><td>HTTPS 回调 / 事件通知</td><td>应用签名、幂等键、事件去重</td></tr>
+    <tr><td>EXT-3</td><td>华为云 SWR</td><td>镜像拉取与凭据分发</td><td>HTTPS（Docker Registry API）</td><td>临时登录凭据 / --with-registry-auth</td></tr>
+    <tr><td>EXT-4</td><td>浏览器</td><td>静态资源、REST 请求、CSV 下载</td><td>HTTPS / HTTP</td><td>TLS、CORS 白名单、Content-Type 校验</td></tr>
+  </tbody>
+</table>
+<p class="small">说明：本系统不实现统一身份认证系统的 <code>/auth/*</code> 边界（扩展阶段对接），也不重写业务系统的业务接口；接口语义以《API 设计说明书》为准。</p>
+
+<h2>5.2　内部系统级接口设计</h2>
+<p>内部接口分两类：<b>前后端 REST 接口</b>（浏览器 → 接入层）与<b>模块间进程内契约</b>（第 3.3 节 I-01～I-09）。表 5-2 给出 REST 资源组级别的契约，不展开具体参数。</p>
+<p class="tcap">表 5-2　内部 REST 接口组</p>
+<table>
+  <thead><tr><th style="width:8%">编号</th><th style="width:18%">接口组</th><th style="width:26%">代表路由</th><th style="width:18%">核心输入大类</th><th style="width:18%">核心输出大类</th><th style="width:12%">协议</th></tr></thead>
+  <tbody>
+    <tr><td>API-01</td><td>认证</td><td><code>/auth/login</code>、<code>/auth/logout</code>、<code>/auth/validate</code>、<code>/auth/password</code></td><td>账号密码、令牌、新旧密码</td><td>令牌、有效性、操作结果</td><td>HTTP/JSON</td></tr>
+    <tr><td>API-02</td><td>账号</td><td><code>/users</code>、<code>/users/{id}</code>、<code>/users/{id}/status</code>、<code>/users/{id}/organization</code>、<code>/users/{id}/sensitive</code></td><td>账号资料、目标状态、组织与岗位</td><td>账号视图、脱敏/明文视图（受独立权限）</td><td>HTTP/JSON</td></tr>
+    <tr><td>API-03</td><td>组织</td><td><code>/organizations</code>、<code>/organizations/{id}/children</code>、<code>/organizations/{id}/parent</code></td><td>组织节点、父节点、层级类型</td><td>组织树、节点详情</td><td>HTTP/JSON</td></tr>
+    <tr><td>API-04</td><td>角色与授权</td><td><code>/roles</code>、<code>/roles/{id}/assignments</code>、<code>/roles/{id}/permissions</code>、<code>/roles/{id}/exclusions</code></td><td>角色资料、用户/权限集合、有效期</td><td>角色、绑定、冲突错误</td><td>HTTP/JSON</td></tr>
+    <tr><td>API-05</td><td>权限目录</td><td><code>/systems</code>、<code>/permissions</code>、<code>/apis</code>、<code>/permissions/{id}/apis/{apiId}</code></td><td>系统、菜单/按钮、API 定义</td><td>权限树、API 目录、映射结果</td><td>HTTP/JSON</td></tr>
+    <tr><td>API-06</td><td>数据范围</td><td><code>/systems/data-scopes</code>、<code>/roles/{id}/data-scopes</code></td><td>范围字典、角色、范围类型</td><td>范围列表、绑定结果</td><td>HTTP/JSON</td></tr>
+    <tr><td>API-07</td><td>开放鉴权</td><td><code>/open/authorize</code>、<code>/open/authorize/batch</code>、<code>/open/permissions</code>、<code>/open/data-scopes</code>、<code>/open/authorize/resource</code></td><td>用户、系统、API、目标数据上下文</td><td>布尔判定、权限集合、数据范围</td><td>HTTP/JSON</td></tr>
+    <tr><td>API-08</td><td>审计日志</td><td><code>/logs</code>、<code>/logs/export</code></td><td>时间、用户、类型、结果、分页条件</td><td>日志分页、CSV 文件</td><td>HTTP/JSON、text/csv</td></tr>
+  </tbody>
+</table>
+<p><b>接口治理约定：</b>除登录外全部请求需要 <code>Authorization: Bearer</code>；写请求支持 <code>Idempotency-Key</code>；响应统一包含业务码、消息、数据与请求号；错误码分为参数（1000 段）、认证鉴权（2000 段）、业务（3000 段）与系统（5000 段）。模块间契约只传标识与值对象，跨层不泄漏 JPA 实体。</p>
+<div class="boundary"><b>⚠️ 边界声明：</b>不编写具体代码级函数签名，不贴冗长 JSON 样例；完整路径、参数、响应字段与错误码以《API 设计说明书》为准。</div>
+
+<!-- ===================== 第 6 章 ===================== -->
+<h1>6　数据设计与存储策略</h1>
+
+<h2>6.1　全局数据逻辑结构设计</h2>
+<p>全局数据逻辑结构如图 6-1 所示。</p>
+<figure class="wide">
+  <img src="概要设计图/fig6-1-er.svg" alt="高级 E-R 图">
+  <figcaption>图 6-1　全局数据逻辑结构图（高级 E-R 图）</figcaption>
+</figure>
+<p>全局数据围绕六类核心业务实体组织：<b>接入系统</b>拥有前端权限树与后端 API 目录；<b>前端权限</b>通过父子自关联形成菜单/按钮树，并通过映射关系控制多个 API；<b>角色</b>与前端权限、用户、数据范围、其他角色（互斥）分别形成多对多或一对多联系；<b>用户</b>归属一个组织，并通过用户-角色绑定获得角色；<b>组织</b>以父子自关联形成总公司—分公司—部门—项目经理部四级树。<b>审计日志</b>与<b>令牌</b>是运行支撑实体，不参与授权链，但同属全局数据范围。</p>
+<p><b>关键设计：</b>角色不直接关联 API，而是“角色 → 前端权限 → API”。这样前端菜单/按钮可见性与后端接口鉴权使用同一份授权事实，避免两套口径（FR-38）。多对多关系由关系表承载，不把关系表画成独立业务实体；<code>parent_id</code> 自关联同时用于权限树、组织树与角色继承，属于同一建模手法。</p>
+
+<h2>6.2　概要级表结构设计</h2>
+<p>全局主要数据表的主外键与职责见表 6-1（完整字段见详细设计）。</p>
+<p class="tcap">表 6-1　全局主要数据表（概要）</p>
+<table>
+  <thead><tr><th style="width:16%">表名</th><th style="width:36%">主要字段（概要）</th><th style="width:20%">主键 / 外键</th><th style="width:28%">说明</th></tr></thead>
+  <tbody>
+    <tr><td>iam_system</td><td>system_code、system_name、status、is_deleted、审计时间</td><td>PK id；UK system_code</td><td>接入系统登记</td></tr>
+    <tr><td>iam_permission</td><td>system_id、parent_id、permission_code、permission_type、route_path、action、sort_no、status</td><td>PK id；FK system_id、parent_id（自关联）</td><td>菜单/按钮自关联树</td></tr>
+    <tr><td>iam_api</td><td>system_id、permission_id、api_code、api_path、http_method、status</td><td>PK id；FK system_id、permission_id</td><td>后端 API 目录，运行期按路径+方法匹配</td></tr>
+    <tr><td>iam_role</td><td>role_code、role_name、role_type、parent_id、status、version、description</td><td>PK id；UK role_code；FK parent_id</td><td>功能角色与岗位型数据角色，支持继承</td></tr>
+    <tr><td>iam_user</td><td>user_no、password_hash、name_enc、phone_enc、name_hash、phone_hash、org_id、post、account_status、leave_time</td><td>PK id；UK user_no；FK org_id</td><td>账号与员工身份；敏感字段密文 + 检索哈希</td></tr>
+    <tr><td>iam_org</td><td>parent_id、ancestors、org_code、org_name、org_type、org_level、leader_user_id、sort_no、status</td><td>PK id；FK parent_id；UK org_code</td><td>四级组织树；ancestors 支持子树查询</td></tr>
+    <tr><td>iam_user_role</td><td>user_id、role_id、status、effective_time、expire_time、grant_by、grant_reason</td><td>PK id；FK user_id、role_id；UK(user_id, role_id)</td><td>用户-角色 M:N；支持有效期与回收</td></tr>
+    <tr><td>iam_role_permission</td><td>role_id、permission_id、allowed_action</td><td>PK id；FK role_id、permission_id；UK(role_id, permission_id)</td><td>角色-前端权限 M:N；allowed_action 决定可执行操作</td></tr>
+    <tr><td>iam_role_exclusion</td><td>role_id、excluded_role_id、status</td><td>PK id；FK role_id、excluded_role_id</td><td>角色互斥声明</td></tr>
+    <tr><td>iam_data_scope</td><td>scope_code、scope_name、description、sort_no、status</td><td>PK id；UK scope_code</td><td>全公司/本分公司/本部门/本项目/本人字典</td></tr>
+    <tr><td>iam_role_data_scope</td><td>role_id、scope_type、org_id、project_id、status、expire_time</td><td>PK id；FK role_id、org_id</td><td>角色-数据范围授权，支持临时授权</td></tr>
+    <tr><td>iam_token</td><td>token_hash、user_id、system_code、issued_at、expire_at、revoked、client_ip</td><td>PK id；FK user_id</td><td>令牌只存哈希；支持吊销与过期</td></tr>
+    <tr><td>iam_log</td><td>log_type、user_id、username、action、operate_time、success、target、ip、system_code、detail、before_snapshot、after_snapshot、decision_id、request_id</td><td>PK log_id；索引字段见说明</td><td>统一审计日志，只追加；权限变更保存前后快照</td></tr>
+  </tbody>
+</table>
+<p class="small">字段字典、类型长度、索引与约束以《数据库设计说明书》和 <code>schema.sql</code> 为唯一口径；本表只表达全局实体与主外键关系，不列完整字段清单。</p>
+
+<h2>6.3　存储方案与物理策略</h2>
+<h3>（1）存储技术选型</h3>
+<p>存储技术选型见表 6-2。</p>
+<p class="tcap">表 6-2　存储技术选型</p>
+<table>
+  <thead><tr><th style="width:16%">数据类型</th><th style="width:20%">存储技术</th><th style="width:64%">选型理由</th></tr></thead>
+  <tbody>
+    <tr><td>账号、组织、角色、权限、API、授权关系、日志、令牌</td><td>MySQL 8.0 / InnoDB / utf8mb4</td><td>强事务与唯一约束是授权一致性的基础；关系模型天然表达多对多与自关联；团队与课程环境成熟、可运维</td></tr>
+    <tr><td>权限快照、版本号、分布式锁、幂等键、防重放 nonce</td><td>Redis 7（AOF 持久化）</td><td>读多写少、TTL 语义天然匹配快照过期；原子递增与 Lua 脚本支持版本与原子解锁；单线程模型适合小键值高频访问</td></tr>
+    <tr><td>日志归档、导出文件</td><td>MySQL 分区/归档表 + CSV 导出（规划）</td><td>当前规模不需要对象存储；导出文件按需生成，不长期驻留；后续可平滑迁移到对象存储</td></tr>
+  </tbody>
+</table>
+<h3>（2）全局数据拓扑与标识</h3>
+<ul>
+  <li><b>拓扑：</b>当前为单主 MySQL + 单 Redis，应用 3 副本；不做分库分表。授权数据规模（万级账号、百级角色、万级绑定）远低于单库容量，分片收益低于复杂度成本。</li>
+  <li><b>读写分离：</b>当前未启用；数据库访问以主库为准，保证“写入后立即读到”的授权一致性。IMP-2 规划只读副本承载鉴权回源。</li>
+  <li><b>全局唯一 ID：</b>使用数据库自增 <code>bigint</code> 主键；对外仅暴露数值 ID，不暴露业务编码作为主键，避免编码变更影响引用。</li>
+  <li><b>软删除：</b>业务表使用 <code>is_deleted</code> 标记；日志表不提供删除能力。</li>
+</ul>
+<h3>（3）缓存更新策略与一致性</h3>
+<ul>
+  <li><b>读路径：</b>先读版本号，再按“用户 + 系统 + 版本”读快照；命中即返回；未命中则回源数据库计算，写回带 TTL（默认 300 秒）的快照。</li>
+  <li><b>写路径：</b>授权变更在本地事务提交后递增全局版本号，使所有旧快照不可达；不执行 <code>KEYS</code> 扫描，旧键由 TTL 自然淘汰。版本号变化后，下一次请求必然使用新快照。</li>
+  <li><b>一致性边界：</b>授权事实以 MySQL 为准；缓存是派生数据，允许短暂滞后，但版本号保证“变更后不命中旧事实”。Redis 故障时读路径回源，写路径拒绝。</li>
+  <li><b>并发控制：</b>授权写操作使用按角色维度的分布式锁，锁值为随机 owner token，释放时 Lua 原子比较；数据库唯一约束与乐观锁 <code>version</code> 作为最终兜底。</li>
+  <li><b>幂等与防重放：</b>写请求以 <code>Idempotency-Key</code> + 请求指纹记录在 Redis；接入方请求使用时间戳与 nonce，超出时间窗或 nonce 重复即拒绝。</li>
+</ul>
+<div class="boundary"><b>⚠️ 边界声明：</b>本节属于逻辑与策略设计，不涉及具体配置参数、连接池大小、SQL DDL 与部署脚本；严禁出现 <code>CREATE TABLE</code> 等语句。</div>
+
+<!-- ===================== 第 7 章 ===================== -->
+<h1>7　部署设计</h1>
+
+<h2>7.1　部署图</h2>
+<p>部署拓扑如图 7-1 所示。</p>
+<figure class="wide">
+  <img src="概要设计图/fig7-1-deploy.svg" alt="部署图">
+  <figcaption>图 7-1　部署图</figcaption>
+</figure>
+
+<h2>7.2　物理部署架构说明</h2>
+<p>节点、角色、网络与端口的对应关系见表 7-1。</p>
+<p class="tcap">表 7-1　部署节点、网络与端口</p>
+<table>
+  <thead><tr><th style="width:14%">节点 / 组件</th><th style="width:14%">Swarm 角色</th><th style="width:30%">部署内容</th><th style="width:22%">网络与端口</th><th style="width:20%">说明</th></tr></thead>
+  <tbody>
+    <tr><td>manage</td><td>manager</td><td>Swarm 控制面；Nginx + iam-web（前端就绪后）</td><td>公网 443/80；管理 22</td><td>部署入口与仲裁节点</td></tr>
+    <tr><td>compiler</td><td>worker</td><td>构建机：Maven 打包、Docker build、推送 SWR</td><td>出网访问 SWR</td><td>集群节点只拉镜像，不构建</td></tr>
+    <tr><td>course-node1</td><td>worker（role=db）</td><td>MySQL 8.0 + Redis 7，数据卷 <code>/srv/iam</code></td><td>overlay 3306 / 6379，不发布宿主端口</td><td>数据库固定放置，本地盘</td></tr>
+    <tr><td>course-node2</td><td>worker（role=app）</td><td>iam-app ×1（目标形态 ×3）</td><td>overlay 8080 业务 / 8081 健康检查</td><td>2G 节点只放 1 个 JVM</td></tr>
+    <tr><td>manager ×3</td><td>manager</td><td>Nginx host 模式、iam-web global</td><td>公网 443/80</td><td>扩到 8 台时凑 3 个 manager 仲裁</td></tr>
+    <tr><td>app ×3</td><td>worker（role=app）</td><td>iam-app</td><td>overlay 8080 / 8081</td><td>无状态；滚动更新 stop-first</td></tr>
+    <tr><td>SWR</td><td>—</td><td>iam-app / iam-web / mysql / redis 镜像</td><td>HTTPS</td><td>集中镜像仓库</td></tr>
+  </tbody>
+</table>
+<p><b>节点规格：</b>当前课程环境按 manager 2 vCPU / 2 GB、app 2 vCPU / 2 GB（每节点 1 个 JVM，容器内存上限 1.28 GB、堆约 1 GB）、db 2 vCPU / 4 GB 规划；MySQL 缓冲池与 Redis 内存上限按节点内存设置，生产环境按压测结果调整。</p>
+<p><b>网络隔离：</b>公网只暴露 443/80 到 manager 上的 Nginx；应用节点与数据节点不发布宿主端口，仅通过 overlay 网络 <code>iam-net</code> 通信；SSH 仅对白名单 IP 开放。数据库与 Redis 不进入 DMZ。</p>
+<p><b>协议：</b>浏览器 → Nginx 为 HTTPS；Nginx → app 为 HTTP（overlay 内网）；app → MySQL 为 JDBC；app → Redis 为 RESP；节点 → SWR 为 HTTPS；应用健康检查通过 <code>/actuator/health</code>。</p>
+<p><b>可用性：</b>app 无状态、多副本、失败重启；manager 目标 3 节点保证仲裁；MySQL 当前单副本 + 本地盘是已知单点（R-1），生产化需主从复制或云数据库。所有密钥通过 Docker Secrets 以文件挂载，不写入镜像与日志。</p>
+
+<!-- ===================== 第 8 章 ===================== -->
+<h1>8　非功能需求的实现方案</h1>
+<p>本章逐条说明 NFR 在架构、模块、存储与部署中的落实位置，与第 2 章 ATAM 评估相互呼应。逐条落实方案见表 8-1。</p>
+<p class="tcap">表 8-1　非功能需求落实方案</p>
+<table>
+  <thead><tr><th style="width:9%">编号</th><th style="width:22%">非功能需求</th><th style="width:41%">落实方案</th><th style="width:16%">落实位置</th><th style="width:12%">状态</th></tr></thead>
+  <tbody>
+    <tr><td>NFR-01</td><td>敏感信息加密存储、展示脱敏、密钥独立</td><td>AES-256-GCM 加密姓名/电话；HMAC 检索哈希；视图层脱敏；密钥经 Secrets/环境变量注入</td><td>M09、M02、7.2</td><td>已实现（独立密钥托管为扩展）</td></tr>
+    <tr><td>NFR-02</td><td>最小权限、默认无权限</td><td>新用户无角色即无权限；未登记 API 与未映射权限默认拒绝；授权需显式写入</td><td>M07、M01</td><td>已实现</td></tr>
+    <tr><td>NFR-03</td><td>防水平/垂直越权</td><td>每个请求按 API 定位权限；功能权限 ∩ 数据范围联合判定；禁止实体直出</td><td>M07、M06、M01</td><td>已实现</td></tr>
+    <tr><td>NFR-04</td><td>令牌防伪、防重放</td><td>JWT 签名 + 令牌哈希入库 + 吊销；OpenAPI HMAC 签名 + 时间戳 + nonce</td><td>M01、M10</td><td>已实现</td></tr>
+    <tr><td>NFR-05</td><td>管理操作二次确认与留痕</td><td>前端确认交互；后端写操作统一审计，权限变更保存快照</td><td>M11、M08</td><td>部分实现</td></tr>
+    <tr><td>NFR-06</td><td>万级账号、18 系统规模</td><td>按规模设计索引与组合查询；不依赖全表扫描；批量判定复用集合</td><td>M07、6.2</td><td>数据模型已具备</td></tr>
+    <tr><td>NFR-07</td><td>鉴权平均 ≤100ms、峰值 ≤200ms</td><td>版本快照缓存；未命中单条 join；无状态 PDP；超时与有界重试</td><td>M07、M10、AD-5</td><td>已设计，待压测</td></tr>
+    <tr><td>NFR-08</td><td>权限查询缓存且与即时生效协调</td><td>版本号 + TTL；变更递增版本使旧快照不可达</td><td>M10、M04</td><td>已实现</td></tr>
+    <tr><td>NFR-09</td><td>审计日志永久保存、只追加</td><td>统一日志表；触发器拒绝更新删除；无删除接口</td><td>M08、6.2</td><td>已实现</td></tr>
+    <tr><td>NFR-10</td><td>日志按容量归档且可查询</td><td>规划按时间分区/归档表，归档不改变永久保存属性</td><td>M08</td><td>规划中</td></tr>
+    <tr><td>NFR-11</td><td>高可用、避免单点</td><td>app 多副本、健康检查、失败重启；Redis 读路径回源；MySQL 单点待改进（R-1）</td><td>M12、7.2</td><td>部分实现</td></tr>
+    <tr><td>NFR-12</td><td>管理界面易用、权限矩阵可视</td><td>Vue 3 + Element Plus；菜单/按钮按权限渲染；统一错误提示</td><td>M11</td><td>部分实现（待联调）</td></tr>
+    <tr><td>NFR-13</td><td>第 19 套系统零改码接入</td><td>系统登记、权限树登记、API 映射、角色配置全部数据驱动</td><td>M05、M04</td><td>已实现</td></tr>
+    <tr><td>NFR-14</td><td>操作取值可扩展</td><td>操作枚举与 allowed_action 覆盖判定集中在 M05/M07</td><td>M05、M07</td><td>部分实现（新增取值需改枚举）</td></tr>
+    <tr><td>NFR-15</td><td>组织与角色模型可扩展</td><td>组织类型/层级可配置；角色支持父子继承与岗位型数据角色</td><td>M03、M04</td><td>已实现</td></tr>
+  </tbody>
+</table>
+<h3>（1）性能</h3>
+<p>鉴权路径被设计为“只读、无状态、可缓存”：版本号 + 快照避免每次回源；未命中时用单条联表查询取候选权限，避免 N+1；批量接口只计算一次集合。管理端的高耗时操作（日志导出、权限矩阵）与鉴权共用进程，已通过分页、索引与限流降低影响，但仍存在 R-6，改进见 IMP-2。</p>
+<h3>（2）安全</h3>
+<p>安全落实遵循三条主线：<b>认证</b>（签名令牌、只存哈希、可吊销、防重放）、<b>鉴权</b>（fail-closed、功能与数据双维度、前后端同源）、<b>数据保护</b>（加密存储、检索哈希、脱敏视图、导出脱敏）。日志不记录密码、令牌、Authorization 头与完整敏感数据。</p>
+<h3>（3）可靠性</h3>
+<p>授权写操作在本地事务内完成；“授权事实 + 变更快照 + 版本递增”保持业务一致；分布式锁 + 唯一约束 + 乐观锁三层防护并发冲突；应用多副本与健康检查提供进程级容错；Redis 故障时读路径回源、写路径快速失败，绝不放行未授权请求。</p>
+<h3>（4）可维护性与可移植性</h3>
+<p>分层与模块边界使变化局部化：RBAC1/3 的规则变化集中在 M04/M07；新增接入系统只改 M05 的数据；审计格式变化只改 M08。部署以镜像 + 环境变量 + Secrets 为契约，节点无状态（数据节点除外），可在 Linux + Docker 环境间迁移；不依赖云厂商专有 API（SWR 仅作为镜像仓库，可替换）。</p>
+
+<!-- ===================== 第 9 章 ===================== -->
+<h1>9　附录：需求可追溯性矩阵</h1>
+<p>表 9-1 确保概要设计中的每个模块、接口、数据策略与架构决策都能回溯到《需求规格说明书》的需求编号。“架构故事/决策”列中的 S1～S5 对应 2.2 节，AD-N 对应 2.1.3 节；“接口”列使用 5.2 节 API 组编号与 3.3 节 I 编号。</p>
+
+<h2>9.1　功能需求追溯矩阵</h2>
+<p class="tcap">表 9-1　功能需求可追溯性矩阵</p>
+<table>
+  <thead><tr><th style="width:8%">需求编号</th><th style="width:17%">需求名称</th><th style="width:16%">架构故事 / 决策</th><th style="width:22%">设计模块 / 类</th><th style="width:19%">内部 / 外部接口</th><th style="width:18%">全局数据实体</th></tr></thead>
+  <tbody>
+    <tr><td>FR-01</td><td>统一账号建立</td><td>S2 / AD-7</td><td>M02 AccountService、IamUser</td><td>API-02 /users</td><td>IamUser、IamOrg</td></tr>
+    <tr><td>FR-02</td><td>账号状态管理</td><td>S3 / AD-8</td><td>M02、IamUser</td><td>API-02 /users/{id}/status</td><td>IamUser、IamToken、IamLog</td></tr>
+    <tr><td>FR-03</td><td>入职建号与初始角色</td><td>S4 / AD-1</td><td>M02、M04</td><td>API-02、API-04</td><td>IamUser、IamUserRole</td></tr>
+    <tr><td>FR-04</td><td>员工调岗</td><td>S4 / AD-1</td><td>M02、M03、M04</td><td>API-02 /organization</td><td>IamUser、IamOrg、IamUserRole</td></tr>
+    <tr><td>FR-05</td><td>离职封存</td><td>S3 / AD-8</td><td>M02、M04、M01</td><td>API-02 /status、API-01 logout</td><td>IamUser、IamUserRole、IamToken、IamLog</td></tr>
+    <tr><td>FR-06</td><td>批量导入与批量状态</td><td>AD-1</td><td>M02（规划）</td><td>扩展接口</td><td>IamUser</td></tr>
+    <tr><td>FR-07</td><td>用户角色与权限查询</td><td>S1 / AD-2</td><td>M04、M07</td><td>API-04、API-07</td><td>IamUserRole、IamRolePermission</td></tr>
+    <tr><td>FR-08</td><td>四级组织树</td><td>S6 / AD-1</td><td>M03 OrganizationService</td><td>API-03</td><td>IamOrg</td></tr>
+    <tr><td>FR-09</td><td>组织增改停移</td><td>S6 / AD-1</td><td>M03、IamOrg</td><td>API-03</td><td>IamOrg、IamLog</td></tr>
+    <tr><td>FR-10</td><td>组织与数据范围映射</td><td>S4 / AD-9</td><td>M06、M03</td><td>API-06</td><td>IamOrg、IamDataScope、IamRoleDataScope</td></tr>
+    <tr><td>FR-11</td><td>组织树导出与人数</td><td>AD-1</td><td>M03（规划）</td><td>扩展接口</td><td>IamOrg、IamUser</td></tr>
+    <tr><td>FR-12</td><td>角色定义</td><td>S4 / AD-9</td><td>M04 RoleService、IamRole</td><td>API-04 /roles</td><td>IamRole</td></tr>
+    <tr><td>FR-13</td><td>角色继承</td><td>S4 / AD-9</td><td>M04、M07</td><td>API-04、I-04</td><td>IamRole</td></tr>
+    <tr><td>FR-14</td><td>角色互斥</td><td>S4 / AD-6</td><td>M04、IamRoleExclusion</td><td>API-04 /exclusions</td><td>IamRoleExclusion、IamUserRole</td></tr>
+    <tr><td>FR-15</td><td>角色复制与停用</td><td>S4</td><td>M04</td><td>API-04 /roles/{id}</td><td>IamRole、IamLog</td></tr>
+    <tr><td>FR-16</td><td>预置基础角色</td><td>S6</td><td>M04、初始化数据</td><td>初始化脚本</td><td>IamRole</td></tr>
+    <tr><td>FR-17</td><td>四级功能权限结构</td><td>S2 / AD-4</td><td>M05</td><td>API-05</td><td>IamSystem、IamPermission、IamApi</td></tr>
+    <tr><td>FR-18</td><td>12 种操作取值</td><td>S2 / AD-4</td><td>M05、M07</td><td>API-04 /permissions</td><td>IamPermission、IamRolePermission</td></tr>
+    <tr><td>FR-19</td><td>功能点与 API 映射</td><td>S2 / AD-4</td><td>M05</td><td>API-05 /permissions/{id}/apis</td><td>IamPermission、IamApi</td></tr>
+    <tr><td>FR-20</td><td>批量授予与回收</td><td>S4</td><td>M04</td><td>API-04 /permissions</td><td>IamRolePermission</td></tr>
+    <tr><td>FR-21</td><td>权限矩阵查询导出</td><td>AD-1</td><td>M04、M05（规划）</td><td>扩展接口</td><td>全部授权关系表</td></tr>
+    <tr><td>FR-22</td><td>数据范围授权</td><td>S4 / AD-9</td><td>M06 DataScopeService</td><td>API-06</td><td>IamDataScope、IamRoleDataScope</td></tr>
+    <tr><td>FR-23</td><td>岗位型数据角色</td><td>S4 / AD-9</td><td>M06、M04</td><td>API-04、API-06</td><td>IamRole、IamRoleDataScope</td></tr>
+    <tr><td>FR-24</td><td>功能与数据联合判定</td><td>S1、S2 / AD-2</td><td>M07、M06 DataPermissionService</td><td>API-07 /authorize/resource</td><td>授权表、IamOrg、IamUser</td></tr>
+    <tr><td>FR-25</td><td>临时授权到期回收</td><td>S4 / AD-6</td><td>M06、M04 到期任务</td><td>API-06、I-06</td><td>IamRoleDataScope</td></tr>
+    <tr><td>FR-26</td><td>本人 / 本项目判定</td><td>S1 / AD-9</td><td>M06</td><td>API-07 /authorize/resource</td><td>IamUser、IamOrg、IamRoleDataScope</td></tr>
+    <tr><td>FR-27</td><td>人工授权与留痕</td><td>S5 / AD-8</td><td>M04、M08</td><td>API-04、I-07</td><td>IamUserRole、IamRolePermission、IamLog</td></tr>
+    <tr><td>FR-28</td><td>权限回收即时生效</td><td>S4 / AD-5</td><td>M04、M10</td><td>API-04 DELETE、I-08</td><td>IamUserRole、IamRolePermission、Redis</td></tr>
+    <tr><td>FR-29</td><td>继承链即时生效</td><td>S4 / AD-5、AD-9</td><td>M04、M07、M10</td><td>API-04、I-08</td><td>IamRole、Redis</td></tr>
+    <tr><td>FR-30</td><td>授权申请-审批-执行</td><td>AD-1</td><td>规划模块</td><td>扩展接口</td><td>—</td></tr>
+    <tr><td>FR-31</td><td>SSO 单点登录</td><td>S2 / AD-2</td><td>M01 AuthService</td><td>API-01</td><td>IamUser、IamToken</td></tr>
+    <tr><td>FR-32</td><td>令牌签发、校验、吊销</td><td>S2 / AD-2</td><td>M01</td><td>API-01</td><td>IamToken</td></tr>
+    <tr><td>FR-33</td><td>业务系统鉴权接口</td><td>S1 / AD-2</td><td>M01、M07</td><td>API-07、I-03</td><td>IamApi、IamPermission、授权表</td></tr>
+    <tr><td>FR-34</td><td>令牌过期与续期</td><td>S3 / AD-2</td><td>M01、M10</td><td>API-01 /validate</td><td>IamToken、Redis</td></tr>
+    <tr><td>FR-35</td><td>业务系统接入登记</td><td>S6 / AD-4</td><td>M05 SystemService</td><td>API-05 /systems</td><td>IamSystem</td></tr>
+    <tr><td>FR-36</td><td>前端可见/可用控制</td><td>S2 / AD-4</td><td>M11、M07</td><td>API-07 /permissions</td><td>IamPermission</td></tr>
+    <tr><td>FR-37</td><td>后端 API 逐请求校验</td><td>S2 / AD-3</td><td>M01、M07</td><td>拦截器、API-07</td><td>IamApi、IamPermission</td></tr>
+    <tr><td>FR-38</td><td>前后端同一权限源</td><td>S2 / AD-3、AD-4</td><td>M07</td><td>I-03、I-04</td><td>授权关系表</td></tr>
+    <tr><td>FR-39</td><td>前端权限查询接口</td><td>S1 / AD-2</td><td>M07</td><td>API-07 /permissions</td><td>IamPermission</td></tr>
+    <tr><td>FR-40</td><td>权限变更即时生效</td><td>S4 / AD-5</td><td>M04、M10、M11</td><td>I-08、API-07</td><td>Redis、IamRolePermission</td></tr>
+    <tr><td>FR-41</td><td>并发与冲突互斥</td><td>S3 / AD-6</td><td>M04、M10</td><td>I-09、写接口</td><td>Redis、IamUserRole、IamRoleExclusion</td></tr>
+    <tr><td>FR-42</td><td>变更前后快照</td><td>S5 / AD-8</td><td>M08</td><td>I-07</td><td>IamLog</td></tr>
+    <tr><td>FR-43</td><td>变更通知</td><td>S4 / S6</td><td>M10 / P6（扩展）</td><td>扩展回调</td><td>Redis</td></tr>
+    <tr><td>FR-44</td><td>审计日志字段</td><td>S5 / AD-8</td><td>M08、AOP 切面</td><td>API-08</td><td>IamLog</td></tr>
+    <tr><td>FR-45</td><td>日志永久保存与查询</td><td>S5 / AD-8</td><td>M08</td><td>API-08 /logs</td><td>IamLog</td></tr>
+    <tr><td>FR-46</td><td>日志导出</td><td>S5</td><td>M08</td><td>API-08 /logs/export</td><td>IamLog</td></tr>
+    <tr><td>FR-47</td><td>日志防篡改</td><td>S5 / AD-8</td><td>M08、数据库触发器</td><td>—</td><td>IamLog</td></tr>
+    <tr><td>FR-48</td><td>敏感信息加密存储</td><td>S2 / AD-7</td><td>M09 CryptoComponent、M02</td><td>I-01、API-02</td><td>IamUser</td></tr>
+    <tr><td>FR-49</td><td>敏感信息展示脱敏</td><td>S2 / AD-7</td><td>M02、M09</td><td>API-02</td><td>IamUser</td></tr>
+    <tr><td>FR-50</td><td>敏感信息导出脱敏</td><td>S2 / AD-7</td><td>M02、M08（规划）</td><td>扩展接口</td><td>IamUser、IamLog</td></tr>
+  </tbody>
+</table>
+
+<h2>9.2　非功能需求追溯矩阵</h2>
+<p>非功能需求的落实位置与架构决策对应关系见表 9-2。</p>
+<p class="tcap">表 9-2　非功能需求可追溯性矩阵</p>
+<table>
+  <thead><tr><th style="width:9%">需求编号</th><th style="width:22%">需求名称</th><th style="width:18%">架构故事 / 决策</th><th style="width:24%">设计模块 / 类</th><th style="width:27%">落实位置</th></tr></thead>
+  <tbody>
+    <tr><td>NFR-01</td><td>加密存储与脱敏</td><td>S2 / AD-7</td><td>M09、M02</td><td>2.1.3、6.2、8</td></tr>
+    <tr><td>NFR-02</td><td>最小权限、默认拒绝</td><td>S2 / AD-3</td><td>M07、M01</td><td>2.1.3、8</td></tr>
+    <tr><td>NFR-03</td><td>防水平/垂直越权</td><td>S2 / AD-3、AD-4</td><td>M07、M06</td><td>2.1.3、4.4、8</td></tr>
+    <tr><td>NFR-04</td><td>令牌防伪与防重放</td><td>S2 / AD-2</td><td>M01、M10</td><td>5.1、6.3、8</td></tr>
+    <tr><td>NFR-05</td><td>管理操作确认与留痕</td><td>S5</td><td>M11、M08</td><td>5.1、8</td></tr>
+    <tr><td>NFR-06</td><td>万级账号与 18 系统规模</td><td>S1</td><td>M07、索引设计</td><td>6.2、8</td></tr>
+    <tr><td>NFR-07</td><td>鉴权延迟指标</td><td>S1 / AD-5</td><td>M07、M10</td><td>2.2、4.4、8</td></tr>
+    <tr><td>NFR-08</td><td>权限缓存与即时生效</td><td>S4 / AD-5</td><td>M10</td><td>2.3、6.3、8</td></tr>
+    <tr><td>NFR-09</td><td>日志永久保存</td><td>S5 / AD-8</td><td>M08</td><td>6.2、6.3、8</td></tr>
+    <tr><td>NFR-10</td><td>日志归档与容量规划</td><td>S5</td><td>M08（规划）</td><td>2.3.4（IMP-3）、8</td></tr>
+    <tr><td>NFR-11</td><td>高可用与避免单点</td><td>S3 / AD-10</td><td>M12、M07</td><td>2.3.3（R-1）、7.2、8</td></tr>
+    <tr><td>NFR-12</td><td>管理界面易用</td><td>—</td><td>M11</td><td>5.1、8</td></tr>
+    <tr><td>NFR-13</td><td>第 19 套系统零改码接入</td><td>S6 / AD-4</td><td>M05</td><td>2.1.3、3.2、8</td></tr>
+    <tr><td>NFR-14</td><td>操作取值可扩展</td><td>S6</td><td>M05、M07</td><td>3.2、8</td></tr>
+    <tr><td>NFR-15</td><td>组织与角色模型可扩展</td><td>S4</td><td>M03、M04</td><td>3.2、6.2、8</td></tr>
+  </tbody>
+</table>
+
+<h2>9.3　引用大作业一分析模型编号清单</h2>
+<p>本文引用的分析模型及其编号见表 9-3。</p>
+<p class="tcap">表 9-3　引用大作业一分析模型编号清单</p>
+<table>
+  <thead><tr><th style="width:15%">分析模型类型</th><th style="width:32%">大作业一编号 / 载体</th><th style="width:31%">内容</th><th style="width:22%">本文转换 / 引用位置</th></tr></thead>
+  <tbody>
+    <tr><td>用例模型</td><td>IAM-AUTH-001、IAM-AUTH-002、IAM-ORG-001、IAM-ROLE-001、IAM-ROLE-002、IAM-DATA-001、IAM-AUDIT-001（SRS 4.3）</td><td>登录与令牌、API 鉴权、账号生命周期、角色互斥、用户授角、岗位数据权限、审计日志</td><td>2.2、3.2、4.4、9.1</td></tr>
+    <tr><td>活动 / 业务流程模型</td><td>SRS 4.4.1～4.4.5</td><td>授权流程、调岗权限变更、离职封存、变更即时生效、一次 API 访问的鉴权决策</td><td>4.2、4.3、4.4</td></tr>
+    <tr><td>概念类模型</td><td>SRS 3.1 领域模型、ER 图（<code>ER图.png</code>）</td><td>用户、角色、权限、API、组织、系统及其联系</td><td>图 4-1、图 6-1</td></tr>
+    <tr><td>状态模型</td><td>SRS FR-02、FR-05 的状态约束（需求阶段以文字表达）</td><td>正常 / 停用 / 锁定 / 封存及迁移约束</td><td>图 4-2</td></tr>
+    <tr><td>分层 DFD</td><td>详细设计 4.2（0 级）、4.3（1 级）、4.4（P2/P3 2 级）；图号 DFD-0、DFD-1、DFD-2-P2、DFD-2-P3</td><td>系统边界、六个主要加工、账号授权与鉴权决策分解</td><td>图 4-3、图 4-4</td></tr>
+    <tr><td>模块结构图</td><td>详细设计 5.3（RBAC0 模块结构图）</td><td>事务分析与变换分析导出的调用层次</td><td>图 3-1</td></tr>
+    <tr><td>验收用例</td><td>UC-01～UC-10（SRS 8）</td><td>数据范围、越权、封存、回收、互斥、日志、脱敏、接入、并发</td><td>2.2、9.1</td></tr>
+  </tbody>
+</table>
+<div class="note">
+  <b>编号说明：</b>大作业一以用例规约（IAM-*）与业务流程（4.4.x）承载用例与活动语义，未单独绘制用例图与活动图；因此本清单按实际文档的章节号/规约号引用，不虚构图号。若评阅要求独立图号，请以本表“大作业一编号 / 载体”列为准进行对照。状态模型在需求阶段以 FR-02、FR-05 的文字约束表达，本文首次细化为状态图 4-2。
+</div>
+
+<p style="margin-top:28px;text-align:right;color:#666;">（文档结束）</p>
+
+</body>
+</html>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import { changeUserStatus, listUsers } from '@/api/user.api'
@@ -9,6 +9,7 @@ import { useTable } from '@/composables/useTable'
 import { AccountStatus, type AccountStatusCode } from '@/constants/enums'
 import type { User } from '@/types/user.types'
 import { ADMIN_ACTION_PERMISSIONS as FP } from '@/constants/permissions'
+import { usePermissionStore } from '@/stores/permission.store'
 import { formatDateTime } from '@/utils/time'
 
 /**
@@ -29,6 +30,9 @@ const emit = defineEmits<{
 
 const { dictLabel, accountStatusOptions } = useDict()
 const { resolve: resolveOrgNames, nameOf } = useOrgNames()
+const permissionStore = usePermissionStore()
+const canTransferUser = computed(() => permissionStore.canAccess(FP.USER_TRANSFER))
+const canChangeUserStatus = computed(() => permissionStore.canAccess(FP.USER_STATUS))
 
 /** 状态 → Tag 配色（视觉映射，文案出自 dict store） */
 type TagType = 'primary' | 'success' | 'info' | 'warning' | 'danger'
@@ -210,8 +214,7 @@ function rowChanging(row: unknown): boolean {
         <template #default="{ row }">
           <el-button link type="primary" @click="detail(row)">详情</el-button>
           <el-button
-            v-if="statusOf(row) !== AccountStatus.SEALED"
-            v-perm.disable="FP.USER_TRANSFER"
+            v-if="canTransferUser && statusOf(row) !== AccountStatus.SEALED"
             link
             type="primary"
             @click="transfer(row)"
@@ -219,42 +222,41 @@ function rowChanging(row: unknown): boolean {
             调岗
           </el-button>
           <el-popconfirm
-            v-if="statusOf(row) === AccountStatus.NORMAL"
+            v-if="canChangeUserStatus && statusOf(row) === AccountStatus.NORMAL"
             title="确认停用该用户？停用后将无法登录"
             confirm-button-text="确认"
             cancel-button-text="取消"
             @confirm="disable(row)"
           >
             <template #reference>
-              <el-button v-perm.disable="FP.USER_STATUS" link type="warning" :disabled="rowChanging(row)">停用</el-button>
+              <el-button link type="warning" :disabled="rowChanging(row)">停用</el-button>
             </template>
           </el-popconfirm>
           <el-popconfirm
-            v-if="statusOf(row) === AccountStatus.DISABLED"
+            v-if="canChangeUserStatus && statusOf(row) === AccountStatus.DISABLED"
             title="确认启用该用户？"
             confirm-button-text="确认"
             cancel-button-text="取消"
             @confirm="enable(row)"
           >
             <template #reference>
-              <el-button v-perm.disable="FP.USER_STATUS" link type="success" :disabled="rowChanging(row)">启用</el-button>
+              <el-button link type="success" :disabled="rowChanging(row)">启用</el-button>
             </template>
           </el-popconfirm>
           <el-popconfirm
-            v-if="statusOf(row) === AccountStatus.LOCKED"
+            v-if="canChangeUserStatus && statusOf(row) === AccountStatus.LOCKED"
             title="确认解锁该用户？"
             confirm-button-text="确认"
             cancel-button-text="取消"
             @confirm="enable(row)"
           >
             <template #reference>
-              <el-button v-perm.disable="FP.USER_STATUS" link type="success" :disabled="rowChanging(row)">解锁</el-button>
+              <el-button link type="success" :disabled="rowChanging(row)">解锁</el-button>
             </template>
           </el-popconfirm>
           <!-- SEALED 走 L2 高危对话框（契约 9.2-2），由页面承接 -->
           <el-button
-            v-if="statusOf(row) === AccountStatus.NORMAL"
-            v-perm.disable="FP.USER_STATUS"
+            v-if="canChangeUserStatus && statusOf(row) === AccountStatus.NORMAL"
             link
             type="danger"
             :disabled="rowChanging(row)"

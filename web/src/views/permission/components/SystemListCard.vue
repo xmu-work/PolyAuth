@@ -1,13 +1,12 @@
 <script setup lang="ts">
 import { onMounted, ref, watch } from 'vue'
-import { Plus } from '@element-plus/icons-vue'
+import { Monitor, Plus } from '@element-plus/icons-vue'
 import { listSystems } from '@/api/system.api'
 import { useDict } from '@/composables/useDict'
 import type { System } from '@/types/system.types'
 import { ADMIN_ACTION_PERMISSIONS as FP } from '@/constants/permissions'
-import { dateTimeColumnFormatter } from '@/utils/time'
 
-/** 接入系统列表卡片（契约 8.7）：系统登记入口；系统编辑/停用 [缺] 端点 */
+/** 接入系统列表卡：系统选择与登记入口。 */
 const props = defineProps<{
   reloadSignal: number
   selectedSystemId: number | null
@@ -46,24 +45,26 @@ watch(
   () => props.reloadSignal,
   () => void load(),
 )
-
-function handleCurrentChange(system: System | null): void {
-  if (system) {
-    emit('select', system.id)
-  }
-}
 </script>
 
 <template>
-  <!-- 视觉组件（契约 9.1-3）：承载「接入系统列表」这一块视觉区域 -->
   <el-card class="system-list-card" shadow="never">
     <template #header>
       <div class="system-list-card__header">
         <div>
           <h2 class="system-list-card__title">接入系统</h2>
-          <p class="system-list-card__hint">共 {{ systems.length }} 个系统接入统一权限平台</p>
+          <p class="system-list-card__hint">共 {{ systems.length }} 个系统</p>
         </div>
-        <el-button v-perm="FP.SYSTEM_CREATE" type="primary" :icon="Plus" @click="emit('create')">登记系统</el-button>
+        <el-button
+          v-perm="FP.SYSTEM_CREATE"
+          type="primary"
+          plain
+          size="small"
+          :icon="Plus"
+          @click="emit('create')"
+        >
+          登记
+        </el-button>
       </div>
     </template>
 
@@ -77,29 +78,40 @@ function handleCurrentChange(system: System | null): void {
     >
       <el-button size="small" type="primary" @click="load">重试</el-button>
     </el-alert>
-    <el-table
-      v-else
-      v-loading="loading"
-      :data="systems"
-      row-key="id"
-      highlight-current-row
-      :current-row-key="selectedSystemId ?? undefined"
-      @current-change="handleCurrentChange"
-    >
-      <el-table-column prop="systemCode" label="系统编码" min-width="110" />
-      <el-table-column prop="systemName" label="系统名称" min-width="170" />
-      <el-table-column label="描述" min-width="280" show-overflow-tooltip>
-        <template #default="{ row }">{{ row.description ?? '—' }}</template>
-      </el-table-column>
-      <el-table-column label="状态" min-width="90">
-        <template #default="{ row }">
-          <el-tag type="success" effect="light">
-            {{ dictLabel(commonStatusOptions, row.status) }}
-          </el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column prop="createdAt" label="接入时间" min-width="160" :formatter="dateTimeColumnFormatter" />
-    </el-table>
+
+    <div v-else v-loading="loading" class="system-list-card__items">
+      <button
+        v-for="system in systems"
+        :key="system.id"
+        type="button"
+        class="system-item"
+        :class="{ 'system-item--active': selectedSystemId === system.id }"
+        @click="emit('select', system.id)"
+      >
+        <span class="system-item__icon">
+          <Monitor />
+        </span>
+        <span class="system-item__body">
+          <span class="system-item__name">{{ system.systemName }}</span>
+          <code class="system-item__code">{{ system.systemCode }}</code>
+          <span class="system-item__description">
+            {{ system.description ?? '暂无描述' }}
+          </span>
+        </span>
+        <el-tag
+          size="small"
+          :type="system.status === 'ACTIVE' ? 'success' : 'info'"
+          effect="light"
+        >
+          {{ dictLabel(commonStatusOptions, system.status) }}
+        </el-tag>
+      </button>
+      <el-empty
+        v-if="systems.length === 0 && !loading"
+        description="暂无接入系统"
+        :image-size="72"
+      />
+    </div>
   </el-card>
 </template>
 
@@ -113,7 +125,7 @@ function handleCurrentChange(system: System | null): void {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: var(--space-4);
+  gap: var(--space-3);
 }
 
 .system-list-card__title {
@@ -123,12 +135,92 @@ function handleCurrentChange(system: System | null): void {
 }
 
 .system-list-card__hint {
-  margin: var(--space-2) var(--space-0) var(--space-0);
+  margin: var(--space-1) var(--space-0) var(--space-0);
   color: var(--color-text-secondary);
   font-size: var(--font-size-sm);
 }
 
 .system-list-card__error {
   margin-bottom: var(--space-3);
+}
+
+.system-list-card__items {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.system-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-3);
+  border: var(--border-width-base) solid transparent;
+  border-radius: var(--radius-lg);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  background: var(--color-bg-card);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.system-item:hover {
+  border-color: var(--color-primary-light-7);
+  background: var(--color-bg-hover);
+}
+
+.system-item--active {
+  border-color: var(--color-primary-light-7);
+  background: var(--color-primary-light-9);
+}
+
+.system-item__icon {
+  display: grid;
+  flex: 0 0 var(--space-8);
+  width: var(--space-8);
+  height: var(--space-8);
+  place-items: center;
+  border-radius: var(--radius-md);
+  color: var(--color-primary);
+  background: var(--color-primary-light-9);
+}
+
+.system-item--active .system-item__icon {
+  color: var(--color-text-inverse);
+  background: var(--color-primary);
+}
+
+.system-item__body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.system-item__name {
+  overflow: hidden;
+  color: var(--color-text-primary);
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.system-item__code {
+  color: var(--color-text-placeholder);
+  font-size: var(--font-size-xs);
+}
+
+.system-item__description {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  line-height: 1.5;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 </style>

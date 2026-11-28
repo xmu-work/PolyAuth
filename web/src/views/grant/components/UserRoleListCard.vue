@@ -116,7 +116,6 @@ function asGrant(row: unknown): UserRole {
       <el-table-column label="角色" min-width="170">
         <template #default="{ row }">
           <span class="user-role-card__name">{{ row.roleName }}</span>
-          <span class="user-role-card__code">{{ row.roleCode }}</span>
         </template>
       </el-table-column>
       <el-table-column label="状态" min-width="130">
@@ -147,7 +146,7 @@ function asGrant(row: unknown): UserRole {
         <template #default="{ row }">
           <el-button
             v-if="asGrant(row).status === GrantStatus.ACTIVE"
-            v-perm.disable="FP.ROLE_REVOKE"
+            v-perm="FP.ROLE_REVOKE"
             link
             type="danger"
             @click="emit('revoke', asGrant(row))"

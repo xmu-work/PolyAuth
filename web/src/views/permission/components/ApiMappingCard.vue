@@ -16,6 +16,8 @@ const props = defineProps<{
   reloadSignal?: number
 }>()
 
+const emit = defineEmits<{ changed: [] }>()
+
 const loading = ref(false)
 const submitting = ref(false)
 const mappedApis = ref<Api[]>([])
@@ -27,6 +29,14 @@ const availableApis = computed(() =>
     (api) => api.permissionId == null && api.isDeleted === 0 && api.status === 'ACTIVE',
   ),
 )
+
+function methodType(method: string): 'success' | 'primary' | 'warning' | 'danger' | 'info' {
+  if (method === 'GET') return 'success'
+  if (method === 'POST') return 'primary'
+  if (method === 'PUT' || method === 'PATCH') return 'warning'
+  if (method === 'DELETE') return 'danger'
+  return 'info'
+}
 
 watch(
   () => [props.systemId, props.permission?.id, props.reloadSignal] as const,
@@ -63,6 +73,7 @@ async function bindSelectedApi(): Promise<void> {
     await bindApiToPermission(props.permission.id, selectedApiId.value)
     ElMessage.success('API 映射已建立')
     await load()
+    emit('changed')
   } finally {
     submitting.value = false
   }
@@ -91,6 +102,7 @@ async function unbind(api: Api): Promise<void> {
     await unbindApiFromPermission(props.permission.id, api.id)
     ElMessage.success('API 映射已解除')
     await load()
+    emit('changed')
   } finally {
     submitting.value = false
   }
@@ -100,16 +112,40 @@ async function unbind(api: Api): Promise<void> {
 <template>
   <el-card v-loading="loading" class="api-mapping-card" shadow="never">
     <template #header>
-      <div>
-        <h2 class="api-mapping-card__title">API 映射</h2>
-        <p class="api-mapping-card__hint">
-          {{ permission ? `当前权限：${permission.permissionName}（#${permission.id}）` : '先在权限树中选择一个菜单或按钮' }}
-        </p>
+      <div class="api-mapping-card__header">
+        <div>
+          <h2 class="api-mapping-card__title">API 映射</h2>
+          <p class="api-mapping-card__hint">
+            {{ permission ? `当前权限：${permission.permissionName}` : '先在权限树中选择一个菜单或按钮' }}
+          </p>
+        </div>
+        <div v-if="permission" class="api-mapping-card__counts">
+          <el-tag size="small" type="success" effect="light">
+            已映射 {{ mappedApis.length }}
+          </el-tag>
+          <el-tag
+            v-if="availableApis.length > 0"
+            size="small"
+            type="warning"
+            effect="light"
+          >
+            未映射 {{ availableApis.length }}
+          </el-tag>
+        </div>
       </div>
     </template>
 
     <el-empty v-if="permission === null" description="请选择权限后管理 API 映射" :image-size="90" />
     <template v-else>
+      <el-alert
+        v-if="availableApis.length > 0"
+        class="api-mapping-card__alert"
+        type="warning"
+        :closable="false"
+        show-icon
+        :title="`当前系统还有 ${availableApis.length} 个 API 未映射权限，未映射 API 默认拒绝访问`"
+      />
+
       <div class="api-mapping-card__toolbar">
         <el-select
           v-model="selectedApiId"
@@ -127,7 +163,7 @@ async function unbind(api: Api): Promise<void> {
           />
         </el-select>
         <el-button
-          v-perm.disable="FP.API_PERMISSION_BIND"
+          v-perm="FP.API_PERMISSION_BIND"
           data-testid="map-api"
           type="primary"
           :loading="submitting"
@@ -138,16 +174,24 @@ async function unbind(api: Api): Promise<void> {
         </el-button>
       </div>
 
-      <div v-if="mappedApis.length === 0" class="api-mapping-card__empty">暂无已映射 API</div>
+      <div v-if="mappedApis.length === 0" class="api-mapping-card__empty">
+        <el-empty description="当前权限尚未映射 API" :image-size="72" />
+      </div>
       <div v-else class="api-mapping-card__list">
         <div v-for="api in mappedApis" :key="api.id" class="api-mapping-card__row">
+          <el-tag
+            class="api-mapping-card__method"
+            :type="methodType(api.httpMethod)"
+            effect="dark"
+          >
+            {{ api.httpMethod }}
+          </el-tag>
           <div class="api-mapping-card__api">
-            <el-tag size="small" effect="plain">{{ api.httpMethod }}</el-tag>
-            <code>{{ api.httpMethod }} {{ api.apiPath }}</code>
-            <span>{{ api.apiName }}</span>
+            <span class="api-mapping-card__api-name">{{ api.apiName }}</span>
+            <code class="api-mapping-card__api-path">{{ api.apiPath }}</code>
           </div>
           <el-button
-            v-perm.disable="FP.API_PERMISSION_UNBIND"
+            v-perm="FP.API_PERMISSION_UNBIND"
             data-testid="unbind-api"
             link
             type="danger"
@@ -168,6 +212,19 @@ async function unbind(api: Api): Promise<void> {
   box-shadow: var(--shadow-card);
 }
 
+.api-mapping-card__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.api-mapping-card__counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
 .api-mapping-card__title {
   margin: var(--space-0);
   color: var(--color-text-primary);
@@ -175,25 +232,29 @@ async function unbind(api: Api): Promise<void> {
 }
 
 .api-mapping-card__hint {
-  margin: var(--space-2) var(--space-0) var(--space-0);
+  margin: var(--space-1) var(--space-0) var(--space-0);
   color: var(--color-text-secondary);
   font-size: var(--font-size-sm);
 }
 
+.api-mapping-card__alert {
+  margin-bottom: var(--space-3);
+}
+
 .api-mapping-card__toolbar {
   display: flex;
+  flex-wrap: wrap;
   gap: var(--space-2);
   margin-bottom: var(--space-4);
 }
 
 .api-mapping-card__select {
   flex: 1;
+  min-width: 180px;
 }
 
 .api-mapping-card__empty {
-  padding: var(--space-5);
-  color: var(--color-text-placeholder);
-  text-align: center;
+  padding: var(--space-4) var(--space-0);
 }
 
 .api-mapping-card__list {
@@ -205,23 +266,45 @@ async function unbind(api: Api): Promise<void> {
 .api-mapping-card__row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: var(--space-3);
   padding: var(--space-3);
   border: var(--border-width-base) solid var(--color-border-light);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-card);
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.api-mapping-card__row:hover {
+  border-color: var(--color-primary-light-8);
+  background: var(--color-bg-hover);
+}
+
+.api-mapping-card__method {
+  flex: 0 0 auto;
+  min-width: 64px;
+  text-align: center;
 }
 
 .api-mapping-card__api {
   display: flex;
-  align-items: center;
-  gap: var(--space-2);
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-1);
   min-width: 0;
 }
 
-.api-mapping-card__api code,
-.api-mapping-card__api span {
+.api-mapping-card__api-name {
   overflow: hidden;
+  color: var(--color-text-primary);
+  font-size: var(--font-size-base);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.api-mapping-card__api-path {
+  overflow: hidden;
+  color: var(--color-text-placeholder);
+  font-size: var(--font-size-xs);
   text-overflow: ellipsis;
   white-space: nowrap;
 }

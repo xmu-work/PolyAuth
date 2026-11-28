@@ -2,6 +2,8 @@
 target
 web/node_modules
 web/dist
+docs
+prototype
 design
 *.md
 *.log

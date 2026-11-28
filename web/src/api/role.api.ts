@@ -16,12 +16,25 @@ export function getRole(roleId: number): Promise<Role> {
 }
 
 export function createRole(payload: RoleCreatePayload): Promise<Role> {
-  return postForm<Role>('/roles', payload)
+  const { parentIds, ...rest } = payload
+  return postForm<Role>('/roles', {
+    ...rest,
+    // 兼容只认识单父角色的旧后端；新后端优先使用 parentIds
+    parentId: rest.parentId ?? parentIds?.[0],
+    // Spring 的 List<Long> 可直接绑定逗号分隔的查询参数
+    parentIds: parentIds && parentIds.length > 0 ? parentIds.join(',') : undefined,
+  })
 }
 
-/** 修改角色名称、描述、状态和父角色。 */
+/** 修改角色名称、描述、状态和多个父角色。 */
 export function updateRole(roleId: number, payload: RoleUpdatePayload): Promise<Role> {
-  return putJson<Role>(`/roles/${roleId}`, payload)
+  const { parentIds, ...rest } = payload
+  return putJson<Role>(`/roles/${roleId}`, {
+    ...rest,
+    // 兼容旧后端；新后端优先使用 parentIds
+    parentId: rest.parentId ?? parentIds?.[0],
+    parentIds,
+  })
 }
 
 /** 查询角色互斥关系中的对端角色 ID。 */

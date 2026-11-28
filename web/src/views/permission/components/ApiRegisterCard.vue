@@ -10,6 +10,7 @@ import type { System } from '@/types/system.types'
 const props = defineProps<{
   systems: System[]
   selectedSystemId?: number | null
+  embedded?: boolean
 }>()
 const emit = defineEmits<{ created: [] }>()
 const formRef = ref<FormInstance>()
@@ -69,8 +70,12 @@ async function submit(): Promise<void> {
 </script>
 
 <template>
-  <el-card class="api-register-card" shadow="never">
-    <template #header>
+  <el-card
+    class="api-register-card"
+    :class="{ 'api-register-card--embedded': embedded }"
+    shadow="never"
+  >
+    <template v-if="!embedded" #header>
       <div>
         <h2 class="api-register-card__title">后端 API</h2>
         <p class="api-register-card__hint">API 独立登记，再归属到菜单/按钮权限；未映射 API 默认拒绝</p>
@@ -133,6 +138,8 @@ async function submit(): Promise<void> {
 
 <style scoped>
 .api-register-card { border-radius: var(--radius-lg); box-shadow: var(--shadow-card); }
+.api-register-card--embedded { border: none; box-shadow: none; background: transparent; }
+.api-register-card--embedded :deep(.el-card__body) { padding: var(--space-0); }
 .api-register-card__title { margin: var(--space-0); color: var(--color-text-primary); font-size: var(--font-size-lg); }
 .api-register-card__hint { margin: var(--space-2) var(--space-0) var(--space-0); color: var(--color-text-secondary); font-size: var(--font-size-sm); }
 </style>

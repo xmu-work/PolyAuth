@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="560" viewBox="0 0 1200 560" font-family="Microsoft YaHei, PingFang SC, SimHei, sans-serif">
+  <defs>
+    <marker id="ln" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#555"/>
+    </marker>
+  </defs>
+  <rect width="1200" height="560" fill="#ffffff"/>
+
+  <rect x="520" y="60" width="160" height="48" rx="6" fill="#dce9f9" stroke="#1f4e8c" stroke-width="2"/>
+  <text x="600" y="90" text-anchor="middle" font-size="16" font-weight="bold" fill="#13396b">效用</text>
+
+  <!-- 一级节点 -->
+  <rect x="60" y="180" width="180" height="46" rx="6" fill="#eef4fc" stroke="#1f4e8c" stroke-width="1.6"/>
+  <text x="150" y="208" text-anchor="middle" font-size="15" font-weight="bold" fill="#13396b">性能</text>
+  <rect x="280" y="180" width="180" height="46" rx="6" fill="#eef4fc" stroke="#1f4e8c" stroke-width="1.6"/>
+  <text x="370" y="208" text-anchor="middle" font-size="15" font-weight="bold" fill="#13396b">安全</text>
+  <rect x="500" y="180" width="180" height="46" rx="6" fill="#eef4fc" stroke="#1f4e8c" stroke-width="1.6"/>
+  <text x="590" y="208" text-anchor="middle" font-size="15" font-weight="bold" fill="#13396b">可用性</text>
+  <rect x="720" y="180" width="180" height="46" rx="6" fill="#eef4fc" stroke="#1f4e8c" stroke-width="1.6"/>
+  <text x="810" y="201" text-anchor="middle" font-size="15" font-weight="bold" fill="#13396b">可修改性</text>
+  <text x="810" y="219" text-anchor="middle" font-size="10" fill="#557">（含可扩展性）</text>
+  <rect x="940" y="180" width="180" height="46" rx="6" fill="#eef4fc" stroke="#1f4e8c" stroke-width="1.6"/>
+  <text x="1030" y="201" text-anchor="middle" font-size="15" font-weight="bold" fill="#13396b">可审计性</text>
+  <text x="1030" y="219" text-anchor="middle" font-size="10" fill="#557">（含可靠性）</text>
+
+  <line x1="600" y1="108" x2="150" y2="178" stroke="#555" stroke-width="1.4" marker-end="url(#ln)"/>
+  <line x1="600" y1="108" x2="370" y2="178" stroke="#555" stroke-width="1.4" marker-end="url(#ln)"/>
+  <line x1="600" y1="108" x2="590" y2="178" stroke="#555" stroke-width="1.4" marker-end="url(#ln)"/>
+  <line x1="600" y1="108" x2="810" y2="178" stroke="#555" stroke-width="1.4" marker-end="url(#ln)"/>
+  <line x1="600" y1="108" x2="1030" y2="178" stroke="#555" stroke-width="1.4" marker-end="url(#ln)"/>
+
+  <!-- 叶节点 -->
+  <rect x="50" y="310" width="200" height="86" rx="5" fill="#fff" stroke="#222" stroke-width="1.4"/>
+  <text x="150" y="334" text-anchor="middle" font-size="12.5" font-weight="bold">S1 高并发鉴权响应</text>
+  <text x="150" y="354" text-anchor="middle" font-size="10.5" fill="#555">P99 ≤ 200ms，峰值 18 系统</text>
+  <text x="150" y="376" text-anchor="middle" font-size="11" fill="#b03030">重要性 H / 难度 M</text>
+
+  <rect x="270" y="310" width="200" height="86" rx="5" fill="#fff" stroke="#222" stroke-width="1.4"/>
+  <text x="370" y="334" text-anchor="middle" font-size="12.5" font-weight="bold">S2 越权与敏感信息防护</text>
+  <text x="370" y="354" text-anchor="middle" font-size="10.5" fill="#555">未授权 API 一律拒绝</text>
+  <text x="370" y="376" text-anchor="middle" font-size="11" fill="#b03030">重要性 H / 难度 M</text>
+
+  <rect x="490" y="310" width="200" height="86" rx="5" fill="#fff" stroke="#222" stroke-width="1.4"/>
+  <text x="590" y="334" text-anchor="middle" font-size="12.5" font-weight="bold">S3 依赖故障时默认拒绝</text>
+  <text x="590" y="354" text-anchor="middle" font-size="10.5" fill="#555">Redis 不可用时不放行</text>
+  <text x="590" y="376" text-anchor="middle" font-size="11" fill="#b03030">重要性 H / 难度 H</text>
+
+  <rect x="710" y="310" width="200" height="86" rx="5" fill="#fff" stroke="#222" stroke-width="1.4"/>
+  <text x="810" y="334" text-anchor="middle" font-size="12.5" font-weight="bold">S4 授权变更秒级生效</text>
+  <text x="810" y="354" text-anchor="middle" font-size="10.5" fill="#555">无需重新登录 / 刷新</text>
+  <text x="810" y="376" text-anchor="middle" font-size="11" fill="#b03030">重要性 H / 难度 M</text>
+
+  <rect x="930" y="310" width="200" height="86" rx="5" fill="#fff" stroke="#222" stroke-width="1.4"/>
+  <text x="1030" y="334" text-anchor="middle" font-size="12.5" font-weight="bold">S5 日志永久可追溯</text>
+  <text x="1030" y="354" text-anchor="middle" font-size="10.5" fill="#555">只追加、不可改、可导出</text>
+  <text x="1030" y="376" text-anchor="middle" font-size="11" fill="#b03030">重要性 H / 难度 L</text>
+
+  <line x1="150" y1="226" x2="150" y2="308" stroke="#555" stroke-width="1.4" marker-end="url(#ln)"/>
+  <line x1="370" y1="226" x2="370" y2="308" stroke="#555" stroke-width="1.4" marker-end="url(#ln)"/>
+  <line x1="590" y1="226" x2="590" y2="308" stroke="#555" stroke-width="1.4" marker-end="url(#ln)"/>
+  <line x1="810" y1="226" x2="810" y2="308" stroke="#555" stroke-width="1.4" marker-end="url(#ln)"/>
+  <line x1="1030" y1="226" x2="1030" y2="308" stroke="#555" stroke-width="1.4" marker-end="url(#ln)"/>
+
+  <text x="60" y="450" font-size="11.5" fill="#555">补充场景（未画入树，供 2.1.3 决策追溯）：S6 第 19 套系统零改码接入（重要性 M / 难度 M）；S7 账号生命周期与封存一致性（重要性 H / 难度 L）。</text>
+  <text x="60" y="476" font-size="11.5" fill="#555">叶节点即 2.2 节架构故事，括号内为（重要性, 实现难度）；ATAM 分析只针对 H 优先级场景展开（S1～S5）。</text>
+  <text x="60" y="502" font-size="11.5" fill="#777">选取依据：课程作业要求 3～5 个质量属性场景；本系统作为公司级 IAM，性能、安全、可用性、可修改性、可审计性是最关键的五项。</text>
+</svg>

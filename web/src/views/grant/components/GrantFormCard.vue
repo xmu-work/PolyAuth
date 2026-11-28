@@ -141,7 +141,7 @@ async function submit(): Promise<void> {
           <el-option
             v-for="role in roles"
             :key="role.id"
-            :label="`${role.roleName}（${role.roleCode}）`"
+            :label="role.roleName"
             :value="role.id"
           />
         </el-select>
@@ -165,7 +165,7 @@ async function submit(): Promise<void> {
         />
       </el-form-item>
       <el-form-item class="grant-form-card__submit">
-        <el-button v-perm.disable="FP.ROLE_ASSIGN" type="primary" :icon="Promotion" :loading="submitting" @click="submit">
+        <el-button v-perm="FP.ROLE_ASSIGN" type="primary" :icon="Promotion" :loading="submitting" @click="submit">
           授予
         </el-button>
       </el-form-item>

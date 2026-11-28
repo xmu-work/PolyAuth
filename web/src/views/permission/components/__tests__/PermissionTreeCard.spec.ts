@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { flushPromises, mount } from '@vue/test-utils'
 import ElementPlus from 'element-plus'
 import PermissionTreeCard from '@/views/permission/components/PermissionTreeCard.vue'
 import type { Permission } from '@/types/system.types'
@@ -39,6 +39,13 @@ describe('FR-17 前端权限树管理', () => {
     })
 
     expect(wrapper.text()).toContain('用户管理')
+
+    const expandButton = wrapper
+      .findAll('button')
+      .find((button) => button.text().includes('展开全部'))
+    await expandButton?.trigger('click')
+    await flushPromises()
+
     expect(wrapper.text()).toContain('查询用户')
     expect(wrapper.text()).toContain('新建用户')
 

@@ -7,7 +7,7 @@ import type { Role } from '@/types/role.types'
 import { formatDateTime } from '@/utils/time'
 
 /** 角色详情卡片（契约 8.5 / RBAC1）：只读详情，治理操作在独立卡片完成。 */
-const props = defineProps<{ roleId: number | null }>()
+const props = defineProps<{ roleId: number | null; reloadSignal?: number }>()
 
 const emit = defineEmits<{ loaded: [role: Role] }>()
 
@@ -18,7 +18,7 @@ const error = ref<string | null>(null)
 const detail = ref<Role | null>(null)
 
 watch(
-  () => props.roleId,
+  () => [props.roleId, props.reloadSignal] as const,
   () => void loadDetail(),
   { immediate: true },
 )
@@ -74,8 +74,7 @@ async function loadDetail(): Promise<void> {
     <el-empty v-else-if="!detail" description="请在左侧选择角色查看详情" />
     <template v-else>
       <el-descriptions :column="2" border>
-        <el-descriptions-item label="角色编码">{{ detail.roleCode }}</el-descriptions-item>
-        <el-descriptions-item label="角色名称">{{ detail.roleName }}</el-descriptions-item>
+        <el-descriptions-item label="角色名称" :span="2">{{ detail.roleName }}</el-descriptions-item>
         <el-descriptions-item label="角色类型">
           <el-tag :type="detail.roleType === RoleType.FUNC ? 'primary' : 'success'" effect="light">
             {{ dictLabel(roleTypeOptions, detail.roleType) }}

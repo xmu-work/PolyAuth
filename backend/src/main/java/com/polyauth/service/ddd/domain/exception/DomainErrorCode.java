@@ -1,0 +1,16 @@
+package com.polyauth.service.ddd.domain.exception;
+
+/**
+ * 面向对象后端的领域错误分类。
+ */
+public enum DomainErrorCode {
+    INVALID_ROLE,
+    ROLE_INHERIT_CYCLE,
+    INVALID_GRANT_PERIOD,
+    GRANT_REVOKED,
+    ORGANIZATION_INVALID,
+    ORGANIZATION_INVALID_MOVE,
+    USER_ALREADY_SEALED,
+    ROLE_EXCLUSION_CONFLICT,
+    PERMISSION_INVALID
+}
